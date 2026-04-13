@@ -145,7 +145,7 @@ export default function EmployerPage() {
   };
 
   return (
-    <section className="p-24">
+    <section className="hidden md:block p-24">
       <div className="text-center flex flex-col items-center mb-10">
         <h2 className="mb-5 text-2xl font-serif md:text-5xl leading-tighter text-ink">
           Want to explore before <br/>you <span className="text-forest">sign up?</span>

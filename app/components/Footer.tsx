@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 export default function Footer() {
   return (
     <footer className="bg-ink text-white/70 px-6 md:px-12 py-16">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:justify-between gap-12">
+      <div className="md:max-w-7xl mx-auto flex flex-col md:flex-row md:justify-between gap-12">
         {/* Brand */}
         <div className="flex flex-col gap-4">
           <Link href="/" className="footer-logo">
@@ -30,22 +30,37 @@ export default function Footer() {
               Platform
             </h4>
             <ul className="flex flex-col gap-2">
-              {["For Employers", "For Professionals", "Pricing"].map(
-                (link, idx) => (
-                  <motion.li
-                    key={idx}
-                    whileHover={{ x: 4 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <Link
-                      href={`/${link.toLowerCase().replace(/\s/g, "-")}`}
-                      className="text-sm "
-                    >
-                      {link}
-                    </Link>
-                  </motion.li>
-                ),
-              )}
+              <motion.li
+                whileHover={{ x: 4 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Link href="/employer#pricing">Pricing</Link>
+              </motion.li>
+              <motion.li
+                whileHover={{ x: 4 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Link href="/candidate#how-it-works">How It Works</Link>
+              </motion.li>
+              <motion.li
+                whileHover={{ x: 4 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Link href="/bespoke" className="flex items-center gap-2">
+                  Bespoke
+                </Link>
+              </motion.li>
+              <motion.li
+                whileHover={{ x: 4 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Link
+                  href="/employer#early-access"
+
+                >
+                  Get Early Access
+                </Link>
+              </motion.li>
             </ul>
           </div>
 
@@ -63,13 +78,17 @@ export default function Footer() {
                   Short-Notice & IC Filter
                 </Link>
               </motion.li>
-              {["45-Day Verification", "Pay-to-Reveal"].map((link, idx) => (
-                <motion.li key={idx} whileHover={{ x: 4 }}>
-                  <Link href="/employer" className="text-sm ">
-                    {link}
-                  </Link>
-                </motion.li>
-              ))}
+              <motion.li whileHover={{ x: 4 }}>
+                <Link href="/insights">Insights</Link>
+              </motion.li>
+              <motion.li whileHover={{ x: 4 }}>
+                <Link
+                  href="/employer#short-notice"
+                  className="flex items-center gap-2 text-sm"
+                >
+                  Short-Notice & IC Filter
+                </Link>
+              </motion.li>
             </ul>
           </div>
 

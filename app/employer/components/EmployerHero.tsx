@@ -20,7 +20,7 @@ export default function EmployerHero() {
       />
 
       {/* CONTENT */}
-      <div className="relative z-10 max-w-4xl">
+      <div className="relative z-10 md:max-w-4xl">
         {/* EYEBROW */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -49,7 +49,7 @@ export default function EmployerHero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-[15px] leading-relaxed text-white/55 max-w-xl mb-10"
+          className="text-[15px] leading-relaxed text-white/55 md:max-w-xl mb-10"
         >
           The best professionals are not applying to job posts. They are already
           working. Vetted is where you find them — verified, available, and

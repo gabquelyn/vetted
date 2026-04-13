@@ -1,43 +1,97 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { FiMenu, FiX } from "react-icons/fi";
 
 export default function Navigation() {
+  const [open, setOpen] = useState(false);
+
+  const links = [
+    { href: "/candidate#how-it-works", label: "How It Works" },
+    { href: "/insights", label: "Insights" },
+    { href: "/employer", label: "For Employers" },
+    { href: "/candidate#join", label: "Join the Registry" },
+    { href: "/bespoke", label: "Bespoke" },
+    { href: "/employer#pricing", label: "Pricing" },
+  ];
+
   return (
-    <nav
-      className={`fixed w-full z-50 flex items-center justify-between p-4 bg-cream/90 border-b border-b-ash backdrop-blur-xs px-6`}
-    >
-      <Link href="/" className="nav-logo">
-        Vetted
-      </Link>
-      <ul className="nav-links">
-        <li>
-          <Link href="#how-it-works">How It Works</Link>
-        </li>
-        <li>
-          <Link href="/employer">For Employers</Link>
-        </li>
-        <li>
-          <Link href="/candidate">Join the Registry</Link>
-        </li>
-        <li>
-          <Link
-            href="/employer#short-notice"
-            className="flex items-center gap-2"
+    <nav className="fixed top-0 w-full z-50 border-b border-ash bg-cream/90 backdrop-blur-md">
+      <div className="px-[10%] py-4 flex items-center justify-between">
+        
+        {/* LOGO */}
+        <Link href="/" className="text-2xl font-semibold uppercase font-serif text-ink">
+          Vetted
+        </Link>
+
+        {/* DESKTOP NAV */}
+        <ul className="hidden md:flex items-center gap-6 text-[14px] text-ink-soft">
+          {links.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                className="hover:text-ink transition"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+
+          {/* CTA */}
+          <li>
+            <Link
+              href="/employer#early-access"
+              className="ml-2 bg-forest text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition"
+            >
+              Get Early Access
+            </Link>
+          </li>
+        </ul>
+
+        {/* MOBILE BUTTON */}
+        <button
+          onClick={() => setOpen(!open)}
+          className="md:hidden text-ink"
+        >
+          {open ? <FiX size={22} /> : <FiMenu size={22} />}
+        </button>
+      </div>
+
+      {/* MOBILE MENU */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="md:hidden border-t border-ash bg-cream"
           >
-            Short-Notice
-          </Link>
-        </li>
-        <li>
-          <Link href="#pricing">Pricing</Link>
-        </li>
-        <li>
-          <Link
-            href="/employer"
-            className="bg-forest text-white p-2 px-4 rounded-lg text-md transition-all hover:bg-primary-mid font-medium"
-          >
-            Get Early Access
-          </Link>
-        </li>
-      </ul>
+            <div className="flex flex-col px-6 py-6 gap-4 text-[15px] text-ink">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className="hover:text-forest transition"
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              {/* CTA */}
+              <Link
+                href="/employer#early-access"
+                onClick={() => setOpen(false)}
+                className="mt-2 bg-forest text-white px-4 py-3 rounded-lg text-center font-medium"
+              >
+                Get Early Access
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

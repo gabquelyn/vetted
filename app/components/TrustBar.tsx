@@ -11,7 +11,7 @@ const items = [
 
 export default function TrustBar() {
   return (
-    <div className="bg-[#faf9f6] border-t border-b border-border px-12 py-5">
+    <div className="bg-[#faf9f6] border-t border-b border-ash px-12 py-5">
       <motion.div
         initial="hidden"
         whileInView="visible"

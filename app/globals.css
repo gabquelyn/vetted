@@ -33,11 +33,14 @@
     --foreground: #ededed;
   }
 } */
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden
+}
 
 body {
   @apply bg-cream text-ink overflow-x-hidden;
-  font-family: 'DM Sans', sans-serif;
-
+  font-family: "DM Sans", sans-serif;
 }
 
 .nav-logo {
@@ -45,7 +48,7 @@ body {
   font-family: "Cormorant Garamond", serif;
 }
 
-.footer-logo{
+.footer-logo {
   @apply text-white text-lg font-medium uppercase;
   font-family: "Cormorant Garamond", serif;
 }
@@ -59,11 +62,11 @@ body {
 }
 
 .footer-col-label {
-  @apply text-xs tracking-wide uppercase mb-3 text-white/25
+  @apply text-xs tracking-wide uppercase mb-3 text-white/25;
 }
 
-.footer-links{
-  @apply text-sm text-white/45 transition-colors hover:text-white/80
+.footer-links {
+  @apply text-sm text-white/45 transition-colors hover:text-white/80;
 }
 
 .filter-label {
