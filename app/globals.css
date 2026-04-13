@@ -1,26 +1,83 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #2d5016;
+  --primary-mid: #3d6b1f;
+  --primary-light: #e8f0e0;
+  --primary-pale: #f4f7f0;
+  --secondary: #1a1a18;
+  --secondary-mid: #3a3a36;
+  --secondary-soft: #6b6b64;
+  --cream: #faf9f6;
+  --border: #e2e4dc;
+  --tertiary: #c0392b;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-forest: var(--primary);
+  --color-forest-mid: var(--primary-mid);
+  --color-forest-light: var(--primary-light);
+  --color-forest-pale: var(--primary-pale);
+  --color-ink: var(--secondary);
+  --color-ink-mid: var(--secondary-mid);
+  --color-ink-soft: var(--secondary-soft);
+  --color-cream: var(--cream);
+  --color-ash: var(--border);
+  --color-tertiary: var(--tertiary);
+  --font-serif: var(--font-serif);
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
+} */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-cream text-ink overflow-x-hidden;
+  font-family: 'DM Sans', sans-serif;
+
+}
+
+.nav-logo {
+  @apply text-[22px] font-medium tracking-[0.12em] uppercase text-ink;
+  font-family: "Cormorant Garamond", serif;
+}
+
+.footer-logo{
+  @apply text-white text-lg font-medium uppercase;
+  font-family: "Cormorant Garamond", serif;
+}
+
+.nav-links {
+  @apply flex items-center list-none gap-9;
+}
+
+.nav-links li {
+  @apply text-sm text-ink-soft transition-colors leading-relaxed hover:text-ink;
+}
+
+.footer-col-label {
+  @apply text-xs tracking-wide uppercase mb-3 text-white/25
+}
+
+.footer-links{
+  @apply text-sm text-white/45 transition-colors hover:text-white/80
+}
+
+.filter-label {
+  @apply text-[10px] uppercase tracking-widest text-white/40 mb-2;
+}
+
+.tag-green {
+  @apply text-[10px] px-2 py-0.5 rounded-full bg-forest-pale text-forest border border-forest-light;
+}
+
+.tag-yellow {
+  @apply text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300;
+}
+
+.tag-blue {
+  @apply text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200;
 }
