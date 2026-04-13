@@ -42,7 +42,7 @@ export default function CandidateCard({
       layout
       whileHover={{ y: -4 }}
       className={clsx(
-        "relative w-72 rounded-2xl text-[.6rem] border bg-white p-4 shadow-sm hover:shadow-md transition",
+        "relative w-full rounded-2xl text-[.6rem] border bg-white p-4 shadow-sm hover:shadow-md transition",
         c.specialist ? "border-yellow-500" : " border-ash",
       )}
       onMouseEnter={(e) => {

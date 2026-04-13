@@ -91,14 +91,14 @@ export default function Hero() {
           <div className="absolute -inset-6 bg-[radial-gradient(circle_at_top,rgba(94,137,50,0.2),transparent_60%)] blur-2xl" />
           {/* card */}
 
-          <div>
+          <div className="w-80">
             <CandidateCard
               c={DBWithCluster[0]}
               onUnlock={() => {}}
               toggleCompare={() => {}}
             />
           </div>
-          <div className="absolute right-0 top-4">
+          <div className="absolute right-0 w-80 top-4">
             <CandidateCard
               c={DBWithCluster[2]}
               onUnlock={() => {}}
