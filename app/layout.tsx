@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.className} ${cormorant.variable} h-full antialiased`}
+      className={`${dmSans.className} ${cormorant.variable} h-full overflow-x-hidden antialiased`}
     >
       <body>
         <Navigation />

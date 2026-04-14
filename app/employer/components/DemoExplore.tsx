@@ -145,11 +145,10 @@ export default function EmployerPage() {
   };
 
   return (
-    <section className="p-24">
+    <section className="p-24 hidden md:block">
       <div className="text-center flex flex-col items-center mb-10">
         <h2 className="mb-5 text-2xl font-serif md:text-5xl leading-tighter text-ink">
-          Want to explore before <br />
-          you <span className="text-forest">sign up?</span>
+          Want to explore before <br/>you <span className="text-forest">sign up?</span>
         </h2>
         <p className="text-sm md:w-md">
           Filter the registry by role, location, and availability. This is an
@@ -158,16 +157,17 @@ export default function EmployerPage() {
         </p>
       </div>
       <div className="w-full max-w-[75%] mx-auto">
-        <div className="grid grid-cols-[240px_1fr] gap-6 w-full items-start">
+        <div className="grid grid-cols-[240px_1fr] gap-6 w-full">
           {/* ── FILTER PANEL ── */}
-
-          <FilterPanel
-            ui={ui}
-            toggleFilter={toggleFilter}
-            updateFilter={updateFilter}
-            resetFilters={resetFilters}
-            setCompareOpen={compareSelected}
-          />
+          <div>
+            <FilterPanel
+              ui={ui}
+              toggleFilter={toggleFilter}
+              updateFilter={updateFilter}
+              resetFilters={resetFilters}
+              setCompareOpen={compareSelected}
+            />
+          </div>
 
           {/* ── RESULTS ── */}
           <div className="">
