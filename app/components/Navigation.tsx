@@ -4,9 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { FiMenu, FiX } from "react-icons/fi";
+import { usePathname } from "next/navigation";
+import clsx from "clsx";
+
 
 export default function Navigation() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname()
 
   const links = [
     { href: "/candidate#how-it-works", label: "How It Works" },
@@ -15,6 +19,7 @@ export default function Navigation() {
     { href: "/candidate#join", label: "Join the Registry" },
     { href: "/bespoke", label: "Bespoke" },
     { href: "/employer#pricing", label: "Pricing" },
+    { href: "/findwork", label: "Find Work" },
   ];
 
   return (
@@ -32,7 +37,7 @@ export default function Navigation() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="hover:text-ink transition"
+                className={clsx("hover:text-ink transition", pathname == link.href && "text-forest font-bold")}
               >
                 {link.label}
               </Link>
