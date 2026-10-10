@@ -1,162 +1,378 @@
 "use client";
-import { motion } from "motion/react";
-import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export default function HeroSection() {
+export const VETTED_HEAD_META = {
+  title: "Vetted | Ontario Healthcare Talent Registry",
+  description:
+    "Explore Vetted, an Ontario healthcare talent Registry where employers can search structured profiles, compare what matters and contact professionals directly.",
+  // PLACEHOLDER DOMAIN — no real production URL exists anywhere in this project's source; replace before deploying.
+  canonical: "https://www.joinvetted.ca/",
+  ogType: "website",
+  ogTitle: "Vetted | Ontario Healthcare Talent Registry",
+  ogDescription:
+    "Explore Vetted, an Ontario healthcare talent Registry where employers can search structured profiles, compare what matters and contact professionals directly.",
+  ogUrl: "https://www.joinvetted.ca/",
+  // No og:image included: no actual share-image asset exists in the supplied project.
+  twitterCard: "summary",
+  twitterTitle: "Vetted | Ontario Healthcare Talent Registry",
+  twitterDescription:
+    "Explore Vetted, an Ontario healthcare talent Registry where employers can search structured profiles, compare what matters and contact professionals directly.",
+  jsonLd: [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Vetted",
+      url: "https://www.joinvetted.ca/",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Vetted",
+      url: "https://www.joinvetted.ca/",
+    },
+  ],
+} as const;
+
+function PinIcon({ size = 12, opacity }: { size?: number; opacity?: number }) {
   return (
-    <section className="min-h-screen grid grid-cols-2 pt-16 relative">
-      {/* EMPLOYER */}
+    <svg
+      className="pin"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      style={opacity !== undefined ? { opacity } : undefined}
+    >
+      <path d="M12 22s8-7.5 8-13a8 8 0 1 0-16 0c0 5.5 8 13 8 13Z" />
+      <circle cx="12" cy="9" r="2.5" />
+    </svg>
+  );
+}
 
-      <div className="group relative flex flex-col justify-center px-16 py-20 min-h-[calc(100vh-64px)] cursor-pointer overflow-hidden bg-ink border-r border-white/10">
-        {/* Glow */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none bg-[radial-gradient(ellipse_at_30%_50%,rgba(45,80,22,0.3)_0%,transparent_70%)]" />
+function CarIcon({ size = 17 }: { size?: number }) {
+  return (
+    <svg
+      className="car"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="#1a1a18"
+    >
+      <path d="M4 16v-3.2c0-.5.15-.9.5-1.3l1.8-4.2c.3-.7 1-1.2 1.8-1.2h7.8c.8 0 1.5.5 1.8 1.2l1.8 4.2c.35.4.5.8.5 1.3V16a1 1 0 0 1-1 1h-.5a1 1 0 0 1-1-1v-.5H6.5V16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Zm2.6-4.5h10.8l-1.3-3.1a.6.6 0 0 0-.55-.4H8.45a.6.6 0 0 0-.55.4Z M7 13.2a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4Zm10 0a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4Z" />
+    </svg>
+  );
+}
 
-        {/* Label */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center gap-2 mb-7 text-[11px] uppercase tracking-[0.14em] text-white/40"
-        >
-          <span className="w-6 h-px bg-white/30" />
-          For Employers
-        </motion.div>
+function FilterChip({ label }: { label: string }) {
+  const [entered, setEntered] = useState(false);
 
-        {/* Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
-          className="font-serif text-[clamp(38px,4.5vw,58px)] font-light leading-[1.1] mb-6 tracking-[-0.01em] text-white"
-        >
-          The right hire <br />
-          isn&apos;t in your <br />
-          <em className="italic text-[#8fb86a]">inbox.</em>
-        </motion.h1>
+  useEffect(() => {
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(() => setEntered(true));
+      return () => cancelAnimationFrame(raf2);
+    });
+    return () => cancelAnimationFrame(raf1);
+  }, []);
 
-        {/* Text */}
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-[15px] font-light leading-[1.65] mb-11 max-w-95 text-white/55"
-        >
-          Stop waiting for applications. Browse a curated registry of verified
-          professionals and pay only when you want to connect.
-        </motion.p>
+  return (
+    <div
+      className="fchip"
+      style={{
+        opacity: entered ? 1 : 0,
+        transform: entered ? "translateY(0)" : "translateY(4px)",
+        transition: "opacity .7s ease, transform .7s ease",
+      }}
+    >
+      {label}
+    </div>
+  );
+}
 
-        {/* CTA */}
-        <Link href="/employer">
-          <motion.p
-            whileHover={{ y: -2 }}
-            className="inline-flex items-center gap-2.5 px-7 py-3.75 rounded-lg text-sm font-medium bg-forest text-white border border-forest shadow-none hover:shadow-[0_8px_24px_rgba(45,80,22,0.4)] hover:bg-[#3d6b1f] transition-all"
+interface HeroCardData {
+  id: number;
+  domId: string;
+  confirmed: string;
+  rid: string;
+  rt: string;
+  location: string;
+  hasVehicle: boolean;
+  tags: string[];
+}
+
+const HERO_CARDS: HeroCardData[] = [
+  {
+    id: 1,
+    domId: "card1",
+    confirmed: "✓ Confirmed · 2d",
+    rid: "RPN-014",
+    rt: "Registered Practical Nurse",
+    location: "Toronto, ON",
+    hasVehicle: true,
+    tags: ["Wound Care", "Nights"],
+  },
+  {
+    id: 2,
+    domId: "card2",
+    confirmed: "✓ Confirmed · 5d",
+    rid: "NP-008",
+    rt: "Nurse Practitioner",
+    location: "Brampton, ON",
+    hasVehicle: false,
+    tags: ["Primary Care"],
+  },
+  {
+    id: 3,
+    domId: "card3",
+    confirmed: "✓ Confirmed · 3d",
+    rid: "MOA-045",
+    rt: "Medical Office Assistant",
+    location: "Ottawa, ON",
+    hasVehicle: false,
+    tags: ["Days"],
+  },
+  {
+    id: 4,
+    domId: "card4",
+    confirmed: "✓ Confirmed · 6d",
+    rid: "RSW-021",
+    rt: "Registered Social Worker",
+    location: "Oshawa, ON",
+    hasVehicle: true,
+    tags: ["Mental Health"],
+  },
+  {
+    id: 5,
+    domId: "card5",
+    confirmed: "✓ Confirmed · 2d",
+    rid: "RN-063",
+    rt: "Registered Nurse",
+    location: "Niagara, ON",
+    hasVehicle: true,
+    tags: ["Stroke / Neuro"],
+  },
+  {
+    id: 6,
+    domId: "card6",
+    confirmed: "✓ Confirmed · 1d",
+    rid: "RPN-027",
+    rt: "Registered Practical Nurse",
+    location: "Mississauga, ON",
+    hasVehicle: false,
+    tags: ["Palliative Care"],
+  },
+];
+
+const MATCH_IDS = [1, 6]; // matchCards in the original (card1, card6)
+export default function HeroSection() {
+  const [typedText, setTypedText] = useState("");
+  const [chips, setChips] = useState<{ chipId: number; label: string }[]>([]);
+  const [highlightActive, setHighlightActive] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+
+  const timersRef = useRef<number[]>([]);
+  const typingIntervalRef = useRef<number | null>(null);
+  const chipIdCounter = useRef(0);
+
+  const cycleRef = useRef<() => void>(() => {});
+
+  const clearAllTimers = useCallback(() => {
+    timersRef.current.forEach((t) => clearTimeout(t));
+    timersRef.current = [];
+    if (typingIntervalRef.current !== null) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+  }, []);
+
+  const typeString = useCallback((str: string) => {
+    let i = 0;
+    setTypedText("");
+    typingIntervalRef.current = window.setInterval(() => {
+      i++;
+      setTypedText(str.slice(0, i));
+      if (i >= str.length && typingIntervalRef.current !== null) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
+    }, 140);
+  }, []);
+
+  const resetCycle = useCallback(() => {
+    setTypedText("");
+    setChips([]);
+    setHighlightActive(false);
+  }, []);
+
+  useEffect(() => {
+    cycleRef.current = () => {
+      resetCycle();
+      timersRef.current.push(window.setTimeout(() => typeString("RPN"), 600));
+      timersRef.current.push(
+        window.setTimeout(
+          () =>
+            setChips((c) => [
+              ...c,
+              { chipId: chipIdCounter.current++, label: "Nights" },
+            ]),
+          1900,
+        ),
+      );
+      timersRef.current.push(
+        window.setTimeout(
+          () =>
+            setChips((c) => [
+              ...c,
+              { chipId: chipIdCounter.current++, label: "Toronto · 25km" },
+            ]),
+          2700,
+        ),
+      );
+      timersRef.current.push(
+        window.setTimeout(() => setHighlightActive(true), 3900),
+      );
+      timersRef.current.push(
+        window.setTimeout(() => {
+          setTypedText("");
+          setChips([]);
+        }, 9500),
+      );
+      timersRef.current.push(
+        window.setTimeout(() => setHighlightActive(false), 10400),
+      );
+      timersRef.current.push(
+        window.setTimeout(() => cycleRef.current(), 11200),
+      );
+    };
+  }, [resetCycle, typeString]);
+
+  // Mount: start the cycle once, mirroring the original IIFE's `cycle();` at the end.
+  useEffect(() => {
+    cycleRef.current();
+    return () => clearAllTimers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    setIsPlaying((prevPlaying) => {
+      const next = !prevPlaying;
+      if (!next) {
+        clearAllTimers();
+      } else {
+        cycleRef.current();
+      }
+      return next;
+    });
+  }, [clearAllTimers]);
+
+  const handlePlayBtnKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        togglePlay();
+      }
+    },
+    [togglePlay],
+  );
+
+  const cardClassName = (id: number) => {
+    if (!highlightActive) return "card";
+    return MATCH_IDS.includes(id) ? "card hi" : "card dim";
+  };
+
+  return (
+    <section className="min-h-[92vh] flex flex-col justify-center px-12 pt-5 pb-0;">
+      <div className="text-center pb-12">
+        <div className="text-[11.5px] font-medium tracking-[0.08em] uppercase text-forest mb-4">
+          For Ontario healthcare employers
+        </div>
+        <h1 className="font-serif font-semibold text-[52px] leading-[1.08] mb-3.5">
+          The Resume Pile Ends with Us
+        </h1>
+        <p className="text-[17px] font-light text-ink-soft max-w-129 mx-auto mb-5.5 leading-normal">
+          Current Ontario healthcare profiles, reviewed by each professional
+          every 30 days. Find candidates worth reviewing{" "}
+          <span className="text-forest font-medium">in minutes.</span>
+        </p>
+        <div className="flex items-center justify-center gap-2.5">
+          <div
+            className="w-8 h-8 rounded-full border border-ash flex items-center justify-center text-ink text-xs cursor-pointer transition-[background,border-color] duration-150 select-none hover:bg-forest-light hover:border-forest"
+            id="playBtn"
+            role="button"
+            tabIndex={0}
+            aria-label={isPlaying ? "Pause animation" : "Play animation"}
+            onClick={togglePlay}
+            onKeyDown={handlePlayBtnKeyDown}
           >
-            I&apos;m Hiring →
-          </motion.p>
-        </Link>
-        {/* Bottom badges */}
-        {/* <div className="flex flex-col gap-1 absolute">
-          {[
-            "No placement fees",
-            "Verified profiles only",
-            "Pay only to connect",
-          ].map((text) => (
-            <div
-              key={text}
-              className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-white/10 text-white/60 border border-white/10"
-            >
-              {text}
-            </div>
-          ))}
-
-          <Link href="/employer#short-notice">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">
-              ⚡ Short-notice & IC filter
-            </div>
-          </Link>
-        </div> */}
-      </div>
-
-      {/* CENTER BADGE */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
-        <div className="w-12 h-12 flex items-center justify-center rounded-full border border-ash bg-cream font-garamond text-lg font-semibold text-ink tracking-wide">
-          V
+            {isPlaying ? "❚❚" : "▶"}
+          </div>
+          <span className="w-px h-4 bg-ash mx-0.5"></span>
+          <a
+            href="employer.html#registry-demo"
+            className="text-[12.5px] font-semibold text-forest no-underline border-b border-transparent transition-[border-color] duration-150 hover:border-b-forest"
+          >
+            Explore the interactive Registry demo →
+          </a>
         </div>
       </div>
 
-      {/* CANDIDATE */}
-
-      <div className="group relative flex flex-col justify-center px-16 py-20 min-h-[calc(100vh-64px)] cursor-pointer overflow-hidden bg-cream">
-        {/* Glow */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none bg-[radial-gradient(ellipse_at_70%_50%,rgba(45,80,22,0.08)_0%,transparent_70%)]" />
-
-        {/* Label */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.6 }}
-          className="flex items-center gap-2 mb-7 text-[11px] uppercase tracking-[0.14em] text-ink-soft"
-        >
-          <span className="w-6 h-px bg-ink-soft" />
-          For Professionals
-        </motion.div>
-
-        {/* Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.6 }}
-          className="font-serif text-[clamp(38px,4.5vw,58px)] font-light leading-[1.1] mb-6 tracking-[-0.01em] text-ink"
-        >
-          Let the right <br />
-          employers find <br />
-          <em className="italic text-forest">you.</em>
-        </motion.h1>
-
-        {/* Text */}
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.6 }}
-          className="text-[15px] font-light leading-[1.65] mb-11 max-w-95 text-ink-softbg-ink-soft"
-        >
-          Join the registry once. Stay verified. Get discovered by employers
-          looking for exactly your experience.
-        </motion.p>
-
-        {/* CTA */}
-        <Link href="/candidate">
-          <motion.p
-            onClick={(e) => e.stopPropagation()}
-            whileHover={{ y: -2 }}
-            className="inline-flex items-center gap-2.5 px-7 py-3.75 rounded-lg text-sm font-medium bg-ink text-white border border-ink hover:bg-ink-mid hover:shadow-[0_8px_24px_rgba(26,26,24,0.2)] transition-all"
-          >
-            Join the Registry →
-          </motion.p>
-        </Link>
-        {/* Bottom badges */}
-        {/* <div className="absolute bottom-16 left-16 flex flex-col gap-2.5">
-          {[
-            "No job hunting",
-            "Profile stays private",
-            "Employers come to you",
-          ].map((text) => (
-            <div
-              key={text}
-              className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-forest-pale text-ink-softbg-ink-soft border border-ash"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#8fb86a]" />
-              {text}
-            </div>
-          ))}
-
-          <a href="/candidate#independent-contractors">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-forest-pale text-forest border border-forest-light">
-              ⚡ Independent contractors welcome
-            </div>
-          </a>
-        </div> */}
+      <div className="max-w-160 mx-auto flex items-center gap-3.5 border-b-2 border-ink pb-4.5 mb-9 text-[22px] text-ink-mid">
+        Search:{" "}
+        <b id="typeText" className="text-ink font-semibold">
+          {typedText}
+        </b>
+        <span className="inline-block w-0.5 h-6 bg-forest animate-[blink_1s_steps(1)_infinite]"></span>
       </div>
+      <div className="flex justify-center gap-3 mb-10" id="chipRow">
+        {chips.map((c) => (
+          <FilterChip key={c.chipId} label={c.label} />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-6 gap-4.5 max-w-350 mx-auto w-full">
+        {HERO_CARDS.map((card) => (
+          <div
+            className={cardClassName(card.id)}
+            id={card.domId}
+            key={card.domId}
+          >
+            <div className="flex justify-between items-center text-[12.5px] mb-3.25">
+              {card.confirmed}
+              <span className="w-1.75 h-1.75 rounded-full bg-primary-mid"></span>
+            </div>
+            <div className="font-['IBM_Plex_Mono',monospace] font-bold text-[19px] mb-0.75">
+              {card.rid}
+            </div>
+            <div className="text-[13px] text-ink-soft mb-3">{card.rt}</div>
+            <div className="text-[9.5px] font-semibold tracking-[0.06em] uppercase text-ink-mid mb-1.5 pt-2.5 border-t border-ash">
+              Location
+            </div>
+            <div className="flex items-center gap-1.5 text-[12.5px] text-ink mb-3">
+              <PinIcon size={12} />
+              {card.location}
+              {card.hasVehicle && (
+                <>
+                  <span className="dot2">·</span>
+                  <CarIcon size={17} />
+                </>
+              )}
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {card.tags.map((tag) => (
+                <span
+                  className="text-[11px] font-semibold bg-forest-light text-forest px-2.5 py-1 rounded-full"
+                  key={tag}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hero-text-spacer" style={{ height: 12 }}></div>
     </section>
   );
 }

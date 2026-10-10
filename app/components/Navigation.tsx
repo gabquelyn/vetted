@@ -16,7 +16,7 @@ export default function Navigation() {
     { href: "/candidate#how-it-works", label: "How It Works" },
     { href: "/insights", label: "Insights" },
     { href: "/employer", label: "For Employers" },
-    { href: "/candidate#join", label: "Join the Registry" },
+    { href: "/join", label: "Join the Registry" },
     { href: "/bespoke", label: "Bespoke" },
     { href: "/employer#pricing", label: "Pricing" },
     { href: "/findwork", label: "Find Work" },

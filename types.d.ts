@@ -66,3 +66,22 @@ interface Article {
   date: string
   read: string
 }
+
+type ResolvedLocation = {
+  city: string;
+  province: string;
+  country: string;
+  lat: number | string;
+  lng: number | string;
+  formatted: string;
+} | null;
+
+type Place = {
+  city: string;
+  province: string;
+  country: string;
+  lat: number;
+  lng: number;
+};
+
+type inputEvent = React.ChangeEvent<HTMLInputElement>

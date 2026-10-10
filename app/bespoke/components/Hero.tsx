@@ -1,78 +1,33 @@
-"use client";
-import { motion } from "motion/react";
+import React from "react";
 
-export default function HeroSection() {
+export default function Hero() {
   return (
-    <section className="relative overflow-hidden border-b border-ash bg-cream px-6 md:px-12 pt-41 pb-20">
-      {/* Grid background */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(0,0,0,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.025) 1px,transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
+    <section className="bg-[#22160B] px-6 md:px-12 pt-24 pb-16 md:pt-[138px] md:pb-[74px]">
+      <div className="max-w-[1120px] mx-auto">
+        <div className="text-[11px] font-bold tracking-[0.16em] uppercase text-[#A6C384] mb-6">
+          Vetted Bespoke
+        </div>
 
-      <div className="relative z-10 mx-auto max-w-195">
-        {/* Label */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="section-label mb-5"
-        >
-          Beverly George · Consulting Practice
-        </motion.div>
+        <h1 className="font-['Cormorant_Garamond',serif] font-medium text-[34px] md:text-[56px] leading-[1.12] tracking-[-0.01em] text-white max-w-[780px] mb-7">
+          For hiring challenges that need more.
+        </h1>
 
-        {/* Heading */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-          className="font-serif text-[clamp(40px,5vw,68px)] font-light leading-[1.05] text-ink mb-7"
+        <p className="text-[17px] font-light leading-[1.65] text-white/74 max-w-[580px] mb-11">
+          Vetted Bespoke works with healthcare organizations on complex
+          recruitment and workforce initiatives — from transforming how an
+          organization hires and implementing recruitment technology to
+          supporting permanent recruitment strategy, expansion, mass recruitment
+          and large-scale workforce mobilization.
+        </p>
+        <a
+          href="#inquiry"
+          className="group inline-flex items-center gap-[6px] text-[12.5px] font-medium tracking-[0.035em] uppercase text-[#A6C384] pb-[7px] border-b border-current transition-[gap] duration-300 hover:gap-[11px]"
         >
-          I help teams build <br />
-          hiring systems that actually{" "}
-          <em className="text-forest not-italic">work.</em>
-        </motion.h1>
-
-        {/* Paragraph 1 */}
-        <motion.p
-          initial={{ opacity: 0, y: 25 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-          className="mb-4 max-w-155 text-lg font-light leading-[1.75] text-ink-soft"
-        >
-          This is my consulting practice — separate from the Vetted platform,
-          and built on six years of placing healthcare professionals across
-          Ontario.
-        </motion.p>
-
-        {/* Paragraph 2 */}
-        <motion.p
-          initial={{ opacity: 0, y: 25 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.3 }}
-          className="mb-10 max-w-155 text-lg font-light leading-[1.75] text-ink-soft"
-        >
-          I work directly with your team — not as a recruiter, but as someone
-          who designs the system behind your hiring so your team can run it with
-          clarity and speed.
-        </motion.p>
-
-        {/* CTA */}
-        <motion.a
-          href="#contact"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.98 }}
-          className="inline-flex items-center gap-2 rounded-full bg-forest px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:shadow-lg"
-        >
-          Work with me →
-        </motion.a>
+          Discuss a Bespoke Engagement
+          <span className="inline-block transition-transform duration-300 group-hover:translate-x-[2px]">
+            →
+          </span>
+        </a>
       </div>
     </section>
   );

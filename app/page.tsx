@@ -1,20 +1,34 @@
 import HeroSection from "./components/HeroSection";
-import SectionDivider from "./components/SectionDivider";
-import Teaser from "./components/Teaser";
 import TrustBar from "./components/TrustBar";
 import WhatSection from "./components/WhatSection";
-
+import Navigation from "./components/Navigation";
+import Filters from "./components/Filters";
+import Urgent from "./components/Urgent";
+import WayIn from "./components/WayIn";
 export default function Home() {
   return (
     <main>
       <HeroSection />
-      <TrustBar />
+      <TrustBar
+        items={[
+          "30-Day Profile Review",
+          "Last Confirmation Date Visible",
+          "Structured Profiles Only",
+          "Contact Professionals Directly",
+        ]}
+      />
       <WhatSection />
-      <SectionDivider fill="#3a3a36" />
-      <div className="-mt-5">
-        <Teaser />
-      </div>
-      
+      <TrustBar
+        items={[
+          "Structured healthcare criteria",
+          "Search beyond job titles",
+          "Consistent candidate comparison",
+        ]}
+      />
+
+      <Filters />
+      <Urgent />
+      <WayIn/>
     </main>
   );
 }

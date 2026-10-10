@@ -2,14 +2,8 @@
 import { motion } from "motion/react";
 import { GiCheckMark } from "react-icons/gi";
 
-const items = [
-  "45-Day Verification System",
-  "Last Verified Date Visible",
-  "Curated Profiles Only",
-  "No Long-Term Contracts",
-];
 
-export default function TrustBar() {
+export default function TrustBar({ items = [] }: { items?: string[] }) {
   return (
     <div className="bg-[#faf9f6] border-t border-b border-ash px-12 py-5">
       <motion.div

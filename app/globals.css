@@ -27,19 +27,12 @@
   --font-serif: var(--font-serif);
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
 html {
   scroll-behavior: smooth;
-
 }
 
 body {
-  @apply bg-cream text-ink overflow-x-hidden;
+  @apply bg-white text-ink overflow-x-hidden;
   font-family: "DM Sans", sans-serif;
 }
 
@@ -83,4 +76,29 @@ body {
 
 .tag-blue {
   @apply text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200;
+}
+
+.card {
+  @apply border border-ash rounded-2xl p-6 text-left bg-white transition-[opacity,border-color] duration-300;
+}
+.card.dim {
+  @apply opacity-[0.32];
+}
+.card.hi {
+  @apply border-forest shadow-[0_0_0_3px_rgba(45,80,22,0.07)];
+}
+
+.eyebrow {
+  @apply text-[11.5px] font-medium tracking-[0.08em] uppercase text-forest mb-4;
+}
+
+h2.head {
+  @apply font-serif font-semibold text-[42px] leading-[1.2] mb-3.5 text-ink;
+}
+
+.h_top {
+  @apply font-serif font-semibold text-[clamp(34px,4vw,48px)] leading-[1.18] text-ink mb-4;
+}
+.join-input {
+  @apply w-full appearance-none rounded-[9px] border border-ash bg-cream px-3.25 py-2.75 text-[13.5px] text-ink focus:border-forest focus:bg-white focus:outline-none;
 }
