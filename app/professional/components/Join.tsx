@@ -418,7 +418,6 @@ export default function JoinSection() {
     setContractValue(value);
     setContractOpen(false);
   }
-  const PAGE_URL = window.location;
 
   /* ---------------- INDEPENDENT CONTRACTOR ---------------- */
   const [icOn, setIcOn] = useState(false);
