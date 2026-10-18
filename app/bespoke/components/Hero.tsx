@@ -2,7 +2,7 @@ import React from "react";
 
 export default function Hero() {
   return (
-    <section className="bg-[#22160B] px-6 md:px-12 pt-24 pb-16 md:pt-[138px] md:pb-[74px]">
+    <section className="bg-[#22160B] px-6 md:px-12 pt-30 md:pt-24 pb-16 md:pt-[138px] md:pb-[74px]">
       <div className="max-w-[1120px] mx-auto">
         <div className="text-[11px] font-bold tracking-[0.16em] uppercase text-[#A6C384] mb-6">
           Vetted Bespoke

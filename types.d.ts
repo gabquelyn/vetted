@@ -85,3 +85,12 @@ type Place = {
 };
 
 type inputEvent = React.ChangeEvent<HTMLInputElement>
+
+type ActiveView =
+  | "registry"
+  | "directory"
+  | "saved"
+  | "searches"
+  | "recent"
+  | "compare"
+  | "reveals" | "requests";

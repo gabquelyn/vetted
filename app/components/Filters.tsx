@@ -142,7 +142,7 @@ export default function Filters() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-y-11 gap-x-8 pt-12.5 border-t border-ash">
+        <div className="grid grid-cols-2  md:grid-cols-4 gap-y-11 gap-x-8 pt-12.5 border-t border-ash">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-forest-light flex items-center justify-center shrink-0 text-forest">
               <svg

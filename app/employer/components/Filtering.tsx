@@ -14,22 +14,40 @@ import {
   SHIFTS,
 } from "@/app/data/professions";
 
-type Filters = Record<string, string[]>;
-
 export default function Filtering({
   onApply,
+  onClear,
+  parties,
+  setParties,
+  setShifts,
+  setMobility,
+  setProfile,
+  environment,
+  setEnvironment,
+  setEmployment,
+  mobility,
+  profile,
+  shifts,
+  employment,
+  count,
 }: {
-  onApply?: (filters: Filters) => void;
+  onApply: () => void;
+  onClear: () => void;
+  parties: string[];
+  mobility: string[];
+  profile: string[];
+  setParties: React.Dispatch<React.SetStateAction<string[]>>;
+  setEnvironment: React.Dispatch<React.SetStateAction<string[]>>;
+  setShifts: React.Dispatch<React.SetStateAction<string[]>>;
+  setEmployment: React.Dispatch<React.SetStateAction<string[]>>;
+  setMobility: React.Dispatch<React.SetStateAction<string[]>>;
+  setProfile: React.Dispatch<React.SetStateAction<string[]>>;
+  environment: string[];
+  shifts: string[];
+  employment: string[];
+  count: number;
 }) {
   const [open, setOpen] = useState(false);
-
-  const [parties, setParties] = useState<string[]>([]);
-  const [enviroment, setEnviroment] = useState<string[]>([]);
-  const [shifts, setShifts] = useState<string[]>([]);
-  const [employment, setEmployment] = useState<string[]>([]);
-  const [mobility, setMobility] = useState<string[]>([]);
-  const [profile, setProfile] = useState<string[]>([]);
-  const [count, setCount] = useState(0);
 
   return (
     <div
@@ -51,7 +69,7 @@ export default function Filtering({
             {count}
           </motion.p>
         )}
-        <p>Filters</p>
+        <p className="text-ink">Filters</p>
         <LuFilter />
       </button>
 
@@ -90,8 +108,8 @@ export default function Filtering({
                   Experienced environment
                 </p>
                 <MultiSelect
-                  value={enviroment}
-                  onChange={setEnviroment}
+                  value={environment}
+                  onChange={setEnvironment}
                   className="relative inline-block w-20 overflow-y-auto"
                   options={ENVIRONMENT.map((e) => ({
                     label: e,
@@ -157,28 +175,16 @@ export default function Filtering({
               <div className="flex items-center justify-between">
                 <button
                   className="cursor-pointer text-forest bg-forest-light p-2 rounded-md"
-                  onClick={() => {
-                    setCount(
-                      parties.length +
-                        enviroment.length +
-                        shifts.length +
-                        employment.length +
-                        mobility.length +
-                        profile.length,
-                    );
-                    onApply?.({
-                      profession: parties,
-                      environment: enviroment,
-                      shift: shifts,
-                      employment,
-                      mobility,
-                      profile,
-                    });
-                  }}
+                  onClick={() => onApply()}
                 >
                   Apply filters
                 </button>
-                <button className="cursor-pointer">Clear filters</button>
+                <button
+                  className="cursor-pointer"
+                  onClick={onClear}
+                >
+                  Clear filters
+                </button>
               </div>
             </div>
           </motion.div>

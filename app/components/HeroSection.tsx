@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export const VETTED_HEAD_META = {
@@ -282,7 +283,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="min-h-[92vh] flex flex-col justify-center px-12 pt-5 pb-0;">
+    <section className="h-screen min-h-[92vh] flex flex-col justify-center px-12 pt-10 md;pt-5 pb-0;">
       <div className="text-center pb-12">
         <div className="text-[11.5px] font-medium tracking-[0.08em] uppercase text-forest mb-4">
           For Ontario healthcare employers
@@ -308,12 +309,12 @@ export default function HeroSection() {
             {isPlaying ? "❚❚" : "▶"}
           </div>
           <span className="w-px h-4 bg-ash mx-0.5"></span>
-          <a
-            href="employer.html#registry-demo"
-            className="text-[12.5px] font-semibold text-forest no-underline border-b border-transparent transition-[border-color] duration-150 hover:border-b-forest"
+          <Link
+            href="/employer"
+            className="border-b border-transparent text-[12.5px] font-semibold text-forest no-underline transition-[border-color] duration-150 hover:border-b-forest"
           >
             Explore the interactive Registry demo →
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -330,24 +331,30 @@ export default function HeroSection() {
         ))}
       </div>
 
-      <div className="grid grid-cols-6 gap-4.5 max-w-350 mx-auto w-full">
-        {HERO_CARDS.map((card) => (
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6 max-w-350 mx-auto w-full">
+        {HERO_CARDS.map((card, index) => (
           <div
-            className={cardClassName(card.id)}
+            className={`${cardClassName(card.id)} ${
+              index >= 1 ? "hidden sm:block" : ""
+            }`}
             id={card.domId}
             key={card.domId}
           >
             <div className="flex justify-between items-center text-[12.5px] mb-3.25">
               {card.confirmed}
-              <span className="w-1.75 h-1.75 rounded-full bg-primary-mid"></span>
+              <span className="w-1.75 h-1.75 rounded-full bg-primary-mid" />
             </div>
+
             <div className="font-['IBM_Plex_Mono',monospace] font-bold text-[19px] mb-0.75">
               {card.rid}
             </div>
+
             <div className="text-[13px] text-ink-soft mb-3">{card.rt}</div>
+
             <div className="text-[9.5px] font-semibold tracking-[0.06em] uppercase text-ink-mid mb-1.5 pt-2.5 border-t border-ash">
               Location
             </div>
+
             <div className="flex items-center gap-1.5 text-[12.5px] text-ink mb-3">
               <PinIcon size={12} />
               {card.location}
@@ -358,6 +365,7 @@ export default function HeroSection() {
                 </>
               )}
             </div>
+
             <div className="flex gap-1.5 flex-wrap">
               {card.tags.map((tag) => (
                 <span

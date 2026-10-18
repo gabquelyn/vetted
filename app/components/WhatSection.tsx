@@ -47,35 +47,35 @@ export default function WhatSection() {
 
   return (
     <section id="how-it-works">
-      <div className="max-w-160 mx-auto px-8 pt-32.5 pb-17.5 text-center">
+      <div className="mx-auto max-w-160 px-4 pt-16 pb-12 text-center sm:px-6 sm:pt-20 sm:pb-14 lg:px-8 lg:pt-32.5 lg:pb-17.5">
         <div className="text-[11.5px] font-medium tracking-[0.08em] uppercase text-forest mb-4">
           What is Vetted
         </div>
-        <h2 className="font-serif font-semibold text-[42px] leading-[1.2] mb-3.75 text-ink">
+        <h2 className="mb-3.75 font-serif text-[clamp(30px,5vw,42px)] font-semibold leading-[1.2] text-ink">
           Everything you can ask on a first call — already organized.
         </h2>
-        <p className="text-[16.5px] font-light text-ink-soft leading-[1.55]">
+        <p className="text-[15px] font-light leading-[1.55] text-ink-soft sm:text-[16.5px]">
           Search healthcare professionals by what actually matters, see the
           details before you reach out, and compare the ones worth a call.
         </p>
       </div>
 
       <div
-        className={`max-w-325 mx-auto mb-26.25 px-12 grid grid-cols-[1fr_1.05fr] gap-18 items-center max-[960px]:grid-cols-1 max-[960px]:gap-11 ${revealTransition} ${revealState(
+        className={`mx-auto mb-16 grid max-w-325 grid-cols-1 items-center gap-8 px-4 sm:px-6 sm:mb-20 sm:gap-10 lg:mb-26.25 lg:grid-cols-[1fr_1.05fr] lg:gap-12 lg:px-8 xl:gap-18 ${revealTransition} ${revealState(
           featureReveal.visible,
         )}`}
         ref={featureReveal.ref}
       >
-        <div className="text-left max-[960px]:text-center">
-          <h3 className="font-serif text-[42px] leading-[1.2] mb-3.75 text-ink">
+        <div className="text-left max-lg:text-center">
+          <h3 className="mb-3.75 font-serif text-[clamp(30px,4.5vw,42px)] leading-[1.2] text-ink">
             Review the <span className="text-forest font-semibold">fit</span>{" "}
             first.
           </h3>
-          <p className="text-[16.5px] text-ink-soft leading-[1.65] max-w-110 mb-4 max-[960px]:mx-auto">
+          <p className="mb-4 max-w-110 text-[15px] leading-[1.65] text-ink-soft sm:text-[16.5px] max-lg:mx-auto">
             Every Vetted profile is healthcare-specific, structured, and
             organized consistently from one candidate to the next.
           </p>
-          <p className="text-[16.5px] text-ink-soft leading-[1.65] max-w-110 mb-4 last:mb-0 max-[960px]:mx-auto">
+          <p className="mb-4 max-w-110 text-[15px] leading-[1.65] text-ink-soft last:mb-0 sm:text-[16.5px] max-lg:mx-auto">
             Review the information that determines fit at a glance, then open
             the structured profile for experience, certifications, work
             environments, mobility, and other role-specific details{" "}
@@ -85,20 +85,20 @@ export default function WhatSection() {
           </p>
         </div>
         <div>
-          <div className="relative max-w-110 mx-auto pb-8.5">
-            <div className="absolute bottom-0 left-3.5 right-3.5 h-16 bg-forest rounded-b-2xl flex items-end justify-around px-4.5 pb-3">
-              <span className="text-[10.5px] text-[#b9d8a0] font-semibold">
+          <div className="relative mx-auto w-full max-w-110 pb-8.5">
+            <div className="absolute bottom-0 left-3.5 right-3.5 flex h-16 items-end justify-around gap-2 rounded-b-2xl bg-forest px-2 pb-3 sm:px-4.5">
+              <span className="text-center text-[9px] font-semibold text-[#b9d8a0] sm:text-[10.5px]">
                 Experience
               </span>
-              <span className="text-[10.5px] text-[#b9d8a0] font-semibold">
+              <span className="text-center text-[9px] font-semibold text-[#b9d8a0] sm:text-[10.5px]">
                 Certifications
               </span>
-              <span className="text-[10.5px] text-[#b9d8a0] font-semibold">
+              <span className="text-center text-[9px] font-semibold text-[#b9d8a0] sm:text-[10.5px]">
                 Work Environments
               </span>
             </div>
             <div className="relative bg-white border border-ash rounded-[20px] shadow-[0_30px_70px_rgba(28,52,16,0.12)] overflow-hidden transition-[transform,box-shadow] duration-300 ease hover:-translate-y-1 hover:shadow-[0_40px_84px_rgba(28,52,16,0.18)]">
-              <div className="bg-forest px-5.5 py-4.5 text-white">
+              <div className="bg-forest px-4 py-4 text-white sm:px-5.5 sm:py-4.5">
                 <div className="flex justify-between items-center mb-3.5">
                   <div className="flex items-center gap-1.75 text-xs text-white/65">
                     <div className="w-3.5 h-3.5 border-[1.3px] border-white/50 rounded-0.75"></div>
@@ -109,15 +109,15 @@ export default function WhatSection() {
                     Active today
                   </div>
                 </div>
-                <div className="text-base font-bold text-white mb-0.5">
+                <div className="mb-0.5 text-[14px] font-bold text-white sm:text-base">
                   Developmental Services Worker
                 </div>
                 <div className="font-mono font-semibold text-xs text-white/65">
                   DSW-142
                 </div>
               </div>
-              <div className="px-5.5 py-5">
-                <div className="flex items-center gap-1.75 text-[13px] text-ink-soft pb-3.5 mb-3.5 border-b border-ash">
+              <div className="px-4 py-4 sm:px-5.5 sm:py-5">
+                <div className="mb-3.5 flex flex-wrap items-center gap-1.75 border-b border-ash pb-3.5 text-[12px] text-ink-soft sm:text-[13px]">
                   <CiLocationOn size={12} />
                   Kingston, ON
                   <span style={{ margin: "0 2px" }}>·</span>
@@ -198,7 +198,7 @@ export default function WhatSection() {
                   <b className="text-ink">DSW Diploma</b>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 min-[380px]:flex-row">
                   <div className="flex-1 text-center p-3.25 rounded-[10px] text-[13.5px] font-bold transition-[background] duration-200 bg-white text-ink border border-ash hover:bg-white hover:border-ink">
                     View Profile
                   </div>
@@ -213,7 +213,7 @@ export default function WhatSection() {
       </div>
 
       <div
-        className={`max-w-325 mx-auto mb-32.5 px-12 ${revealTransition} ${revealState(
+        className={`relative mx-auto mb-20 max-w-325 px-4 sm:mb-24 sm:px-6 lg:mb-32.5 lg:px-8 ${revealTransition} ${revealState(
           verifyReveal.visible,
         )}`}
         ref={verifyReveal.ref}
@@ -222,17 +222,17 @@ export default function WhatSection() {
           className="absolute top-1/2 left-20 w-85 h-85 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(45,80,22,0.1)_0%,rgba(45,80,22,0)_68%)] pointer-events-none z-0"
           aria-hidden="true"
         ></div>
-        <div className="relative max-w-220 mx-auto grid grid-cols-[auto_1fr] gap-14 items-center max-[960px]:grid-cols-1 max-[960px]:text-center max-[960px]:px-8">
+        <div className="relative mx-auto grid max-w-220 grid-cols-1 items-center gap-7 text-center sm:gap-10 lg:grid-cols-[auto_1fr] lg:gap-14 lg:px-4 lg:text-left">
           <CircularProgress />
           <div>
-            <div className="text-[11.5px] font-semibold tracking-[0.06em] uppercase text-forest mb-3 relative z-1 max-[960px]:mx-auto">
+            <div className="relative z-[1] mb-3 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-forest lg:mx-0">
               30-Day Profile Review
             </div>
             <h3 className="font-serif text-[clamp(28px,3vw,38px)] font-medium text-ink leading-[1.2] mb-3 relative z-1">
               See who is still{" "}
               <span className="text-forest font-semibold">open to work.</span>
             </h3>
-            <p className="text-[15.5px] text-ink-soft leading-[1.6] max-w-120 relative z-1 max-[960px]:mx-auto">
+            <p className="relative z-[1] mx-auto max-w-120 text-[15px] leading-[1.6] text-ink-soft sm:text-[15.5px] lg:mx-0">
               Every professional reconfirms whether they are still open to work
               during the 30-day profile review. If they stop responding,{" "}
               <b className="text-ink font-bold">their profile is hidden</b> —
@@ -242,14 +242,14 @@ export default function WhatSection() {
         </div>
       </div>
 
-      <div className="max-w-325 mx-auto px-12 pb-20 grid grid-cols-2 gap-14 max-[960px]:grid-cols-1 max-[960px]:gap-16">
+      <div className="mx-auto grid max-w-325 grid-cols-1 gap-12 px-4 pb-14 sm:px-6 sm:pb-16 lg:grid-cols-2 lg:gap-10 lg:px-8 lg:pb-20 xl:gap-14">
         <div
           className={`text-left ${revealTransition} ${revealState(
             lowerItem1Reveal.visible,
           )}`}
           ref={lowerItem1Reveal.ref}
         >
-          <div className="group flex gap-3.5">
+          <div className="group flex gap-2.5 sm:gap-3.5">
             <div className="flex-1 bg-white border border-ash rounded-[14px] p-5.5 shadow-[0_14px_34px_rgba(28,52,16,0.06)] transition-[transform,box-shadow] duration-300 ease group-hover:-translate-y-0.75 group-hover:shadow-[0_20px_44px_rgba(28,52,16,0.1)]">
               <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-ink-mid mb-3.5">
                 Before
@@ -271,20 +271,20 @@ export default function WhatSection() {
               <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#b9d8a0] mb-3.5">
                 After reveal
               </div>
-              <div className="text-[12.5px] mb-2.5">
+              <div className="mb-2.5 break-words text-[11px] sm:text-[12.5px]">
                 <b className="block text-[14.5px]">Cathy Thompson</b>
                 cathy.thompson@email.com
               </div>
-              <div className="text-[12.5px] mb-2.5">
+              <div className="mb-2.5 break-words text-[11px] sm:text-[12.5px]">
                 <b className="block text-[14.5px]">(604) 555-1234</b>
                 Resume ready to download
               </div>
             </div>
           </div>
-          <h4 className="font-serif text-[27px] font-semibold mb-2.75 mt-7.5">
+          <h4 className="mb-2.75 mt-6 font-serif text-[clamp(23px,3vw,27px)] font-semibold sm:mt-7.5">
             Full contact info in a click
           </h4>
-          <p className="text-[14.5px] text-ink-soft leading-[1.6] max-w-110">
+          <p className="max-w-110 text-[14px] leading-[1.6] text-ink-soft sm:text-[14.5px]">
             Reach out directly—no placement fee.{" "}
             <b className="text-forest font-bold">
               You contact the professional yourself.
@@ -298,21 +298,21 @@ export default function WhatSection() {
           )}`}
           ref={lowerItem2Reveal.ref}
         >
-          <div className="flex gap-3">
-            <div className="flex-1 bg-white border-[1.5px] border-forest rounded-[13px] p-4.5 shadow-[0_14px_34px_rgba(28,52,16,0.06)] transition-[transform,box-shadow] duration-300 ease hover:-translate-y-0.75 hover:shadow-[0_20px_44px_rgba(28,52,16,0.1)]">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
+            <div className="min-w-0 rounded-[13px] border-[1.5px] border-forest bg-white p-3 shadow-[0_14px_34px_rgba(28,52,16,0.06)] transition-[transform,box-shadow] duration-300 ease hover:-translate-y-0.75 hover:shadow-[0_20px_44px_rgba(28,52,16,0.1)] sm:p-4.5">
               <div className="w-4 h-4 rounded-sm bg-forest text-white flex items-center justify-center text-[10px] mb-3">
                 ✓
               </div>
-              <div className="font-mono font-bold text-[14px] mb-3">
+              <div className="mb-3 break-words font-mono text-[12px] font-bold sm:text-[14px]">
                 RPN-014
               </div>
-              <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash first-of-type:border-t-0">
+              <div className="flex flex-col justify-between gap-0.5 border-t border-ash py-1.25 text-[10px] text-ink-soft min-[400px]:flex-row min-[400px]:gap-2 sm:text-[11px]">
                 <span>Experience</span>
                 <span className="font-semibold text-ink">6 yrs</span>
               </div>
               <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash">
                 <span>Availability</span>
-                <span className="font-semibold text-ink">Immediate</span>
+                <span className="break-words font-semibold text-ink">Immediate</span>
               </div>
               <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash">
                 <span>Specialty</span>
@@ -323,14 +323,14 @@ export default function WhatSection() {
                 <span className="font-semibold text-ink">Nights</span>
               </div>
             </div>
-            <div className="flex-1 bg-white border-[1.5px] border-forest rounded-[13px] p-4.5 shadow-[0_14px_34px_rgba(28,52,16,0.06)] transition-[transform,box-shadow] duration-300 ease hover:-translate-y-0.75 hover:shadow-[0_20px_44px_rgba(28,52,16,0.1)]">
+            <div className="min-w-0 rounded-[13px] border-[1.5px] border-forest bg-white p-3 shadow-[0_14px_34px_rgba(28,52,16,0.06)] transition-[transform,box-shadow] duration-300 ease hover:-translate-y-0.75 hover:shadow-[0_20px_44px_rgba(28,52,16,0.1)] sm:p-4.5">
               <div className="w-4 h-4 rounded-sm bg-forest text-white flex items-center justify-center text-[10px] mb-3">
                 ✓
               </div>
-              <div className="font-mono font-bold text-[14px] mb-3">
+              <div className="mb-3 break-words font-mono text-[12px] font-bold sm:text-[14px]">
                 RPN-027
               </div>
-              <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash first-of-type:border-t-0">
+              <div className="flex flex-col justify-between gap-0.5 border-t border-ash py-1.25 text-[10px] text-ink-soft min-[400px]:flex-row min-[400px]:gap-2 sm:text-[11px]">
                 <span>Experience</span>
                 <span className="font-semibold text-ink">3 yrs</span>
               </div>
@@ -347,20 +347,20 @@ export default function WhatSection() {
                 <span className="font-semibold text-ink">Nights</span>
               </div>
             </div>
-            <div className="flex-1 bg-white border-[1.5px] border-forest rounded-[13px] p-4.5 shadow-[0_14px_34px_rgba(28,52,16,0.06)] transition-[transform,box-shadow] duration-300 ease hover:-translate-y-0.75 hover:shadow-[0_20px_44px_rgba(28,52,16,0.1)]">
+            <div className="min-w-0 rounded-[13px] border-[1.5px] border-forest bg-white p-3 shadow-[0_14px_34px_rgba(28,52,16,0.06)] transition-[transform,box-shadow] duration-300 ease hover:-translate-y-0.75 hover:shadow-[0_20px_44px_rgba(28,52,16,0.1)] sm:p-4.5">
               <div className="w-4 h-4 rounded-sm bg-forest text-white flex items-center justify-center text-[10px] mb-3">
                 ✓
               </div>
-              <div className="font-mono font-bold text-[14px] mb-3">
+              <div className="mb-3 break-words font-mono text-[12px] font-bold sm:text-[14px]">
                 RPN-058
               </div>
-              <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash first-of-type:border-t-0">
+              <div className="flex flex-col justify-between gap-0.5 border-t border-ash py-1.25 text-[10px] text-ink-soft min-[400px]:flex-row min-[400px]:gap-2 sm:text-[11px]">
                 <span>Experience</span>
                 <span className="font-semibold text-ink">9 yrs</span>
               </div>
               <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash">
                 <span>Availability</span>
-                <span className="font-semibold text-ink">Immediate</span>
+                <span className="break-words font-semibold text-ink">Immediate</span>
               </div>
               <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash">
                 <span>Specialty</span>
@@ -372,10 +372,10 @@ export default function WhatSection() {
               </div>
             </div>
           </div>
-          <h4 className="font-serif text-[27px] font-semibold mb-2.75 mt-7.5">
+          <h4 className="mb-2.75 mt-6 font-serif text-[clamp(23px,3vw,27px)] font-semibold sm:mt-7.5">
             Compare side by side
           </h4>
-          <p className="text-[14.5px] text-ink-soft leading-[1.6] max-w-110">
+          <p className="max-w-110 text-[14px] leading-[1.6] text-ink-soft sm:text-[14.5px]">
             Decide who is worth contacting first —{" "}
             <b className="text-forest font-bold">
               without opening a dozen tabs.

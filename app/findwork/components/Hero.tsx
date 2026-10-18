@@ -1,92 +1,75 @@
-"use client";
+import React from "react";
 
-import Link from "next/link";
-import { motion } from "motion/react";
+type Stat = { value: string; label: string };
 
-export function Hero() {
+export interface FindWorkHeroProps {
+  eyebrow?: string;
+  heading?: string;
+  subheading?: string;
+  joinHref?: string;
+  joinLabel?: string;
+  howItWorksHref?: string;
+  howItWorksLabel?: string;
+  stats?: Stat[];
+}
+
+const DEFAULT_STATS: Stat[] = [
+  { value: "50+", label: "healthcare roles covered" },
+  { value: "45+", label: "Ontario cities & regions" },
+  { value: "$0", label: "cost to candidates" },
+];
+
+export default function FindWorkHero({
+  eyebrow = "For Ontario healthcare professionals",
+  heading = "Find healthcare work across Ontario.",
+  subheading = "Explore opportunities by profession or city, then join the Registry so employers can find you.",
+  joinHref = "#/join",
+  joinLabel = "Join the Registry →",
+  howItWorksHref = "#/how-it-works",
+  howItWorksLabel = "How It Works",
+  stats = DEFAULT_STATS,
+}: FindWorkHeroProps) {
   return (
-    <section className="relative flex items-center min-h-[75vh] pt-16 overflow-hidden bg-[#faf9f6]">
-      {/* Orb */}
-      <div className="absolute -top-20 -right-40 w-150 h-150 rounded-full bg-[radial-gradient(circle,rgba(45,80,22,0.07)_0%,transparent_70%)] pointer-events-none" />
+    <section className="flex flex-col items-center justify-center h-screen md:h-[60vh] border-b border-ash bg-white px-5 pb-10 text-center font-serif antialiased min-[860px]:px-12 min-[860px]:pb-14 min-[860px]:pt-18">
+      <div className="mx-auto max-w-155">
+        <div className="mb-3.5 text-[11.5px] font-medium uppercase tracking-[0.08em] text-forest">
+          {eyebrow}
+        </div>
 
-      <div className="max-w-6xl mx-auto px-6 md:px-12 py-24 w-full">
-        {/* Eyebrow */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center gap-3 text-[11px] uppercase tracking-[0.14em] text-[#2D5016] mb-6"
-        >
-          <span className="w-6 h-px bg-[#2D5016]" />
-          Ontario curated registry
-        </motion.div>
+        <h1 className="mb-4 font-serif text-[clamp(34px,5vw,50px)] font-semibold leading-[1.1] text-[#1a1a18]">
+          {heading}
+        </h1>
 
-        {/* Heading */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="font-serif text-4xl md:text-7xl font-light leading-[1.05] text-[#1a1a18] max-w-3xl mb-6"
-        >
-          Work that <span className="italic text-[#2D5016]">finds you.</span>
-          <br />
-          Across all of Ontario.
-        </motion.h1>
+        <p className="mb-6.5 text-[16.5px] font-light leading-[1.55] text-[#5c5c58]">
+          {subheading}
+        </p>
 
-        {/* Subtext */}
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.6 }}
-          className="text-base md:text-lg text-[#6b6b64] max-w-xl leading-relaxed mb-10"
-        >
-          One verified profile. No applications. No agencies. When employers
-          across Ontario are looking for your role, your credentials, your
-          experience — they come to you.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="flex flex-wrap gap-4"
-        >
-          <Link
-            href="/join"
-            className="px-7 py-4 bg-[#2D5016] text-white rounded-lg text-sm font-medium border border-[#2D5016] hover:bg-[#3d6b1f] hover:-translate-y-px transition-all shadow-md hover:shadow-xl"
+        <div className="mb-5.5 flex w-full flex-col items-center justify-center gap-3.5 min-[460px]:w-auto min-[460px]:flex-row min-[460px]:flex-wrap">
+          <a
+            href={joinHref}
+            className="inline-block w-full rounded-[10px] bg-forest px-6.5 py-3.5 text-center text-[14px] font-semibold text-white no-underline transition-colors duration-150 hover:bg-[#16260c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest min-[460px]:w-auto"
           >
-            Join the Registry →
-          </Link>
-
-          <Link
-            href="/candidate"
-            className="px-6 py-4 border border-[#e2e4dc] text-[#6b6b64] rounded-lg text-sm hover:text-[#1a1a18] hover:border-[#3a3a36] transition"
+            {joinLabel}
+          </a>
+          <a
+            href={howItWorksHref}
+            className="inline-block w-full rounded-[10px] border-[1.5px] border-forest bg-transparent px-6 py-[12.5px] text-center text-[14px] font-semibold text-forest no-underline transition-colors duration-150 hover:bg-forest hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest min-[460px]:w-auto"
           >
-            How it works
-          </Link>
-        </motion.div>
+            {howItWorksLabel}
+          </a>
+        </div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex flex-wrap gap-10 mt-14 pt-10 border-t border-[#e2e4dc]"
-        >
-          {[
-            { num: "40+", label: "Healthcare roles covered" },
-            { num: "45+", label: "Ontario cities & regions" },
-            { num: "$0", label: "Cost to candidates" },
-          ].map((stat, i) => (
-            <div key={i}>
-              <div className="font-serif text-3xl text-[#1a1a18]">
-                {stat.num}
-              </div>
-              <div className="text-xs text-[#6b6b64] mt-1">{stat.label}</div>
-            </div>
+        <div className="flex flex-wrap items-center justify-center gap-2 text-[12.5px] text-[#8a8a84] min-[860px]:gap-2.5">
+          {stats.map((stat, i) => (
+            <React.Fragment key={stat.label}>
+              {i > 0 && <span className="text-ash">·</span>}
+              <span>
+                <b className="font-bold text-[#5c5c58] text-lg">{stat.value}</b>{" "}
+                {stat.label}
+              </span>
+            </React.Fragment>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

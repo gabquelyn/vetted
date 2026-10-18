@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import Navigation from "./components/Navigation";
+import { Toaster } from "sonner";
 import Footer from "./components/Footer";
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -30,6 +31,19 @@ export default function RootLayout({
       className={`${dmSans.className} ${cormorant.variable} h-full overflow-x-hidden antialiased`}
     >
       <body>
+        <Toaster
+          position="bottom-center"
+          toastOptions={{
+            style: {
+              backgroundColor: "#e8f0e0",
+              color: "#2d5016",
+              border: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyItems: "center"
+            },
+          }}
+        />
         <Navigation />
         {children}
         <Footer />

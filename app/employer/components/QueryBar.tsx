@@ -5,34 +5,50 @@ import { FiSearch } from "react-icons/fi";
 import { IoBuildOutline } from "react-icons/io5";
 import AddressAutocomplete from "@/app/components/AutoComplete";
 
-export default function QueryBar() {
+export default function QueryBar({
+  query,
+  setQuery,
+}: {
+  query: string;
+  setQuery: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
   return (
-    <section className="flex items-end gap-5 mb-3">
-      <div className="w-300 border-b grid grid-cols-[60%_40%] text-sm items-center  border-b-ash  focus-within:border-b-forest transition-all py-3 px-4">
-        <div className="relative w-full">
-          <FiSearch className="absolute left-3 top-1/2 -translate-1/2 text-ink-soft" />
-          <input
-            className="bg-transparent border-none outline-none w-full pl-8"
-            placeholder="Search by profession, clinical experience, skill..."
-          />
-        </div>
-        <div className="flex items-center gap-5">
-          <button className="rounded-full border border-ash text-ink-soft py-1 px-2 flex items-center gap-1">
-            <FaRegCircleQuestion />
-            <p className="font-semibold text-xs">Help</p>
-          </button>
+ <section className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-end">
+  <div className="grid w-full min-w-0 grid-cols-1 items-center gap-4 border-b border-ash px-3 py-3 text-sm transition-all focus-within:border-forest sm:px-4 lg:flex-1 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:gap-5">
+    {/* Search */}
+    <div className="relative min-w-0 w-full">
+      <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft" />
 
-          <div className="h-5 w-px bg-ash"></div>
+      <input
+        className="w-full min-w-0 border-none bg-transparent pl-8 outline-none"
+        placeholder="Search by profession, clinical experience, skill..."
+        value={query}
+        onChange={setQuery}
+      />
+    </div>
 
-          <AddressAutocomplete />
-        </div>
+    {/* Help and location */}
+    <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-5">
+      <button className="flex shrink-0 items-center gap-1 rounded-full border border-ash px-2 py-1 text-ink-soft">
+        <FaRegCircleQuestion />
+        <p className="text-xs font-semibold">Help</p>
+      </button>
+
+      <div className="h-5 w-px shrink-0 bg-ash" />
+
+      <div className="min-w-0 flex-1">
+        <AddressAutocomplete />
       </div>
-      <div className="shrink-0">
-        <button className="flex gap-2 items-center bg-forest-light p-2 px-4 text-xs font-semibold rounded-full">
-          <IoBuildOutline />
-          <p>Build from job description</p>
-        </button>
-      </div>
-    </section>
+    </div>
+  </div>
+
+  {/* Build button */}
+  <div className="w-full shrink-0 lg:w-auto">
+    <button className="flex w-full items-center justify-center gap-2 rounded-full bg-forest-light px-4 py-3 text-xs font-semibold sm:w-auto lg:py-2">
+      <IoBuildOutline />
+      <p>Build from job description</p>
+    </button>
+  </div>
+</section>
   );
 }

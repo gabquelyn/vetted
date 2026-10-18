@@ -28,7 +28,7 @@ export default function FAQSection() {
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
   return (
-    <section className="py-20 px-6 bg-[#1a1a18] border-t border-white/10">
+    <section className="py-20 px-6 bg-ink/95 border-t border-white/10">
       <div className="max-w-3xl mx-auto">
         {/* Label */}
         <div className="text-white/30 text-sm mb-2 uppercase tracking-wider">

@@ -11,6 +11,7 @@
   --cream: #faf9f6;
   --border: #e2e4dc;
   --tertiary: #c0392b;
+  --gold: #895A1F;
 }
 
 @theme inline {
@@ -23,6 +24,7 @@
   --color-ink-soft: var(--secondary-soft);
   --color-cream: var(--cream);
   --color-ash: var(--border);
+  --color-highlight: var(--gold);
   --color-tertiary: var(--tertiary);
   --font-serif: var(--font-serif);
 }
@@ -31,6 +33,9 @@ html {
   scroll-behavior: smooth;
 }
 
+button{
+  cursor: pointer;
+}
 body {
   @apply bg-white text-ink overflow-x-hidden;
   font-family: "DM Sans", sans-serif;
