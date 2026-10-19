@@ -52,7 +52,7 @@ const TopBar = function TopBar({
   closeRef: RefObject<HTMLButtonElement | null>;
 }) {
   return (
-    <div className="z-35 flex shrink-0 flex-wrap items-center justify-between gap-4 bg-cream pt-3.25 pb-2.75 shadow-[0_1px_0_var(--color-line)]">
+    <div className="z-35 hidden md:flex shrink-0 flex-wrap  items-center justify-between gap-4 bg-cream pt-3.25 pb-2.75 shadow-[0_1px_0_var(--color-line)]">
       <div className="flex items-center gap-3.5">
         <div className="font-serif text-[21px] leading-none font-bold tracking-[.04em] text-forest-deep">
           VETTED

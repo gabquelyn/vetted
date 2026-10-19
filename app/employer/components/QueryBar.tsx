@@ -28,7 +28,7 @@ export default function QueryBar({
     </div>
 
     {/* Help and location */}
-    <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-5">
+    <div className="hidden md:flex min-w-0 flex-wrap items-center gap-3 sm:gap-5">
       <button className="flex shrink-0 items-center gap-1 rounded-full border border-ash px-2 py-1 text-ink-soft">
         <FaRegCircleQuestion />
         <p className="text-xs font-semibold">Help</p>
@@ -43,7 +43,7 @@ export default function QueryBar({
   </div>
 
   {/* Build button */}
-  <div className="w-full shrink-0 lg:w-auto">
+  <div className="hidden md:block w-full shrink-0 lg:w-auto">
     <button className="flex w-full items-center justify-center gap-2 rounded-full bg-forest-light px-4 py-3 text-xs font-semibold sm:w-auto lg:py-2">
       <IoBuildOutline />
       <p>Build from job description</p>

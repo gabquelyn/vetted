@@ -222,8 +222,11 @@ export default function WhatSection() {
           className="absolute top-1/2 left-20 w-85 h-85 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(45,80,22,0.1)_0%,rgba(45,80,22,0)_68%)] pointer-events-none z-0"
           aria-hidden="true"
         ></div>
+
         <div className="relative mx-auto grid max-w-220 grid-cols-1 items-center gap-7 text-center sm:gap-10 lg:grid-cols-[auto_1fr] lg:gap-14 lg:px-4 lg:text-left">
-          <CircularProgress />
+          <div className="mx-auto">
+            <CircularProgress />
+          </div>
           <div>
             <div className="relative z-[1] mb-3 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-forest lg:mx-0">
               30-Day Profile Review
@@ -271,20 +274,20 @@ export default function WhatSection() {
               <div className="text-[10px] font-bold uppercase tracking-[0.05em] text-[#b9d8a0] mb-3.5">
                 After reveal
               </div>
-              <div className="mb-2.5 break-words text-[11px] sm:text-[12.5px]">
+              <div className="mb-2.5 wrap-break-word text-[11px] sm:text-[12.5px]">
                 <b className="block text-[14.5px]">Cathy Thompson</b>
                 cathy.thompson@email.com
               </div>
-              <div className="mb-2.5 break-words text-[11px] sm:text-[12.5px]">
+              <div className="mb-2.5 wrap-break-word text-[11px] sm:text-[12.5px]">
                 <b className="block text-[14.5px]">(604) 555-1234</b>
                 Resume ready to download
               </div>
             </div>
           </div>
-          <h4 className="mb-2.75 mt-6 font-serif text-[clamp(23px,3vw,27px)] font-semibold sm:mt-7.5">
+          <h4 className="text-center md:text-left mb-2.75 mt-6 font-serif text-[clamp(23px,3vw,27px)] font-semibold sm:mt-7.5">
             Full contact info in a click
           </h4>
-          <p className="max-w-110 text-[14px] leading-[1.6] text-ink-soft sm:text-[14.5px]">
+          <p className="text-center md:text-left max-w-110 text-[14px] leading-[1.6] text-ink-soft sm:text-[14.5px]">
             Reach out directly—no placement fee.{" "}
             <b className="text-forest font-bold">
               You contact the professional yourself.
@@ -298,12 +301,12 @@ export default function WhatSection() {
           )}`}
           ref={lowerItem2Reveal.ref}
         >
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 sm:gap-3 lg:grid-cols-3">
             <div className="min-w-0 rounded-[13px] border-[1.5px] border-forest bg-white p-3 shadow-[0_14px_34px_rgba(28,52,16,0.06)] transition-[transform,box-shadow] duration-300 ease hover:-translate-y-0.75 hover:shadow-[0_20px_44px_rgba(28,52,16,0.1)] sm:p-4.5">
               <div className="w-4 h-4 rounded-sm bg-forest text-white flex items-center justify-center text-[10px] mb-3">
                 ✓
               </div>
-              <div className="mb-3 break-words font-mono text-[12px] font-bold sm:text-[14px]">
+              <div className="mb-3 wrap-break-word font-mono text-[12px] font-bold sm:text-[14px]">
                 RPN-014
               </div>
               <div className="flex flex-col justify-between gap-0.5 border-t border-ash py-1.25 text-[10px] text-ink-soft min-[400px]:flex-row min-[400px]:gap-2 sm:text-[11px]">
@@ -312,7 +315,9 @@ export default function WhatSection() {
               </div>
               <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash">
                 <span>Availability</span>
-                <span className="break-words font-semibold text-ink">Immediate</span>
+                <span className="wrap-break-word font-semibold text-ink">
+                  Immediate
+                </span>
               </div>
               <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash">
                 <span>Specialty</span>
@@ -327,7 +332,7 @@ export default function WhatSection() {
               <div className="w-4 h-4 rounded-sm bg-forest text-white flex items-center justify-center text-[10px] mb-3">
                 ✓
               </div>
-              <div className="mb-3 break-words font-mono text-[12px] font-bold sm:text-[14px]">
+              <div className="mb-3 wrap-break-word font-mono text-[12px] font-bold sm:text-[14px]">
                 RPN-027
               </div>
               <div className="flex flex-col justify-between gap-0.5 border-t border-ash py-1.25 text-[10px] text-ink-soft min-[400px]:flex-row min-[400px]:gap-2 sm:text-[11px]">
@@ -351,7 +356,7 @@ export default function WhatSection() {
               <div className="w-4 h-4 rounded-sm bg-forest text-white flex items-center justify-center text-[10px] mb-3">
                 ✓
               </div>
-              <div className="mb-3 break-words font-mono text-[12px] font-bold sm:text-[14px]">
+              <div className="mb-3 wrap-break-word font-mono text-[12px] font-bold sm:text-[14px]">
                 RPN-058
               </div>
               <div className="flex flex-col justify-between gap-0.5 border-t border-ash py-1.25 text-[10px] text-ink-soft min-[400px]:flex-row min-[400px]:gap-2 sm:text-[11px]">
@@ -360,7 +365,9 @@ export default function WhatSection() {
               </div>
               <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash">
                 <span>Availability</span>
-                <span className="break-words font-semibold text-ink">Immediate</span>
+                <span className="wrap-break-word font-semibold text-ink">
+                  Immediate
+                </span>
               </div>
               <div className="flex justify-between text-[11px] text-ink-soft py-1.25 border-t border-ash">
                 <span>Specialty</span>
@@ -372,15 +379,18 @@ export default function WhatSection() {
               </div>
             </div>
           </div>
-          <h4 className="mb-2.75 mt-6 font-serif text-[clamp(23px,3vw,27px)] font-semibold sm:mt-7.5">
-            Compare side by side
-          </h4>
-          <p className="max-w-110 text-[14px] leading-[1.6] text-ink-soft sm:text-[14.5px]">
-            Decide who is worth contacting first —{" "}
-            <b className="text-forest font-bold">
-              without opening a dozen tabs.
-            </b>
-          </p>
+
+          <div className="text-center md:text-left">
+            <h4 className="mb-2.75 mt-6 font-serif text-[clamp(23px,3vw,27px)] font-semibold sm:mt-7.5">
+              Compare side by side
+            </h4>
+            <p className="max-w-110 text-[14px] leading-[1.6] text-ink-soft sm:text-[14.5px]">
+              Decide who is worth contacting first —{" "}
+              <b className="text-forest font-bold">
+                without opening a dozen tabs.
+              </b>
+            </p>
+          </div>
         </div>
       </div>
     </section>

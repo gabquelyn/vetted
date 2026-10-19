@@ -57,7 +57,7 @@ export default function Filters() {
         </div>
 
         <div className="grid grid-cols-[1fr_1.1fr] gap-17.5 items-center mb-27.5 max-[1000px]:grid-cols-1 max-[1000px]:gap-10">
-          <div>
+          <div className="text-center md:text-left">
             <h3 className="font-['Cormorant_Garamond',serif] text-[clamp(30px,3.2vw,42px)] font-medium leading-[1.15] mb-4.5">
               Filter for the{" "}
               <span className="text-forest font-semibold">
@@ -142,7 +142,7 @@ export default function Filters() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2  md:grid-cols-4 gap-y-11 gap-x-8 pt-12.5 border-t border-ash">
+        <div className="grid grid-cols-1 items-center justify-center  md:grid-cols-2 lg:grid-cols-4 gap-y-11 gap-x-8 pt-12.5 border-t border-ash">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-forest-light flex items-center justify-center shrink-0 text-forest">
               <svg

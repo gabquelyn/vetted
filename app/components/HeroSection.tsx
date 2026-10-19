@@ -283,7 +283,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="h-screen min-h-[92vh] flex flex-col justify-center px-12 pt-10 md;pt-5 pb-0;">
+    <section className="min-h-screen flex flex-col justify-center px-12 pt-10 md:pt-5 pb-0;">
       <div className="text-center pb-12">
         <div className="text-[11.5px] font-medium tracking-[0.08em] uppercase text-forest mb-4">
           For Ontario healthcare employers
