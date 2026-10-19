@@ -45,7 +45,7 @@ export default function ProfileView({
   return (
     <div className="grid h-full min-h-0 min-w-0 grid-cols-1 gap-4 px-3 py-3 sm:px-5 sm:py-4 lg:grid-cols-[minmax(200px,1fr)_minmax(0,4fr)] lg:px-7">
       {/* Side panel */}
-      <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-ash bg-cream p-3 text-xs lg:col-span-1">
+      <div className="hidden md:flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-ash bg-cream p-3 text-xs lg:col-span-1">
         <p className="mb-2 shrink-0 font-semibold text-ink-mid">
           Showing {results.length} results
         </p>
