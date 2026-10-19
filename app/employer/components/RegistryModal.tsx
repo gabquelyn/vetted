@@ -13,11 +13,11 @@ export default function RegistryModal() {
   const onClose = () => {
     router.back();
   };
-  // const [professions, setProfessions] = useState<Set<ProfessionCode>>(
-  //   () => new Set(),
-  // );
-  // const [gateDone, setGateDone] = useState(false);
-  // const [showGateNote, setShowGateNote] = useState(false);
+  const [professions, setProfessions] = useState<Set<ProfessionCode>>(
+    () => new Set(),
+  );
+  const [gateDone, setGateDone] = useState(false);
+  const [showGateNote, setShowGateNote] = useState(false);
 
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -37,43 +37,43 @@ export default function RegistryModal() {
   }, []);
 
   // Once the profession gate is complete, move focus to Close.
-  // useEffect(() => {
-  //   if (!gateDone) return;
+  useEffect(() => {
+    if (!gateDone) return;
 
-  //   const timeoutId = window.setTimeout(() => {
-  //     closeRef.current?.focus();
-  //   }, 30);
+    const timeoutId = window.setTimeout(() => {
+      closeRef.current?.focus();
+    }, 30);
 
-  //   return () => window.clearTimeout(timeoutId);
-  // }, [gateDone]);
+    return () => window.clearTimeout(timeoutId);
+  }, [gateDone]);
 
-  // const toggleProfession = useCallback((code: ProfessionCode) => {
-  //   setProfessions((previous) => {
-  //     const next = new Set(previous);
+  const toggleProfession = useCallback((code: ProfessionCode) => {
+    setProfessions((previous) => {
+      const next = new Set(previous);
 
-  //     if (next.has(code)) {
-  //       next.delete(code);
-  //     } else {
-  //       next.add(code);
-  //     }
+      if (next.has(code)) {
+        next.delete(code);
+      } else {
+        next.add(code);
+      }
 
-  //     return next;
-  //   });
+      return next;
+    });
 
-  //   setShowGateNote(false);
-  // }, []);
+    setShowGateNote(false);
+  }, []);
 
-  // const continueFromGate = useCallback(() => {
-  //   if (professions.size === 0) {
-  //     setShowGateNote(true);
-  //     return;
-  //   }
+  const continueFromGate = useCallback(() => {
+    if (professions.size === 0) {
+      setShowGateNote(true);
+      return;
+    }
 
-  //   setGateDone(true);
+    setGateDone(true);
 
-  //   // TODO:
-  //   // Run the initial filterFullDemo() equivalent + first-entry tour.
-  // }, [professions.size]);
+    // TODO:
+    // Run the initial filterFullDemo() equivalent + first-entry tour.
+  }, [professions.size]);
 
   const goToUrgentHiring = useCallback(() => {
     window.setTimeout(() => {
@@ -103,7 +103,7 @@ export default function RegistryModal() {
           className="fixed inset-0 z-600 flex flex-col overflow-hidden bg-cream"
         >
           <div className="flex min-h-0 w-full flex-1 flex-col">
-            {/* <AnimatePresence>
+            <AnimatePresence>
               {!gateDone && (
                 <ProfessionGate
                   key="gate"
@@ -114,7 +114,7 @@ export default function RegistryModal() {
                   onClose={onClose}
                 />
               )}
-            </AnimatePresence> */}
+            </AnimatePresence>
 
             <div className="mx-auto flex min-h-0 w-full max-w-420 flex-1 flex-col px-5 pb-10 min-[900px]:px-7 min-[900px]:pb-0">
               <TopBar
