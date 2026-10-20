@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { LuFilter } from "react-icons/lu";
+import { GoPin } from "react-icons/go";
 import Divider from "./Divider";
 import MultiSelect from "./MultiSelect";
 import {
@@ -37,6 +38,8 @@ export default function Filtering({
   shifts,
   employment,
   count,
+  activatePanel,
+  setActivatePanel, // toggles the pinned state in the parent
 }: {
   onApply: () => void;
   onClear: () => void;
@@ -53,9 +56,16 @@ export default function Filtering({
   shifts: string[];
   employment: string[];
   count: number;
+  activatePanel: boolean;
+  setActivatePanel: () => void;
 }) {
+  const pinned = activatePanel;
+
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
+  // Clip only while the pinned block is animating its height, so inner
+  // dropdowns (MultiSelect lists) aren't cut off once it has settled.
+  const [clip, setClip] = useState(false);
 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -69,19 +79,9 @@ export default function Filtering({
     }
   }, []);
 
-  const openPanel = useCallback(() => {
-    cancelClose();
-    setOpen(true);
-  }, [cancelClose]);
-
-  const scheduleClose = useCallback(() => {
-    cancelClose();
-    closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
-  }, [cancelClose]);
-
-  useEffect(() => cancelClose, [cancelClose]);
-
-  // --- position the panel under the button ---
+  // Measure the trigger and place the floating panel under it. Only called
+  // from event handlers and external-event subscriptions, never from an
+  // effect body, so it doesn't cause cascading renders.
   const updatePosition = useCallback(() => {
     const el = buttonRef.current;
     if (!el) return;
@@ -93,20 +93,49 @@ export default function Filtering({
     });
   }, []);
 
-  useLayoutEffect(() => {
-    if (!open) return;
+  const openPanel = useCallback(() => {
+    cancelClose();
     updatePosition();
+    setOpen(true);
+  }, [cancelClose, updatePosition]);
+
+  const scheduleClose = useCallback(() => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
+  }, [cancelClose]);
+
+  useEffect(() => cancelClose, [cancelClose]);
+
+  // Touch / keyboard toggle for the trigger.
+  const togglePanel = () => {
+    cancelClose();
+    updatePosition();
+    setOpen((o) => !o);
+  };
+
+  // Pinning hands the panel over to the inline block, so dismiss the popup
+  // in the same event that flips the pinned state.
+  const handlePinToggle = () => {
+    cancelClose();
+    setOpen(false);
+    setActivatePanel();
+  };
+
+  // --- keep the floating panel anchored while the page scrolls / resizes ---
+  // Pure subscription: setState only happens inside the listener callback.
+  useEffect(() => {
+    if (!open || pinned) return;
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
     return () => {
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [open, updatePosition]);
+  }, [open, pinned, updatePosition]);
 
-  // --- click outside + Escape ---
+  // --- click outside + Escape (floating mode only) ---
   useEffect(() => {
-    if (!open) return;
+    if (!open || pinned) return;
 
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as Node;
@@ -124,11 +153,147 @@ export default function Filtering({
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [open, pinned]);
 
-  const panel = (
+  // --- the card itself, shared by the floating and pinned modes ---
+  const card = (
+    <div
+      className={`text-xs flex flex-col gap-2 rounded-xl border border-ash bg-[#FCFAF5] p-4 overflow-y-auto overscroll-contain [&>*]:shrink-0 ${
+        pinned ? "" : "shadow-lg"
+      }`}
+      style={{
+        // Pinned: cap to the viewport. Floating: cap to the space below the
+        // trigger (minus the 0.5rem hover bridge and a 1rem bottom gutter).
+        maxHeight: pinned
+          ? "calc(100vh - 2rem)"
+          : `max(15rem, calc(100vh - ${pos.top}px - 1.5rem))`,
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <p className="uppercase text-forest font-semibold">
+            Search and Filter
+          </p>
+          {count > 0 && (
+            <motion.span
+              key={count}
+              initial={{ scale: 0.6 }}
+              animate={{ scale: 1 }}
+              className="h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-forest text-white text-[.55rem]"
+            >
+              {count}
+            </motion.span>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={handlePinToggle}
+          aria-pressed={pinned}
+          aria-label={pinned ? "Unpin filters" : "Pin filters"}
+          title={pinned ? "Unpin filters" : "Pin filters"}
+          className={`cursor-pointer p-2 px-3 rounded-lg border transition-colors ${
+            pinned
+              ? "bg-forest text-white border-forest"
+              : "bg-white text-ink border-ash hover:border-gray-300"
+          }`}
+        >
+          <motion.span
+            className="block"
+            animate={{ rotate: pinned ? 0 : 45, scale: pinned ? [1, 1.25, 1] : 1 }}
+            transition={{
+              rotate: { type: "spring", stiffness: 400, damping: 18 },
+              // keyframe arrays can't use springs, so the pop is a tween
+              scale: { duration: 0.25, ease: "easeOut" },
+            }}
+          >
+            <GoPin />
+          </motion.span>
+        </button>
+      </div>
+      <Divider />
+
+      <div>
+        <p className="text-ink-soft font-bold mb-2">Primary Search</p>
+        <MultiSelect
+          value={parties}
+          onChange={setParties}
+          className="relative inline-block w-20 overflow-y-auto bg-white "
+          options={PROFESSIONS.map((p) => ({ label: p[1], value: p[0] }))}
+          allowSearch
+        />
+      </div>
+
+      <div>
+        <p className="text-ink-soft font-bold mb-2">Experienced environment</p>
+        <MultiSelect
+          value={environment}
+          onChange={setEnvironment}
+          className="relative inline-block w-20 overflow-y-auto bg-white "
+          options={ENVIRONMENT.map((e) => ({ label: e, value: e }))}
+          allowSearch
+        />
+      </div>
+
+      <div>
+        <p className="text-ink-soft font-bold mb-2">Shifts</p>
+        <MultiSelect
+          value={shifts}
+          onChange={setShifts}
+          className="relative inline-block w-20 overflow-y-auto bg-white "
+          options={SHIFTS.map((e) => ({ label: e, value: e }))}
+        />
+      </div>
+
+      <div>
+        <p className="text-ink-soft font-bold mb-2">Employment</p>
+        <MultiSelect
+          value={employment}
+          onChange={setEmployment}
+          className="relative inline-block w-20 overflow-y-auto bg-white "
+          options={EMPLOYMENT.map((e) => ({ label: e, value: e }))}
+        />
+      </div>
+
+      <div>
+        <p className="text-ink-soft font-bold mb-2">Mobility</p>
+        <MultiSelect
+          value={mobility}
+          onChange={setMobility}
+          className="relative inline-block w-20 overflow-y-auto bg-white "
+          options={MOBILITY.map((e) => ({ label: e[1], value: e[0] }))}
+        />
+      </div>
+
+      <div>
+        <p className="text-ink-soft font-bold mb-2">Profile</p>
+        <MultiSelect
+          value={profile}
+          onChange={setProfile}
+          className="relative inline-block w-20 overflow-y-auto bg-white "
+          options={PROFILE.map((e) => ({ label: e[1], value: e[0] }))}
+        />
+      </div>
+
+      {/* actions */}
+      <div className="flex items-center justify-between">
+        <button
+          className="cursor-pointer text-forest bg-forest-light p-2 rounded-md"
+          onClick={onApply}
+        >
+          Apply filters
+        </button>
+        <button className="cursor-pointer" onClick={onClear}>
+          Clear filters
+        </button>
+      </div>
+    </div>
+  );
+
+  // --- floating popup (portaled so no ancestor can cover or clip it) ---
+  const floatingPanel = (
     <AnimatePresence>
-      {open && (
+      {open && !pinned && (
         <motion.div
           ref={panelRef}
           initial={{ opacity: 0, y: -6, scale: 0.97 }}
@@ -147,89 +312,7 @@ export default function Filtering({
           onMouseEnter={openPanel}
           onMouseLeave={scheduleClose}
         >
-          <div className="text-xs flex flex-col gap-2 rounded-xl border border-ash bg-white p-4 shadow-lg">
-            <p className="uppercase text-forest font-semibold">
-              Search and Filter
-            </p>
-            <Divider />
-
-            <div>
-              <p className="text-ink-soft font-bold mb-2">Primary Search</p>
-              <MultiSelect
-                value={parties}
-                onChange={setParties}
-                className="relative inline-block w-20 overflow-y-auto"
-                options={PROFESSIONS.map((p) => ({ label: p[1], value: p[0] }))}
-                allowSearch
-              />
-            </div>
-
-            <div>
-              <p className="text-ink-soft font-bold mb-2">
-                Experienced environment
-              </p>
-              <MultiSelect
-                value={environment}
-                onChange={setEnvironment}
-                className="relative inline-block w-20 overflow-y-auto"
-                options={ENVIRONMENT.map((e) => ({ label: e, value: e }))}
-                allowSearch
-              />
-            </div>
-
-            <div>
-              <p className="text-ink-soft font-bold mb-2">Shifts</p>
-              <MultiSelect
-                value={shifts}
-                onChange={setShifts}
-                className="relative inline-block w-20 overflow-y-auto"
-                options={SHIFTS.map((e) => ({ label: e, value: e }))}
-              />
-            </div>
-
-            <div>
-              <p className="text-ink-soft font-bold mb-2">Employment</p>
-              <MultiSelect
-                value={employment}
-                onChange={setEmployment}
-                className="relative inline-block w-20 overflow-y-auto"
-                options={EMPLOYMENT.map((e) => ({ label: e, value: e }))}
-              />
-            </div>
-
-            <div>
-              <p className="text-ink-soft font-bold mb-2">Mobility</p>
-              <MultiSelect
-                value={mobility}
-                onChange={setMobility}
-                className="relative inline-block w-20 overflow-y-auto"
-                options={MOBILITY.map((e) => ({ label: e[1], value: e[0] }))}
-              />
-            </div>
-
-            <div>
-              <p className="text-ink-soft font-bold mb-2">Profile</p>
-              <MultiSelect
-                value={profile}
-                onChange={setProfile}
-                className="relative inline-block w-20 overflow-y-auto"
-                options={PROFILE.map((e) => ({ label: e[1], value: e[0] }))}
-              />
-            </div>
-
-            {/* actions */}
-            <div className="flex items-center justify-between">
-              <button
-                className="cursor-pointer text-forest bg-forest-light p-2 rounded-md"
-                onClick={onApply}
-              >
-                Apply filters
-              </button>
-              <button className="cursor-pointer" onClick={onClear}>
-                Clear filters
-              </button>
-            </div>
-          </div>
+          {card}
         </motion.div>
       )}
     </AnimatePresence>
@@ -237,44 +320,72 @@ export default function Filtering({
 
   return (
     <div className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onMouseEnter={openPanel}
-        onMouseLeave={scheduleClose}
-        // Touch / pen: tap toggles. Mouse relies on hover so a click doesn't fight it.
-        onPointerDown={(e) => {
-          if (e.pointerType !== "mouse") {
-            cancelClose();
-            setOpen((o) => !o);
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setOpen((o) => !o);
-          }
-        }}
-        className="text-xs cursor-pointer flex items-center gap-2 border border-ash rounded-xl text-ink-soft p-2 px-3 relative"
-      >
-        {count > 0 && (
-          <motion.span
-            key={count}
-            initial={{ scale: 0.6 }}
-            animate={{ scale: 1 }}
-            className="absolute right-0 -top-2 h-4 w-4 flex items-center justify-center rounded-full bg-forest text-white text-[.5rem]"
+      {/* When pinned, the card takes the button's place in the layout as a block */}
+      <AnimatePresence mode="wait" initial={false}>
+        {pinned ? (
+          <motion.div
+            key="pinned"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            onAnimationStart={() => setClip(true)}
+            onAnimationComplete={() => setClip(false)}
+            style={{
+              width: PANEL_WIDTH,
+              overflow: clip ? "hidden" : "visible",
+            }}
           >
-            {count}
-          </motion.span>
+            {card}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="trigger"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+          >
+            <button
+              ref={buttonRef}
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded={open}
+              onMouseEnter={openPanel}
+              onMouseLeave={scheduleClose}
+              // Touch / pen: tap toggles. Mouse relies on hover so a click doesn't fight it.
+              onPointerDown={(e) => {
+                if (e.pointerType !== "mouse") togglePanel();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  togglePanel();
+                }
+              }}
+              className="text-xs cursor-pointer flex flex-col items-center gap-2 border bg-white uppercase border-ash rounded-xl text-ink-soft p-4 relative"
+            >
+              {count > 0 && (
+                <motion.span
+                  key={count}
+                  initial={{ scale: 0.6 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -right-1.5 -top-2 h-4 w-4 flex items-center justify-center rounded-full bg-forest text-white text-[.5rem]"
+                >
+                  {count}
+                </motion.span>
+              )}
+              <LuFilter />
+              {/* vertical-rl + rotate-180 makes the label read bottom-to-top */}
+              <span className="text-ink tracking-wide [writing-mode:vertical-rl] rotate-180">
+                Filters
+              </span>
+            </button>
+          </motion.div>
         )}
-        <span className="text-ink">Filters</span>
-        <LuFilter />
-      </button>
+      </AnimatePresence>
 
-      {/* Rendered on document.body so no ancestor stacking context or overflow can clip or cover it */}
-      {typeof document !== "undefined" && createPortal(panel, document.body)}
+      {typeof document !== "undefined" && createPortal(floatingPanel, document.body)}
     </div>
   );
 }

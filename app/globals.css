@@ -12,10 +12,13 @@
   --border: #e2e4dc;
   --tertiary: #c0392b;
   --gold: #895A1F;
+  --dark: #16260C;
 }
+
 
 @theme inline {
   --color-forest: var(--primary);
+  --color-forest-dark: var(--dark);
   --color-forest-mid: var(--primary-mid);
   --color-forest-light: var(--primary-light);
   --color-forest-pale: var(--primary-pale);
@@ -27,6 +30,40 @@
   --color-highlight: var(--gold);
   --color-tertiary: var(--tertiary);
   --font-serif: var(--font-serif);
+}
+
+
+/* Firefox + modern Chromium */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Safari / older Chromium */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.18);
+  border-radius: 9999px;
+  /* transparent border keeps the thumb slim with a little breathing room */
+  border: 1px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 html {

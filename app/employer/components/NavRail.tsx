@@ -127,7 +127,7 @@ export default function NavRail({
   }, [active]);
 
   return (
-    <div className="sticky top-0 z-30 w-full min-w-0 shrink-0 bg-white lg:static lg:z-auto lg:h-full lg:w-auto">
+    <div className="sticky top-0 z-30 w-full min-w-0 shrink-0 lg:static lg:z-auto lg:h-full lg:w-auto">
       <nav
         ref={navRef}
         aria-label="Employer workspace navigation"
@@ -167,7 +167,7 @@ export default function NavRail({
               className={`${itemBase} ${
                 isActive
                   ? "bg-forest text-white"
-                  : "bg-transparent text-ink-soft hover:bg-forest-light hover:text-forest"
+                  : "bg-transparent text-ink hover:bg-forest-light hover:text-forest"
               }`}
             >
               <Icon size={15} strokeWidth={1.8} aria-hidden="true" className="shrink-0" />

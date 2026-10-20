@@ -146,7 +146,7 @@ export default function MultiSelect({
             <ul
               role="listbox"
               aria-multiselectable
-              className="max-h-40 overflow-y-auto py-1"
+              className="max-h-50 overflow-y-auto py-1"
             >
               {filtered.length === 0 ? (
                 <li className="px-3 py-4 text-center text-xs text-gray-400">

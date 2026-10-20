@@ -1,6 +1,7 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Candidate, FULL_CANDIDATES } from "@/app/data/registry";
+import { AnimatePresence, motion } from "motion/react";
 import CandidateCard from "./CanCard";
 import Select from "@/app/components/CustomSelect";
 import Filtering from "./Filtering";
@@ -67,6 +68,8 @@ export default function Registry({
   const [introducing, setIntroducing] = useState<Candidate | null>(null);
   const [count, setCount] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [highlightActive, setHighlightActive] = useState<string | null>(null);
+  const [activePanel, setActivePanel] = useState(false);
 
   // Close on Escape and lock page scroll while the mobile panel is open
   useEffect(() => {
@@ -179,7 +182,7 @@ export default function Registry({
           }}
         />
       )}
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col items-stretch gap-3 sm:gap-4.5 lg:flex-row">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col items-stretch gap-2 sm:gap-4.5 lg:flex-row">
         <NavRail
           active={activeView}
           onSelect={handleRailSelect}
@@ -189,6 +192,31 @@ export default function Registry({
             reveals: reveals.length,
           }}
         />
+
+        <div className="min-w-0 max-w-full">
+          <Filtering
+            onApply={() => {
+              onApply(filters);
+              setFiltersOpen(false);
+            }}
+            onClear={clearFilters}
+            shifts={shifts}
+            setShifts={setShifts}
+            environment={environment}
+            setEnvironment={setEnvironment}
+            setEmployment={setEmployment}
+            employment={employment}
+            mobility={mobility}
+            setMobility={setMobility}
+            profile={profile}
+            setProfile={setProfile}
+            count={count}
+            parties={parties}
+            setParties={setParties}
+            activatePanel={activePanel}
+            setActivatePanel={() => setActivePanel((prev) => !prev)}
+          />
+        </div>
 
         {/* Saved searches */}
         <Overlay
@@ -249,7 +277,7 @@ export default function Registry({
               onReveal={(id) => onReveal(id)}
               revealing={true}
               reveals={reveals}
-              deductReveal = {useReveal}
+              deductReveal={useReveal}
               revealsRemaining={revealsRemaining}
             />
           )}
@@ -274,37 +302,8 @@ export default function Registry({
             <>
               {/* Filters and results toolbar */}
               {activeView !== "reveals" && (
-                <div className="border-b border-b-ash px-3 py-2.5 sm:px-6 md:py-4 lg:px-7">
+                <div className="">
                   {/* Saved-search actions: always visible */}
-                  {count > 0 && toggle && (
-                    <div className="mb-2 flex items-center justify-between gap-2 text-xs md:mb-3 md:justify-end">
-                      <button
-                        className="shrink-0 cursor-pointer font-semibold text-ink-soft underline"
-                        onClick={clearFilters}
-                      >
-                        Clear all
-                      </button>
-                      <button
-                        className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-ash px-3 py-1.5 font-bold text-forest md:py-2"
-                        onClick={() => {
-                          toast.info("Search saved");
-                          setRecentSearch((prev) => [
-                            ...prev,
-                            {
-                              search: filters,
-                              timestamp: new Date().toDateString(),
-                              id: uuid(),
-                            },
-                          ]);
-                          setToggle(false);
-                        }}
-                      >
-                        <IoBookmarkOutline />
-                        <span>Save search</span>
-                      </button>
-                    </div>
-                  )}
-
                   {/* Mobile trigger: replaces the whole toolbar on small screens */}
                   <button
                     type="button"
@@ -341,12 +340,12 @@ export default function Registry({
                     aria-modal={filtersOpen || undefined}
                     aria-label="Filters and sort"
                     className={`
-        fixed inset-y-0 right-0 z-50 flex w-[88%] max-w-sm flex-col bg-white shadow-2xl
-        transition-[transform,visibility] duration-200 ease-out
-        ${filtersOpen ? "translate-x-0 visible" : "translate-x-full invisible"}
-        md:visible md:static md:z-auto md:block md:w-auto md:max-w-none md:translate-x-0
-        md:bg-transparent md:shadow-none md:transition-none
-      `}
+                    fixed inset-y-0 right-0 z-50 flex w-[88%] max-w-sm flex-col bg-white shadow-2xl
+                    transition-[transform,visibility] duration-200 ease-out
+                    ${filtersOpen ? "translate-x-0 visible" : "translate-x-full invisible"}
+                   md:visible md:static md:z-auto md:block md:w-auto md:max-w-none md:translate-x-0
+                    md:bg-transparent md:shadow-none md:transition-none
+                  `}
                   >
                     {/* Drawer header (mobile only) */}
                     <div className="flex items-center justify-between border-b border-ash px-4 py-3 md:hidden">
@@ -364,79 +363,24 @@ export default function Registry({
                     </div>
 
                     {/* Scrollable body */}
-                    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4 md:flex-none md:gap-4 md:overflow-visible md:p-0 xl:flex-row xl:items-center xl:justify-between">
-                      <div className="min-w-0 max-w-full">
-                        <Filtering
-                          onApply={() => {
-                            onApply(filters);
-                            setFiltersOpen(false);
-                          }}
-                          onClear={clearFilters}
-                          shifts={shifts}
-                          setShifts={setShifts}
-                          environment={environment}
-                          setEnvironment={setEnvironment}
-                          setEmployment={setEmployment}
-                          employment={employment}
-                          mobility={mobility}
-                          setMobility={setMobility}
-                          profile={profile}
-                          setProfile={setProfile}
-                          count={count}
-                          parties={parties}
-                          setParties={setParties}
-                        />
-                      </div>
+                  </div>
 
-                      <div className="flex flex-col gap-3 border-t border-ash pt-4 md:flex-row md:flex-wrap md:items-center md:gap-x-4 md:border-t-0 md:pt-0">
-                        <div className="flex items-center justify-between gap-1.5 md:justify-start">
-                          <p className="whitespace-nowrap text-xs text-ink-soft">
-                            Results per page:
-                          </p>
-                          <Select
-                            options={[
-                              { value: "20", label: "20" },
-                              { value: "40", label: "40" },
-                              { value: "60", label: "60" },
-                            ]}
-                            onChange={(val) => setResults(val)}
-                            value={result}
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between gap-1.5 md:justify-start">
-                          <p className="whitespace-nowrap text-xs text-ink-soft">
-                            Sort:
-                          </p>
-                          <Select
-                            options={[
-                              { value: "new", label: "Newest Confirmed" },
-                              { value: "most", label: "Most Experienced" },
-                            ]}
-                            onChange={(val) => setSort(val as "new" | "most")}
-                            value={sort}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Drawer footer (mobile only) */}
-                    <div className="flex gap-3 border-t border-ash p-4 md:hidden">
-                      <button
-                        type="button"
-                        onClick={clearFilters}
-                        className="flex-1 cursor-pointer rounded-full border border-ash py-2.5 text-sm font-semibold text-ink-soft"
-                      >
-                        Clear all
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFiltersOpen(false)}
-                        className="flex-1 cursor-pointer rounded-full bg-forest py-2.5 text-sm font-semibold text-white"
-                      >
-                        Show results
-                      </button>
-                    </div>
+                  {/* Drawer footer (mobile only) */}
+                  <div className="flex gap-3 border-t border-ash p-4 md:hidden">
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="flex-1 cursor-pointer rounded-full border border-ash py-2.5 text-sm font-semibold text-ink-soft"
+                    >
+                      Clear all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFiltersOpen(false)}
+                      className="flex-1 cursor-pointer rounded-full bg-forest py-2.5 text-sm font-semibold text-white"
+                    >
+                      Show results
+                    </button>
                   </div>
                 </div>
               )}
@@ -465,7 +409,7 @@ export default function Registry({
                   reveals={reveals}
                 />
               ) : (
-                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
+                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-12">
                   {sorted.length == 0 && (
                     <div className="flex flex-col items-center justify-center gap-1 text-center text-sm text-ink-soft">
                       <p>No professional with this record found</p>
@@ -479,22 +423,108 @@ export default function Registry({
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                    {sorted.slice(0, +result).map((candidate) => (
-                      <CandidateCard
-                        c={candidate}
-                        key={candidate.id}
-                        saved={saved}
-                        onSave={(id) => onSave(id)}
-                        onCompare={(id) => onCompare(id)}
-                        onProfileView={() => setViewing(candidate.id)}
-                        onReveal={(c) => {
-                          if (revealsRemaining > 0) setRevealing(c);
+                  {count > 0 && toggle && (
+                    <div className="flex items-center justify-between gap-2 text-xs md:justify-end mb-1">
+                      <button
+                        className="shrink-0 cursor-pointer font-semibold text-ink-soft underline"
+                        onClick={clearFilters}
+                      >
+                        Clear all
+                      </button>
+                      <button
+                        className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-ash px-3 py-1.5 font-bold text-forest md:py-2"
+                        onClick={() => {
+                          toast.info("Search saved");
+                          setRecentSearch((prev) => [
+                            ...prev,
+                            {
+                              search: filters,
+                              timestamp: new Date().toDateString(),
+                              id: uuid(),
+                            },
+                          ]);
+                          setToggle(false);
                         }}
-                        reveals={reveals}
-                        onIntroduction={(c) => setIntroducing(c)}
+                      >
+                        <IoBookmarkOutline />
+                        <span>Save search</span>
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-3 border-t border-ash md:flex-row md:justify-between py-4 md:items-center md:gap-x-4 md:border-t-0 md:pt-0">
+                    <div className="flex items-center justify-between gap-1.5 md:justify-start">
+                      <p className="whitespace-nowrap text-xs text-ink-soft">
+                        Results per page:
+                      </p>
+                      <Select
+                        options={[
+                          { value: "20", label: "20" },
+                          { value: "40", label: "40" },
+                          { value: "60", label: "60" },
+                        ]}
+                        onChange={(val) => setResults(val)}
+                        value={result}
                       />
-                    ))}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-1.5 md:justify-start">
+                      <p className="whitespace-nowrap text-xs text-ink-soft">
+                        Sort:
+                      </p>
+                      <Select
+                        options={[
+                          { value: "new", label: "Newest Confirmed" },
+                          { value: "most", label: "Most Experienced" },
+                        ]}
+                        onChange={(val) => setSort(val as "new" | "most")}
+                        value={sort}
+                      />
+                    </div>
+                  </div>
+
+                  <div
+                    className={`${activePanel ? "sm:grid-cols-1 xl:grid-cols-3 2xl:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"} grid grid-cols-1 gap-5`}
+                  >
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {sorted.slice(0, +result).map((candidate) => (
+                        <motion.div
+                          key={candidate.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{
+                            layout: {
+                              type: "spring",
+                              stiffness: 500,
+                              damping: 40,
+                            },
+                            opacity: { duration: 0.2 },
+                          }}
+                        >
+                          <CandidateCard
+                            c={candidate}
+                            key={candidate.id}
+                            saved={saved}
+                            onSave={(id) => onSave(id)}
+                            onCompare={(id) => onCompare(id)}
+                            onProfileView={() => setViewing(candidate.id)}
+                            onReveal={(c) => {
+                              if (revealsRemaining > 0) setRevealing(c);
+                            }}
+                            reveals={reveals}
+                            onIntroduction={(c) => setIntroducing(c)}
+                            highlightActive={highlightActive == candidate.id}
+                            setHighlightActive={(id) => {
+                              setHighlightActive((prev) =>
+                                prev == id ? null : id,
+                              );
+                            }}
+                          />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 </div>
               )}
