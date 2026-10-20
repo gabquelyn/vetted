@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useId, useSyncExternalStore } from 'react'
+import React, { ReactNode, useEffect, useId, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
@@ -10,7 +10,7 @@ interface ModalProps {
   /** Defaults to true so `<Modal onClose={...}>` works when you render it conditionally */
   open?: boolean
   onClose: () => void
-  title?: string
+  title?: string | ReactNode
   children: React.ReactNode
   /** Extra classes for the panel, e.g. "max-w-3xl" */
   className?: string
@@ -82,14 +82,14 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 8 }}
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-            className={`relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-ash bg-white text-ink shadow-2xl ${className}`}
+            className={`relative z-10 flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white text-ink shadow-2xl ${className}`}
           >
             {(title || !hideCloseButton) && (
-              <div className="flex items-center justify-between gap-4 border-b border-ash px-5 py-3.5">
+              <div className="flex items-center justify-between gap-4 border-b border-ash px-5 py-3.5 bg-forest-dark">
                 {title ? (
-                  <h2 id={titleId} className="text-base font-semibold text-forest">
+                  <div id={titleId}>
                     {title}
-                  </h2>
+                  </div>
                 ) : (
                   <span />
                 )}
@@ -117,7 +117,7 @@ export default function Modal({
               </div>
             )}
 
-            <div className="overflow-y-auto px-5 py-4">{children}</div>
+            <div className="overflow-y-auto">{children}</div>
           </motion.div>
         </div>
       )}

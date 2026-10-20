@@ -269,7 +269,30 @@ export default function Registry({
         </Overlay>
 
         {/* Reveal modal */}
-        <Modal open={!!revealing} onClose={() => setRevealing(null)}>
+        <Modal
+          open={!!revealing}
+          onClose={() => setRevealing(null)}
+          title={
+            reveals.includes(revealing?.id || "") ? (
+              <div className="text-white p-3">
+                <p className="text-xs text-forest-light">Demo reveal complete</p>
+                <p className="font-semibold text-xl mt-3">{revealing?.reveal.name}</p>
+                <p className="text-[#E8F0E0] text-xs">
+                  {revealing?.title} · {revealing?.loc}
+                </p>
+              </div>
+            ) : (
+              <div className="text-white p-3">
+                <p className="font-serif text-3xl">
+                  Reveal contact information for {revealing?.id}?
+                </p>
+                <p className="text-[#E8F0E0] text-xs">
+                  {revealing?.title} · {revealing?.loc}
+                </p>
+              </div>
+            )
+          }
+        >
           {revealing && (
             <CandidatePreview
               candidate={revealing}

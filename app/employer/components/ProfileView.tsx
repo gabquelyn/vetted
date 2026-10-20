@@ -8,6 +8,7 @@ import ExperienceList from "./ExperienceList";
 import { IoMdStarOutline } from "react-icons/io";
 import { MdArrowRightAlt } from "react-icons/md";
 import { FiCheckSquare } from "react-icons/fi";
+import RevealedContact from "./RevealedContact";
 export default function ProfileView({
   results,
   viewing,
@@ -122,19 +123,7 @@ export default function ProfileView({
                 </p>
               </div>
               {reveals.includes(candidate.id) && (
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-mid">
-                  {[name, email, phone].map((value, i) => (
-                    <React.Fragment key={i}>
-                      {i > 0 && (
-                        <span
-                          aria-hidden
-                          className="hidden h-4 w-px bg-ash sm:block"
-                        />
-                      )}
-                      <p className="break-all">{value}</p>
-                    </React.Fragment>
-                  ))}
-                </div>
+                <RevealedContact values={[name, email, phone]} />
               )}
             </div>
 
@@ -205,7 +194,7 @@ export default function ProfileView({
             </Section>
           </div>
           <div>
-            <Section title="Available & practical fit">
+            <Section title="Availability & practical fit">
               <div className="bg-forest-light flex flex-col gap-2 p-3 px-4 text-xs text-forest rounded-2xl">
                 <Fact label="Availability" value={candidate.avail} />
                 <Divider />
@@ -279,7 +268,9 @@ export default function ProfileView({
 
               <div className=" flex items-center justify-between">
                 <p className="text-xs mb-1">Language</p>
-                <p className="font-semibold text-ink-mid">{candidate.lang}</p>
+                <p className="font-semibold text-ink-mid">
+                  {candidate.lang.join(", ")}
+                </p>
               </div>
             </div>
           </div>

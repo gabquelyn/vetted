@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { Candidate } from "@/app/data/registry";
+import Divider from "./Divider";
 
 interface CandidatePreviewProps {
   candidate: Candidate;
@@ -61,94 +62,124 @@ export default function CandidatePreview({
   revealsRemaining,
   deductReveal,
 }: CandidatePreviewProps) {
-  console.log(reveals.includes(c.id));
   const reduce = useReducedMotion();
   const [revealed, setRevealed] = useState(reveals.includes(c.id));
   return (
-    <div className="text-ink">
+    <div className="text-ink text-xs p-6">
       {/* header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="rounded bg-forest-pale px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-forest">
-              {c.code}
-            </span>
-            <span className="text-xs text-ink-soft">{c.id}</span>
-          </div>
-          <h3 className="mt-1.5 text-lg font-semibold text-forest">
-            {c.title}
-          </h3>
-          <p className="mt-0.5 text-sm text-ink-mid">
-            {c.loc} · {c.snapshot}
+      {revealed ? (
+        <div className="space-y-3">
+          <p className="mb-2 text-[.6rem] font-semibold uppercase text-ink-soft tracking-wider">
+            Contact access
           </p>
-        </div>
-
-        <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-ash px-2.5 py-1 text-xs text-ink-mid">
-          <span className="h-1.5 w-1.5 rounded-full bg-forest-mid" />
-          {c.activeAgo}
-        </span>
-      </div>
-
-      <div className="mt-5 space-y-5">
-        {/* key facts */}
-        <Section title="At a glance" index={0}>
-          <div className="grid grid-cols-2 gap-2">
-            <Fact
-              label="Experience"
-              value={`${c.years} ${c.years === 1 ? "year" : "years"}`}
-            />
-            <Fact label="Availability" value={c.avail} />
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            <Contact label="Email" value={c.reveal.email} />
+            <Contact label="Phone" value={c.reveal.phone} />
           </div>
-        </Section>
 
-        {/* summary */}
-        {c.summary && (
-          <Section title="Summary" index={1}>
-            <p className="text-sm leading-relaxed text-ink-mid">{c.summary}</p>
-          </Section>
-        )}
+          {/* resume */}
+          <p className="text-ink-soft font-semibold">Resume available</p>
 
-        {revealed && (
-          <Section title="Personal details" index={2}>
-            <div className="space-y-2">
-              <Fact label="Name" value={c.reveal.name} />
-              <Fact label="Email" value={c.reveal.email} />
-              <Fact label="Phone number" value={c.reveal.phone} />
+          {c.professionalRegistration && (
+            <div className="border-l-2 space-y-1 border-forest-dark p-3">
+              <p className="mb-2 text-[.6rem] font-semibold uppercase text-ink-soft tracking-wider">
+                professional registration
+              </p>
+              <p className="font-semibold text-sm">
+                {c.professionalRegistration?.[0].regulator} (
+                {c.professionalRegistration?.[0].regulatorShort})
+              </p>
+              <p className="text-ink-mid uppercase flex items-center gap-2">
+                Registration number:{" "}
+                <span className="font-bold">
+                  {c.professionalRegistration?.[0].registrationNumber}
+                </span>
+              </p>
+              <p>Registered · Candidate-reported · Number on file</p>
+              <p className="italic text-ink-soft">
+                Employer should verify current standing with CNO before hire.
+              </p>
             </div>
-          </Section>
-        )}
-      </div>
+          )}
 
-      {/* actions */}
-      <div className="mt-6 flex flex-col-reverse gap-2 border-t border-ash pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center w-full justify-between gap-2">
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.97 }}
-            onClick={onCancel}
-            className="rounded-md border border-ash bg-white px-4 py-2 text-sm text-ink-mid transition-colors hover:border-forest-mid hover:text-forest"
-          >
-            Cancel
-          </motion.button>
+          <Divider />
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-ink-soft text-xs">
+              Added to revealed professionals
+            </p>
+            <div className="flex items-center gap-2">
+              <p className="h-2 w-2 bg-green-500 rounded-full"></p>
+              <p>{c.activeAgo}</p>
+            </div>
+          </div>
 
-          <motion.button
-            type="button"
-            disabled={revealed}
-            whileHover={reduce || revealing ? undefined : { scale: 1.02 }}
-            whileTap={reduce || revealing ? undefined : { scale: 0.97 }}
-            onClick={() => {
-              if (revealsRemaining > 0) {
-                setRevealed(true);
-                onReveal(c.id);
-                deductReveal();
-              }
-            }}
-            className="rounded-md bg-forest px-4 py-2 text-sm  text-white transition-colors hover:bg-forest-mid disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {revealLabel}
-          </motion.button>
+          <Divider />
+
+          <p className="text-ink-soft text-xs">
+            ⓘ This is simulated demo identity/contact information for
+            demonstration purposes only — not a real person.
+          </p>
+          <div className="flex gap-5 justify-between">
+            <button className="p-2 w-[40%] border-forest border rounded-lg" onClick={onCancel}>
+              Done
+            </button>
+            <button className="p-2 w-[40%] bg-forest text-white rounded-lg">
+              Request Employer Early access
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="bg-forest-light p-4 grid grid-cols-3 gap-2">
+            <Detail
+              label="In the Employer Workspace, Reveal provides:"
+              val="Full name, email, phone"
+            />
+            <Detail label="Resume" val="Included" />
+            <Detail
+              label="After reveal"
+              val="Stays organized in your workspace"
+            />
+          </div>
+          <div className="p-5">
+            <p>
+              ⓘ This is a simulated demo reveal. No real contact information
+              exists for this profile — completing it shows you the state
+              transition an employer would see, nothing more.
+            </p>
+            <div className="flex justify-end mt-2">
+              <button
+                className="bg-forest rounded-lg p-2 px-4 text-white"
+                onClick={() => {
+                  setRevealed(true);
+                  onReveal(c.id);
+                  deductReveal();
+                }}
+              >
+                Complete reveal
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Detail({ label, val }: { label: string; val: string }) {
+  return (
+    <div className="space-y-3 font-semibold">
+      <p className="text-forest">{label}</p>
+      <p>{val}</p>
+    </div>
+  );
+}
+
+function Contact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-ink-soft">{label}</p>
+      <p className="text-ink font-semibold">{value}</p>
     </div>
   );
 }
