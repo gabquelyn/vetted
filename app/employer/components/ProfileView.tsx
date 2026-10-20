@@ -1,8 +1,13 @@
+"use client";
 import { Candidate } from "@/app/data/registry";
 import React from "react";
 import { FaArrowLeft } from "react-icons/fa6";
-import { TiStarOutline } from "react-icons/ti";
-
+import Divider from "./Divider";
+import Pill from "./Pill";
+import ExperienceList from "./ExperienceList";
+import { IoMdStarOutline } from "react-icons/io";
+import { MdArrowRightAlt } from "react-icons/md";
+import { FiCheckSquare } from "react-icons/fi";
 export default function ProfileView({
   results,
   viewing,
@@ -29,7 +34,7 @@ export default function ProfileView({
   activeView: ActiveView;
 }) {
   const candidate = results.find((c) => c.id == viewing) || results[0];
-  const { name, email, phone } = candidate?.reveal;
+
   if (!candidate) {
     return (
       <div className="mt-5 flex flex-col items-center text-xs text-ink-mid">
@@ -42,312 +47,277 @@ export default function ProfileView({
       </div>
     );
   }
+
+  // Destructured after the guard so an empty result set can't throw here.
+  const { name, email, phone } = candidate.reveal;
+
   return (
-    <div className="grid h-full min-h-0 min-w-0 grid-cols-1 gap-4 py-3 sm:py-4 lg:grid-cols-[auto_minmax(0,1fr)] lg:px-7">
+    <div className="grid h-full min-h-0 min-w-0 grid-cols-1 gap-5 md:grid-cols-[clamp(11rem,17vw,16rem)_minmax(0,1fr)]">
       {/* Side panel */}
-      <div className="hidden md:flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-ash bg-cream p-3 text-xs lg:col-span-1">
-        <p className="mb-2 shrink-0 font-semibold text-ink-mid">
-          Showing {results.length} results
+      <div className="hidden md:flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-ash bg-cream px-2 py-5 text-[.7rem] md:col-span-1">
+        <p className="mb-4 shrink-0 text-[.6rem] font-semibold uppercase tracking-widest text-ink-soft">
+          {results.length} {results.length === 1 ? "result" : "results"}
         </p>
 
-        <div className="flex min-h-0 gap-2 overflow-x-auto overflow-y-hidden pb-1 lg:flex-1 lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto lg:pb-0">
+        {/* left/top padding leaves room for the selected card's left shadow */}
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto py-1 pl-2 pr-1">
           {results.map((c) => (
             <div
               key={c.id}
-              className={`relative flex w-56 shrink-0 cursor-pointer flex-col gap-1 rounded-md border p-2 hover:border-forest sm:w-64 lg:w-full lg:p-4 ${
+              className={`flex min-w-0 shrink-0 cursor-pointer flex-col gap-1 break-words rounded-xl border px-4 py-3 transition-all ${
                 viewing === c.id
-                  ? "border-forest bg-forest-pale"
-                  : "border-ash bg-white"
+                  ? "border-forest bg-forest-pale shadow-[-6px_0_14px_-4px] shadow-forest/50"
+                  : "border-ash bg-white hover:border-forest/60"
               }`}
               onClick={() => setView(c.id)}
             >
               {c.specialist && (
-                <div className="absolute rounded-bl-md rounded-tl-md text-[.6rem] right-0 p-2 text-highlight bg-highlight/30 uppercase">
+                <span className="mb-1 self-start rounded-full bg-highlight/15 px-2 py-0.5 text-[.5rem] font-semibold uppercase tracking-wide text-highlight">
                   Specialist
-                </div>
+                </span>
               )}
 
-              <p className="pr-5 font-semibold text-forest">{c.title}</p>
-              <p className="text-[.55rem] text-ink-soft">{c.code}</p>
-              <p className="text-ink-mid">{c.loc}</p>
+              <p className="text-xs font-semibold leading-snug text-forest">
+                {c.title}
+              </p>
+              <p className="text-[.55rem] uppercase tracking-wider text-ink-soft">
+                {c.code}
+              </p>
+              <p className="leading-relaxed text-ink-mid">{c.loc}</p>
 
               <p className="flex items-center gap-2 text-forest">
-                <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
                 {c.activeAgo}
               </p>
-
-              <p className="text-ink-mid">Confirmed {c.confirmedDays}d</p>
+              <p className="text-ink-soft">Confirmed {c.confirmedDays}d ago</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Profile results */}
-      <div className="flex h-full min-h-0 min-w-0 flex-col overflow-y-auto rounded-md border border-ash bg-white p-4 text-sm text-ink sm:p-5 lg:col-span-1 lg:p-6">
-        {/* Back button */}
-        <div className="mb-3 flex shrink-0 justify-end text-xs font-semibold text-forest underline">
-          <button
-            className="flex items-center gap-2 rounded-full"
-            onClick={onClose}
-          >
-            <FaArrowLeft />
-            <p>Back to results</p>
-          </button>
-        </div>
-
-        {/* Header */}
-        <div className="flex shrink-0 flex-col gap-4 border-b border-ash pb-5 md:flex-row md:items-start md:justify-between">
-          <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-[.65rem] font-semibold uppercase tracking-widest text-ink-soft">
-              {candidate.code}
-            </p>
-
-            <h2 className="break-words font-serif text-2xl font-semibold leading-tight text-forest sm:text-3xl">
-              {candidate.title}
-            </h2>
-
-            <p className="text-ink-mid">
-              {candidate.loc} · {candidate.years} yrs experience
-            </p>
-
-            {reveals.includes(candidate.id) && (
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-mid">
-                {[name, email, phone].map((value, i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 && (
-                      <span
-                        aria-hidden
-                        className="hidden h-4 w-px bg-ash sm:block"
-                      />
-                    )}
-                    <p className="break-all">{value}</p>
-                  </React.Fragment>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex min-w-0 shrink-0 flex-col items-start gap-2 md:items-end">
-            <p className="flex items-center gap-2 text-xs text-forest-mid">
-              <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
-              Active {candidate.activeAgo}
-            </p>
-
-            <p className="text-xs text-ink-soft">
-              Confirmed {candidate.confirmedDays}d ago
-            </p>
-
-            <div className="flex flex-wrap gap-1.5">
-              {candidate.specialist && (
-                <p className="rounded-full bg-highlight px-3 py-2 text-xs font-bold text-white">
-                  Specialist
-                </p>
-              )}
-
-              {candidate.ic && (
-                <Chip tone="outline">Independent contractor</Chip>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Key facts */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-          <Fact label="Availability" value={candidate.avail} />
-          <Fact label="Employment" value={candidate.empType} />
-          <Fact label="Shift" value={candidate.shift.join(", ")} />
-          <Fact label="Credential" value={candidate.credential} />
-          <Fact label="Vehicle" value={candidate.vehicle ? "Yes" : "No"} />
-          <Fact label="Licence" value={candidate.licence ? "Yes" : "No"} />
-          <Fact label="Rural" value={candidate.rural} />
-          <Fact label="Float" value={candidate.float} />
-        </div>
-
-        {/* Snapshot and summary */}
-        <Section title="Snapshot">
-          <p className="rounded-lg bg-forest-pale px-4 py-3 font-medium text-forest">
-            {candidate.snapshot}
-          </p>
-
-          <p className="mt-3 leading-relaxed text-ink-mid">
-            {candidate.summary}
-          </p>
-        </Section>
-
-        {/* Skills and specialties */}
-        <Section title="Skills">
-          <div className="flex flex-wrap gap-2">
-            {candidate.skills.map((s) => (
-              <Chip key={s} tone="soft">
-                {s}
-              </Chip>
-            ))}
-          </div>
-
-          {candidate.specialties && candidate.specialties.length > 0 && (
-            <>
-              <p className="mb-2 mt-4 text-xs font-semibold text-ink-mid">
-                Specialties
+      <div className="flex h-full min-h-0 min-w-0 flex-col overflow-y-auto rounded-2xl border border-ash bg-white gap-1 p-3 text-sm text-ink sm:p-5 md:col-span-1 lg:p-10">
+        <div className="flex justify-between items-start">
+          {/* Header */}
+          <div className="flex shrink-0 flex-col gap-2 pb-5 md:flex-row md:items-start md:justify-between">
+            <div className="flex min-w-0 flex-col text-xs">
+              <h2 className="wrap-break-word font-serif text-xl mb-1 font-semibold leading-tight text-ink">
+                {candidate.title} · {candidate.loc}
+              </h2>
+              <p className="text-[.65rem] font-semibold uppercase tracking-widest text-ink-soft">
+                {candidate.id}
+              </p>
+              <p className="text-[.65rem] font-semibold uppercase text-ink-soft">
+                {candidate.snapshot}
               </p>
 
-              <div className="flex flex-wrap gap-2">
-                {candidate.specialties.map((s) => (
-                  <Chip key={s} tone="solid">
-                    {s}
-                  </Chip>
-                ))}
-              </div>
-            </>
-          )}
-        </Section>
-
-        {/* Experience */}
-        <Section title="Experience">
-          <div className="flex flex-col gap-4 border-l-2 border-forest-light pl-5">
-            {candidate.exp.map((e, i) => (
-              <div key={i} className="relative min-w-0">
-                <span className="absolute -left-[1.6rem] top-1.5 h-2 w-2 rounded-full bg-forest" />
-
-                <p className="break-words font-semibold text-ink">{e.role}</p>
-
-                <p className="text-xs text-ink-soft">
-                  {e.expLoc} · {e.dates}
+              <div className="flex items-center gap-2">
+                <p className="flex items-center gap-2 text-xs text-forest-mid">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+                  {candidate.activeAgo}
                 </p>
 
-                {e.skills && (
-                  <p className="mt-1 break-words leading-relaxed text-ink-mid">
-                    {e.skills}
+                <p className="text-xs text-ink-soft">
+                  Confirmed {candidate.confirmedDays}d ago
+                </p>
+              </div>
+              {reveals.includes(candidate.id) && (
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-mid">
+                  {[name, email, phone].map((value, i) => (
+                    <React.Fragment key={i}>
+                      {i > 0 && (
+                        <span
+                          aria-hidden
+                          className="hidden h-4 w-px bg-ash sm:block"
+                        />
+                      )}
+                      <p className="break-all">{value}</p>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex min-w-0 shrink-0 flex-col items-start gap-2 md:items-end">
+              <div className="flex flex-wrap gap-1.5">
+                {candidate.specialist && (
+                  <p className="rounded-full bg-highlight px-3 py-2 text-xs font-bold text-white">
+                    Specialist
+                  </p>
+                )}
+
+                {candidate.ic && (
+                  <p className="text-highlight border rounded-full px-2 p-1 border-highlight text-[.6rem]">
+                    Independent contractor
                   </p>
                 )}
               </div>
-            ))}
+            </div>
           </div>
-        </Section>
-
-        {/* Education, certifications, EMR, languages */}
-        <div className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
-          <Section title="Education">
-            <p className="text-ink-mid">{candidate.edu}</p>
-
-            <div className="mt-2 flex flex-wrap gap-2">
-              {candidate.eduChips.map((c) => (
-                <Chip key={c} tone="outline">
-                  {c}
-                </Chip>
-              ))}
-            </div>
-          </Section>
-
-          <Section title="Certifications">
-            <div className="flex flex-wrap gap-2">
-              {candidate.certs.map((c) => (
-                <Chip key={c} tone="outline">
-                  {c}
-                </Chip>
-              ))}
-            </div>
-          </Section>
-
-          <Section title="EMR systems">
-            <div className="flex flex-wrap gap-2">
-              {candidate.emr.map((c) => (
-                <Chip key={c} tone="soft">
-                  {c}
-                </Chip>
-              ))}
-            </div>
-          </Section>
-
-          <Section title="Languages">
-            <div className="flex flex-wrap gap-2">
-              {candidate.lang.map((c) => (
-                <Chip key={c} tone="soft">
-                  {c}
-                </Chip>
-              ))}
-            </div>
-          </Section>
+          {/* Back button */}
+          <div className="mb-3 flex shrink-0 justify-end text-xs font-semibold text-forest underline">
+            <button
+              className="flex items-center gap-2 rounded-full"
+              onClick={onClose}
+            >
+              <FaArrowLeft />
+              <p>Back to results</p>
+            </button>
+          </div>
         </div>
 
-        {/* Environments and mobility */}
-        <Section title="Environments">
-          <p className="mb-2 text-xs font-semibold text-ink-mid">
-            Experienced in
-          </p>
+        <div className="max-w-[80%] mb-2 text-ink-mid">
+          <p>{candidate.summary}</p>
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            {candidate.env.map((c) => (
-              <Chip key={c} tone="soft">
-                {c}
-              </Chip>
-            ))}
-          </div>
+        <Divider />
 
-          <p className="mb-2 mt-4 text-xs font-semibold text-ink-mid">
-            Open to working in
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            {candidate.openToWorkingIn.map((c) => (
-              <Chip key={c} tone="outline">
-                {c}
-              </Chip>
-            ))}
-          </div>
-        </Section>
-
-        {/* Relocation and travel */}
-        <Section title="Relocation & travel">
-          <p className="text-xs text-ink-mid">{candidate.relocation}</p>
-
-          {candidate.relocationReach &&
-            candidate.relocationReach.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {candidate.relocationReach.map((c) => (
-                  <Chip key={c} tone="outline">
-                    {c}
-                  </Chip>
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <div className="flex gap-2 flex-col">
+            {/* Experience */}
+            <Section title="Experience">
+              <Divider />
+              {/* key resets the expanded state when switching candidates */}
+              <ExperienceList key={candidate.id} roles={candidate.exp} />
+            </Section>
+            {/* Skills and specialties */}
+            <Section title="Key Skills">
+              <div className="flex flex-wrap gap-2">
+                {candidate.skills.map((s) => (
+                  <Pill key={s} s={s} />
                 ))}
               </div>
-            )}
+            </Section>
+            <Section title="credentials & Certifications">
+              <div className="flex flex-wrap gap-2">
+                {candidate.certs.map((c) => (
+                  <Pill key={c} s={c} />
+                ))}
+              </div>
+            </Section>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            {candidate.ruralOpen && <Chip tone="soft">Open to rural</Chip>}
-            {candidate.travelOpen && <Chip tone="soft">Open to travel</Chip>}
+            <Section title="EMR systems">
+              <div className="flex flex-wrap gap-2">
+                {candidate.emr.map((c) => (
+                  <Pill key={c} s={c} />
+                ))}
+              </div>
+            </Section>
           </div>
-        </Section>
+          <div>
+            <Section title="Available & practical fit">
+              <div className="bg-forest-light flex flex-col gap-2 p-3 px-4 text-xs text-forest rounded-2xl">
+                <Fact label="Availability" value={candidate.avail} />
+                <Divider />
+                <Fact label="Shift" value={candidate.shift.join(", ")} />
+                <Divider />
+                <Fact
+                  label="Open to working in"
+                  value={candidate.openToWorkingIn[0]}
+                />
+                <Divider />
+                <Fact label="Employment" value={candidate.empType} />
+                <Divider />
+                <Fact
+                  label="Own vehicle"
+                  value={candidate.vehicle ? "Yes" : "No"}
+                />
+                <Divider />
+                <Fact
+                  label="Licence"
+                  value={candidate.licence ? "Yes" : "No"}
+                />
+                <Divider />
+                <Fact label="Credential" value={candidate.credential} />
+                <Divider />
+                <Fact label="Rural roles" value={candidate.rural} />
+                <Divider />
+                <Fact
+                  label="Travel/Fly in"
+                  value={candidate.travelOpen ? "Open" : "Not open"}
+                />
+                <Divider />
+                <Fact
+                  label="Relocation"
+                  value={candidate.relocation ? "Open" : "Not open"}
+                />
+              </div>
+            </Section>
+
+            <div className="text-ink-soft pt-5 text-xs space-y-2">
+              <p className="mb-3 text-[.65rem] font-semibold uppercase tracking-widest text-ink-soft">
+                Additional profile details
+              </p>
+              {candidate.professionalRegistration && (
+                <div className="border-l-4 border-forest-dark pl-3 space-y-1">
+                  <p className="text-xs mb-1">Professional registration</p>
+                  <p className="font-semibold text-ink-mid">
+                    {candidate.professionalRegistration?.[0]?.regulator}{" "}
+                    <span>
+                      ({candidate.professionalRegistration[0].regulatorShort})
+                    </span>
+                  </p>
+                  <div>
+                    {!candidate.professionalRegistration?.[0]
+                      ?.candidateReported ? (
+                      <div>
+                        <p>Registration details not provided </p>
+                        <p className="text-xs italic">
+                          Employer should verify current standing with CNO
+                        </p>
+                      </div>
+                    ) : (
+                      "Candidate standing confirmed"
+                    )}
+                  </div>
+                </div>
+              )}
+              <div>
+                <p className="text-xs mb-1">Education</p>
+                <p className="font-semibold text-ink-mid">{candidate.edu}</p>
+              </div>
+
+              <div className=" flex items-center justify-between">
+                <p className="text-xs mb-1">Language</p>
+                <p className="font-semibold text-ink-mid">{candidate.lang}</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Actions */}
-        <div className="mt-auto">
+        <div className="mt-4">
           <div className="h-px w-full bg-ash" />
 
           <div className="my-4 flex flex-col gap-3 text-xs sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap justify-between md:justify-center gap-2">
               <button
-                className={`cursor-pointer rounded-md border px-4 py-2 ${
+                className={`cursor-pointer flex items-center gap-1 rounded-md border px-4 py-2 ${
                   saved.includes(candidate.id)
                     ? "border-highlight bg-highlight/10 text-highlight"
                     : "border-ash text-ink-mid"
                 }`}
                 onClick={() => onSave(candidate.id)}
               >
+                <IoMdStarOutline className="shrink-0" />
                 {saved.includes(candidate.id) ? "Saved" : "Save"}
               </button>
 
               <button
-                className={`cursor-pointer rounded-md border px-4 py-2 ${
+                className={`cursor-pointer rounded-md flex items-center gap-1 border px-4 py-2 ${
                   compare.includes(candidate.id)
                     ? "border-highlight bg-highlight/10 text-highlight"
                     : "border-ash text-ink-mid"
                 }`}
                 onClick={() => onCompare(candidate.id)}
               >
+                <FiCheckSquare className="shrink-0" />
                 {compare.includes(candidate.id) ? "In compare" : "Compare"}
               </button>
             </div>
 
             <button
-              className={`cursor-pointer rounded-lg px-4 py-2 disabled:cursor-not-allowed ${
+              className={`cursor-pointer flex items-center gap-1 justify-center w-40 rounded-lg px-4 py-2 disabled:cursor-not-allowed ${
                 reveals.includes(candidate.id)
                   ? "border border-ash bg-transparent text-ink-mid"
                   : "bg-forest text-white"
@@ -356,6 +326,11 @@ export default function ProfileView({
               disabled={reveals.includes(candidate.id)}
             >
               {reveals.includes(candidate.id) ? "Revealed" : "Reveal"}
+              {reveals.includes(candidate.id) ? (
+                <IoMdStarOutline />
+              ) : (
+                <MdArrowRightAlt />
+              )}
             </button>
           </div>
         </div>
@@ -376,6 +351,7 @@ function Section({
       <h3 className="mb-3 text-[.65rem] font-semibold uppercase tracking-widest text-ink-soft">
         {title}
       </h3>
+
       {children}
     </section>
   );
@@ -383,32 +359,9 @@ function Section({
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-ash bg-cream px-3 py-2.5">
-      <p className="text-[.6rem] font-semibold uppercase tracking-wider text-ink-soft">
-        {label}
-      </p>
-      <p className="mt-0.5 text-xs font-medium text-ink">{value}</p>
+    <div className="flex items-center justify-between">
+      <p className="text-forest">{label}</p>
+      <p className="text-xs font-semibold text-ink-mid">{value}</p>
     </div>
-  );
-}
-
-function Chip({
-  children,
-  tone = "soft",
-}: {
-  children: React.ReactNode;
-  tone?: "soft" | "solid" | "outline";
-}) {
-  const styles = {
-    soft: "bg-forest-pale text-forest",
-    solid: "bg-forest text-white",
-    outline: "border border-forest-light text-forest-mid",
-  };
-  return (
-    <span
-      className={`rounded-full px-3 py-1 text-xs font-medium ${styles[tone]}`}
-    >
-      {children}
-    </span>
   );
 }

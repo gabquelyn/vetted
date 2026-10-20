@@ -171,7 +171,7 @@ export default function Filtering({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <p className="uppercase text-forest font-semibold">
+          <p className="uppercase">
             Search and Filter
           </p>
           {count > 0 && (

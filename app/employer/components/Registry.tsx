@@ -182,7 +182,7 @@ export default function Registry({
           }}
         />
       )}
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col items-stretch gap-2 sm:gap-4.5 lg:flex-row">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col items-stretch gap-2 sm:gap-3 lg:flex-row">
         <NavRail
           active={activeView}
           onSelect={handleRailSelect}

@@ -5,7 +5,6 @@ import { IoMdCheckmark } from "react-icons/io";
 import Divider from "./Divider";
 import { TiStarOutline } from "react-icons/ti";
 import { GiCheckMark } from "react-icons/gi";
-import { IoMdStarOutline } from "react-icons/io";
 import { FaRegBookmark } from "react-icons/fa";
 
 const Item = ({ name, val }: { name: string; val: string }) => {
