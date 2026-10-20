@@ -43,7 +43,7 @@ export default function ProfileView({
     );
   }
   return (
-    <div className="grid h-full min-h-0 min-w-0 grid-cols-1 gap-4 px-3 py-3 sm:px-5 sm:py-4 lg:grid-cols-[minmax(200px,1fr)_minmax(0,4fr)] lg:px-7">
+    <div className="grid h-full min-h-0 min-w-0 grid-cols-1 gap-4 py-3 sm:py-4 lg:grid-cols-[auto_minmax(0,1fr)] lg:px-7">
       {/* Side panel */}
       <div className="hidden md:flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-ash bg-cream p-3 text-xs lg:col-span-1">
         <p className="mb-2 shrink-0 font-semibold text-ink-mid">
@@ -54,7 +54,7 @@ export default function ProfileView({
           {results.map((c) => (
             <div
               key={c.id}
-              className={`relative flex w-56 shrink-0 cursor-pointer flex-col gap-1 rounded-md border p-3 hover:border-forest sm:w-64 lg:w-full lg:p-4 ${
+              className={`relative flex w-56 shrink-0 cursor-pointer flex-col gap-1 rounded-md border p-2 hover:border-forest sm:w-64 lg:w-full lg:p-4 ${
                 viewing === c.id
                   ? "border-forest bg-forest-pale"
                   : "border-ash bg-white"
@@ -62,8 +62,8 @@ export default function ProfileView({
               onClick={() => setView(c.id)}
             >
               {c.specialist && (
-                <div className="absolute right-0 p-2 text-highlight">
-                  <TiStarOutline />
+                <div className="absolute rounded-bl-md rounded-tl-md text-[.6rem] right-0 p-2 text-highlight bg-highlight/30 uppercase">
+                  Specialist
                 </div>
               )}
 
