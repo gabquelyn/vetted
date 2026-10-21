@@ -20,7 +20,7 @@ import SavedCandidate from "./SavedCandidate";
 import Modal from "./Modal";
 import CandidatePreview from "./CandidatePreview";
 import IntroductionFlow from "./IntroductionFlow";
-import Requests from "./Requests";
+import Preview from "./Preview";
 
 export default function Registry({
   revealsRemaining,
@@ -65,6 +65,7 @@ export default function Registry({
   const [mobility, setMobility] = useState<string[]>([]);
   const [profile, setProfile] = useState<string[]>([]);
   const [reveals, setReveals] = useState<string[]>([]);
+  const [recents, setRecents] = useState<string[]>([]);
   const [introduced, setIntroduced] = useState<string[]>([]);
   const [revealing, setRevealing] = useState<Candidate | null>(null);
   const [viewing, setViewing] = useState("");
@@ -258,13 +259,19 @@ export default function Registry({
         >
           <div className="flex flex-col gap-1">
             {introduced.map((c) => (
-              <Requests
+              <Preview
                 key={c}
                 c={c}
                 onViewProfile={() => {
                   setActiveView("registry");
                   setViewing(c);
                 }}
+                onReveal={(c) => {
+                  if (revealsRemaining > 0) setRevealing(c);
+                }}
+                reveals={reveals}
+                onIntroduction={(c) => setIntroducing(c)}
+                introduced={introduced}
               />
             ))}
           </div>
@@ -287,6 +294,59 @@ export default function Registry({
                   setActiveView("registry");
                   setViewing(id);
                 }}
+              />
+            ))}
+          </div>
+        </Overlay>
+
+        {/* Recents */}
+
+        <Overlay
+          open={activeView == "recent"}
+          onClose={() => setActiveView("registry")}
+          title="Recents"
+        >
+          <div className="min-h-0 space-y-2 overflow-y-auto">
+            {recents.map((c) => (
+              <Preview
+                key={c}
+                c={c}
+                onViewProfile={() => {
+                  setActiveView("registry");
+                  setViewing(c);
+                }}
+                onReveal={(c) => {
+                  if (revealsRemaining > 0) setRevealing(c);
+                }}
+                reveals={reveals}
+                onIntroduction={(c) => setIntroducing(c)}
+                introduced={introduced}
+              />
+            ))}
+          </div>
+        </Overlay>
+
+        {/* Recents */}
+        <Overlay
+          open={activeView == "reveals"}
+          onClose={() => setActiveView("registry")}
+          title="Reveals"
+        >
+          <div className="min-h-0 space-y-2 overflow-y-auto">
+            {recents.map((c) => (
+              <Preview
+                key={c}
+                c={c}
+                onViewProfile={() => {
+                  setActiveView("registry");
+                  setViewing(c);
+                }}
+                onReveal={(c) => {
+                  if (revealsRemaining > 0) setRevealing(c);
+                }}
+                reveals={reveals}
+                onIntroduction={(c) => setIntroducing(c)}
+                introduced={introduced}
               />
             ))}
           </div>
@@ -440,26 +500,18 @@ export default function Registry({
               )}
 
               {/* Profile or candidate results */}
-              {viewing || activeView == "reveals" ? (
+              {viewing ? (
                 <ProfileView
                   viewing={viewing}
                   closed={!revealing}
-                  results={
-                    activeView == "reveals"
-                      ? revealedCandidates
-                      : sorted.slice(0, +result)
-                  }
+                  results={sorted.slice(0, +result)}
                   activeView={activeView}
                   setView={(id) => setViewing(id)}
                   onCompare={(id) => onCompare(id)}
                   onSave={(id) => onSave(id)}
                   compare={compare}
                   saved={saved}
-                  onClose={
-                    activeView == "reveals"
-                      ? () => setActiveView("registry")
-                      : () => setViewing("")
-                  }
+                  onClose={() => setViewing("")}
                   setReveal={(c) => setRevealing(c)}
                   reveals={reveals}
                   onIntroduction={(c) => setIntroducing(c)}
@@ -566,7 +618,13 @@ export default function Registry({
                             saved={saved}
                             onSave={(id) => onSave(id)}
                             onCompare={(id) => onCompare(id)}
-                            onProfileView={() => setViewing(candidate.id)}
+                            onProfileView={() => {
+                              setRecents((prev) => {
+                                const val = new Set([...prev, candidate.id]);
+                                return [...val];
+                              });
+                              setViewing(candidate.id);
+                            }}
                             onReveal={(c) => {
                               if (revealsRemaining > 0) setRevealing(c);
                             }}

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 
 const HOLD_SECONDS = 2.8; // how long the highlight stays at full strength
@@ -15,16 +15,32 @@ const FADE_SECONDS = 1.2; // how long it takes to fade out afterwards
  */
 export default function RevealedContact({
   values,
-  active,
+  active = true,
 }: {
   values: string[];
   /** Pass false while a modal covers the page. The highlight stays lit and
    *  the hold-then-fade only starts once this flips to true. */
   active?: boolean;
 }) {
-  console.log(active)
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Bring the contact details into view as soon as the highlight is allowed
+  // to play (on mount, or when the modal closes). Syncs with the DOM only;
+  // no state is set here.
+  useEffect(() => {
+    if (!active) return;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    ref.current?.scrollIntoView({
+      behavior: reduce ? "auto" : "smooth",
+      block: "center",
+    });
+  }, [active]);
+
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
