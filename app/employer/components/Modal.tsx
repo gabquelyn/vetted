@@ -18,6 +18,7 @@ interface ModalProps {
   closeOnBackdrop?: boolean
   /** Hide the built-in close button (default false) */
   hideCloseButton?: boolean
+  banner?: string
 }
 
 export default function Modal({
@@ -28,6 +29,7 @@ export default function Modal({
   className = '',
   closeOnBackdrop = true,
   hideCloseButton = false,
+  banner
 }: ModalProps) {
   const reduce = useReducedMotion()
   const titleId = useId()
@@ -85,7 +87,7 @@ export default function Modal({
             className={`relative z-10 flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white text-ink shadow-2xl ${className}`}
           >
             {(title || !hideCloseButton) && (
-              <div className="flex items-center justify-between gap-4 border-b border-ash px-5 py-3.5 bg-forest-dark">
+              <div className={`flex items-center justify-between gap-4 border-b border-ash px-5 py-3.5 ${banner || "bg-forest-dark"}`}>
                 {title ? (
                   <div id={titleId}>
                     {title}

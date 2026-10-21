@@ -45,7 +45,7 @@ const DUTIES_MAX = 300
 const NON_NEG_MAX = 150
 
 const inputClass =
-  'w-full rounded-md border border-ash bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-soft transition-colors focus:border-highlight-mid focus:outline-none focus:ring-2 focus:ring-highlight-pale'
+  'w-full rounded-md border border-ash bg-white px-3 py-2  text-ink placeholder:text-ink-soft transition-colors focus:border-highlight text-highlight-dark focus:outline-none text-highlight-dark-pale'
 
 /* ---------- small building blocks ---------- */
 
@@ -69,7 +69,7 @@ function Field({
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between gap-2">
-        <label htmlFor={htmlFor} className="text-sm font-medium text-ink">
+        <label htmlFor={htmlFor} className=" font-medium text-ink">
           {label}
           {optional && <span className="ml-1 text-xs font-normal text-ink-soft">(optional)</span>}
         </label>
@@ -86,7 +86,7 @@ function Field({
             role="alert"
             className="mt-1.5 text-xs text-ink-mid"
           >
-            <span className="font-semibold text-highlight">Required:</span> {error}
+            <span className="font-semibold text-highlight-dark">Required:</span> {error}
           </motion.p>
         )}
       </AnimatePresence>
@@ -124,10 +124,10 @@ function ChipToggle({
             aria-pressed={on}
             whileTap={{ scale: 0.95 }}
             onClick={() => onToggle(o)}
-            className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+            className={`rounded-full border px-3 py-1  transition-colors ${
               on
-                ? 'border-highlight bg-highlight text-white'
-                : 'border-ash bg-white text-ink-mid hover:border-highlight-mid hover:text-highlight'
+                ? 'border-highlight text-highlight-dark bg-highlight-dartext-highlight-dark '
+                : 'border-ash bg-white text-ink-mid hover:border-highlight-dartext-highlight-dark-mid hover:text-highlight-dark'
             }`}
           >
             {o}
@@ -200,7 +200,7 @@ export default function IntroductionRequestForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5 text-ink">
+    <form onSubmit={handleSubmit} noValidate className="space-y-5 text-ink-mid p-6 text-xs">
       <Field label="Work environment / setting" htmlFor={id('env')} error={show('environment')}>
         <select
           id={id('env')}
@@ -262,15 +262,15 @@ export default function IntroductionRequestForm({
                   role="radio"
                   aria-checked={on}
                   onClick={() => set('compensationType', t)}
-                  className={`relative rounded-md px-3.5 py-1.5 text-sm transition-colors ${
-                    on ? 'text-white' : 'text-ink-mid hover:text-highlight'
+                  className={`relative rounded-md px-3.5 py-1.5  transition-colors ${
+                    on ? 'text-white' : 'text-ink-mid hover:text-highlight-dark'
                   }`}
                 >
                   {on && (
                     <motion.span
                       layoutId={id('comp-pill')}
                       transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 36 }}
-                      className="absolute inset-0 rounded-md bg-highlight"
+                      className="absolute inset-0 rounded-md bg-highlight-dark text-highlight-dark"
                     />
                   )}
                   <span className="relative">{t}</span>
@@ -366,7 +366,7 @@ export default function IntroductionRequestForm({
             type="button"
             whileTap={{ scale: 0.97 }}
             onClick={() => fileRef.current?.click()}
-            className="rounded-md border border-ash bg-white px-3 py-1.5 text-sm text-ink-mid transition-colors hover:border-highlight-mid hover:text-highlight"
+            className="rounded-md border border-ash bg-white px-3 py-1.5  text-ink-mid transition-colors hover:border-highlight text-highlight-dark-mid hover:text-highlight-dark"
           >
             Attach a file <span className="text-ink-soft">(demo only)</span>
           </motion.button>
@@ -396,7 +396,7 @@ export default function IntroductionRequestForm({
           whileTap={{ scale: 0.97 }}
           onClick={() => onBack(values)}
           disabled={submitting}
-          className="rounded-md border border-ash bg-white px-4 py-2 text-sm text-ink-mid transition-colors hover:border-highlight-mid hover:text-highlight disabled:opacity-60"
+          className="rounded-md border border-ash bg-white px-4 py-2  text-ink-mid transition-colors hover:border-highlight text-highlight-dark-mid hover:text-highlight-dark disabled:opacity-60"
         >
           Back
         </motion.button>
@@ -406,7 +406,7 @@ export default function IntroductionRequestForm({
           disabled={submitting}
           whileHover={reduce || submitting ? undefined : { scale: 1.02 }}
           whileTap={reduce || submitting ? undefined : { scale: 0.97 }}
-          className="rounded-md bg-highlight px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-highlight-mid disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-highlight-dartext-highlight-dark px-4 py-2  font-semibold hover:text-white transition-colors hover:bg-highlight-dark text-highlight-dark  disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? 'Saving…' : submitLabel}
         </motion.button>

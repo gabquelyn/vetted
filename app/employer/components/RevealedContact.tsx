@@ -13,7 +13,16 @@ const FADE_SECONDS = 1.2; // how long it takes to fade out afterwards
  * "just revealed" moment: the row slides in, a green highlight sits behind
  * it for a few seconds, then fades away.
  */
-export default function RevealedContact({ values }: { values: string[] }) {
+export default function RevealedContact({
+  values,
+  active,
+}: {
+  values: string[];
+  /** Pass false while a modal covers the page. The highlight stays lit and
+   *  the hold-then-fade only starts once this flips to true. */
+  active?: boolean;
+}) {
+  console.log(active)
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}
@@ -25,10 +34,10 @@ export default function RevealedContact({ values }: { values: string[] }) {
       <motion.span
         aria-hidden
         initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
+        animate={{ opacity: active ? 0 : 1 }}
         transition={{
           duration: FADE_SECONDS,
-          delay: HOLD_SECONDS,
+          delay: active ? HOLD_SECONDS : 0,
           ease: "easeInOut",
         }}
         className="pointer-events-none absolute -inset-x-2 -inset-y-1.5 -z-10 rounded-lg bg-forest-light ring-1 ring-forest/30"

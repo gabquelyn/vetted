@@ -65,10 +65,10 @@ export default function CandidatePreview({
   const reduce = useReducedMotion();
   const [revealed, setRevealed] = useState(reveals.includes(c.id));
   return (
-    <div className="text-ink text-xs p-6">
+    <div className="text-ink text-xs">
       {/* header */}
       {revealed ? (
-        <div className="space-y-3">
+        <div className="space-y-3 p-6">
           <p className="mb-2 text-[.6rem] font-semibold uppercase text-ink-soft tracking-wider">
             Contact access
           </p>

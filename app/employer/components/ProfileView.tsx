@@ -9,6 +9,8 @@ import { IoMdStarOutline } from "react-icons/io";
 import { MdArrowRightAlt } from "react-icons/md";
 import { FiCheckSquare } from "react-icons/fi";
 import RevealedContact from "./RevealedContact";
+import { GiCheckMark } from "react-icons/gi";
+
 export default function ProfileView({
   results,
   viewing,
@@ -21,6 +23,9 @@ export default function ProfileView({
   setReveal,
   reveals,
   activeView,
+  closed,
+  onIntroduction,
+  introduced,
 }: {
   results: Candidate[];
   viewing?: string;
@@ -33,8 +38,12 @@ export default function ProfileView({
   setReveal: (c: Candidate) => void;
   reveals: string[];
   activeView: ActiveView;
+  closed: boolean;
+  onIntroduction: (c: Candidate) => void;
+  introduced: string[];
 }) {
   const candidate = results.find((c) => c.id == viewing) || results[0];
+  const intro = introduced.includes(candidate.id);
 
   if (!candidate) {
     return (
@@ -91,6 +100,12 @@ export default function ProfileView({
                 {c.activeAgo}
               </p>
               <p className="text-ink-soft">Confirmed {c.confirmedDays}d ago</p>
+
+              {reveals.includes(c.id) && (
+                <p className="flex items-center gap-1 text-xs text-ink-soft">
+                  Revealed <GiCheckMark size={8} />
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -123,14 +138,17 @@ export default function ProfileView({
                 </p>
               </div>
               {reveals.includes(candidate.id) && (
-                <RevealedContact values={[name, email, phone]} />
+                <RevealedContact
+                  values={[name, email, phone]}
+                  active={closed}
+                />
               )}
             </div>
 
             <div className="flex min-w-0 shrink-0 flex-col items-start gap-2 md:items-end">
               <div className="flex flex-wrap gap-1.5">
                 {candidate.specialist && (
-                  <p className="rounded-full bg-highlight px-3 py-2 text-xs font-bold text-white">
+                  <p className="text-highlight border rounded-full px-2 p-1 border-highlight text-[.6rem]">
                     Specialist
                   </p>
                 )}
@@ -307,22 +325,32 @@ export default function ProfileView({
               </button>
             </div>
 
-            <button
-              className={`cursor-pointer flex items-center gap-1 justify-center w-40 rounded-lg px-4 py-2 disabled:cursor-not-allowed ${
-                reveals.includes(candidate.id)
-                  ? "border border-ash bg-transparent text-ink-mid"
-                  : "bg-forest text-white"
-              }`}
-              onClick={() => setReveal(candidate)}
-              disabled={reveals.includes(candidate.id)}
-            >
-              {reveals.includes(candidate.id) ? "Revealed" : "Reveal"}
-              {reveals.includes(candidate.id) ? (
-                <IoMdStarOutline />
-              ) : (
-                <MdArrowRightAlt />
-              )}
-            </button>
+            {candidate.specialist ? (
+              <button
+                className={`cursor-pointer flex items-center gap-1 justify-center w-40 rounded-lg px-4 font-semibold py-2 ${intro ? "text-highlight border-highlight border" : "text-white bg-highlight"}`}
+                onClick={() => onIntroduction(candidate)}
+                disabled={intro}
+              >
+                {intro ? "Requested" : "Request introduction"}
+              </button>
+            ) : (
+              <button
+                className={`cursor-pointer flex items-center gap-1 justify-center w-40 rounded-lg px-4 py-2 disabled:cursor-not-allowed ${
+                  reveals.includes(candidate.id)
+                    ? "border border-forest bg-transparent text-forest-dark"
+                    : "bg-forest text-white"
+                }`}
+                onClick={() => setReveal(candidate)}
+                disabled={reveals.includes(candidate.id)}
+              >
+                {reveals.includes(candidate.id) ? "Revealed" : "Reveal"}
+                {reveals.includes(candidate.id) ? (
+                  <GiCheckMark />
+                ) : (
+                  <MdArrowRightAlt />
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

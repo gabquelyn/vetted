@@ -78,7 +78,7 @@ export default function Overlay({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 32, stiffness: 320 }}
-            className={`absolute right-0 top-0 flex h-full w-full flex-col bg-white shadow-2xl sm:w-[85%] md:w-[45%] lg:w-[35%] xl:w-[25%] ${className}`}
+            className={`absolute right-0 top-0 flex h-full w-full flex-col bg-cream shadow-2xl sm:w-[85%] md:w-[45%] lg:w-[35%] xl:w-[25%] ${className}`}
           >
             <header className="flex items-center justify-between border-b border-ash px-5 py-4">
               <p className="text-sm font-semibold text-ink">{title}</p>

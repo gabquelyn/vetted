@@ -35,6 +35,7 @@ export default function CanCard({
   onIntroduction,
   highlightActive,
   setHighlightActive,
+  introduced,
 }: {
   c: Candidate;
   onSave: (id: string) => void;
@@ -46,8 +47,10 @@ export default function CanCard({
   onIntroduction: (c: Candidate) => void;
   highlightActive: boolean;
   setHighlightActive: (id: string) => void;
+  introduced: string[];
 }) {
   const revealed = reveals.includes(c.id);
+  const intro = introduced.includes(c.id);
   return (
     <div
       className={`group h-110 rounded-2xl text-slate-100 text-sm overflow-hidden ${highlightActive ? "outline-2 outline-forest-dark" : "outline outline-ash/80 hover:outline-gray-300 hover:outline"}`}
@@ -65,7 +68,7 @@ export default function CanCard({
           >
             <button
               onClick={(e) => {
-                e.stopPropagation()
+                e.stopPropagation();
                 onSave(c.id);
               }}
               className={`cursor-pointer rounded-md p-1.5 hover:bg-white/15   ${saved.includes(c.id) ? " text-yellow-500 bg-white/15" : ""}`}
@@ -153,17 +156,24 @@ export default function CanCard({
           </button>
           {c.specialist ? (
             <button
-              className="px-3 w-full p-2 rounded-lg bg-highlight text-white cursor-pointer"
+              className={`px-3 w-full p-2 rounded-lg ${introduced.includes(c.id) ? "border border-highlight text-highlight" : "bg-highlight text-white"} cursor-pointer`}
               onClick={() => onIntroduction(c)}
+              disabled={!!intro}
             >
-              Request
+              {intro ? "Requested" : "Request"}
             </button>
           ) : (
             <button
               className={`px-3 w-full p-2 rounded-lg ${revealed ? "border-forest border text-forest hover:bg-forest-light" : "bg-forest text-white"}`}
               onClick={() => onReveal(c)}
             >
-              {revealed ? <p className="text-forest flex items-center gap-2 justify-center"><span>Revealed</span> <GiCheckMark/></p> : "Reveal"}
+              {revealed ? (
+                <p className="text-forest flex items-center gap-2 justify-center">
+                  <span>Revealed</span> <GiCheckMark />
+                </p>
+              ) : (
+                "Reveal"
+              )}
             </button>
           )}
         </div>

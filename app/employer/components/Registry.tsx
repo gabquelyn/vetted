@@ -20,6 +20,7 @@ import SavedCandidate from "./SavedCandidate";
 import Modal from "./Modal";
 import CandidatePreview from "./CandidatePreview";
 import IntroductionFlow from "./IntroductionFlow";
+import Requests from "./Requests";
 
 export default function Registry({
   revealsRemaining,
@@ -42,7 +43,8 @@ export default function Registry({
       id === "searches" ||
       id === "recent" ||
       id == "compare" ||
-      id == "reveals"
+      id == "reveals" ||
+      id == "requests"
     ) {
       setActiveView(id);
 
@@ -63,6 +65,7 @@ export default function Registry({
   const [mobility, setMobility] = useState<string[]>([]);
   const [profile, setProfile] = useState<string[]>([]);
   const [reveals, setReveals] = useState<string[]>([]);
+  const [introduced, setIntroduced] = useState<string[]>([]);
   const [revealing, setRevealing] = useState<Candidate | null>(null);
   const [viewing, setViewing] = useState("");
   const [introducing, setIntroducing] = useState<Candidate | null>(null);
@@ -190,6 +193,7 @@ export default function Registry({
             saved: saved.length,
             compare: compare.length,
             reveals: reveals.length,
+            requests: introduced.length,
           }}
         />
 
@@ -245,6 +249,26 @@ export default function Registry({
           </div>
         </Overlay>
 
+        {/* introductions */}
+
+        <Overlay
+          open={activeView == "requests"}
+          onClose={() => setActiveView("registry")}
+          title="Specialist Requests"
+        >
+          <div className="flex flex-col gap-1">
+            {introduced.map((c) => (
+              <Requests
+                key={c}
+                c={c}
+                onViewProfile={() => {
+                  setActiveView("registry");
+                  setViewing(c);
+                }}
+              />
+            ))}
+          </div>
+        </Overlay>
         {/* Saved professionals */}
         <Overlay
           open={activeView == "saved"}
@@ -275,8 +299,12 @@ export default function Registry({
           title={
             reveals.includes(revealing?.id || "") ? (
               <div className="text-white p-3">
-                <p className="text-xs text-forest-light">Demo reveal complete</p>
-                <p className="font-semibold text-xl mt-3">{revealing?.reveal.name}</p>
+                <p className="text-xs text-forest-light">
+                  Demo reveal complete
+                </p>
+                <p className="font-semibold text-xl mt-3">
+                  {revealing?.reveal.name}
+                </p>
                 <p className="text-[#E8F0E0] text-xs">
                   {revealing?.title} · {revealing?.loc}
                 </p>
@@ -315,7 +343,10 @@ export default function Registry({
             location={introducing.loc}
             fee="250"
             submitting={false}
-            onSubmit={(values) => {}}
+            onSubmit={(values) => {
+              setIntroduced((prev) => [...prev, introducing.id]);
+              setIntroducing(null);
+            }}
           />
         )}
 
@@ -412,6 +443,7 @@ export default function Registry({
               {viewing || activeView == "reveals" ? (
                 <ProfileView
                   viewing={viewing}
+                  closed={!revealing}
                   results={
                     activeView == "reveals"
                       ? revealedCandidates
@@ -430,6 +462,8 @@ export default function Registry({
                   }
                   setReveal={(c) => setRevealing(c)}
                   reveals={reveals}
+                  onIntroduction={(c) => setIntroducing(c)}
+                  introduced={introduced}
                 />
               ) : (
                 <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-12">
@@ -544,6 +578,7 @@ export default function Registry({
                                 prev == id ? null : id,
                               );
                             }}
+                            introduced={introduced}
                           />
                         </motion.div>
                       ))}

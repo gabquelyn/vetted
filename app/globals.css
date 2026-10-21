@@ -13,8 +13,8 @@
   --tertiary: #c0392b;
   --gold: #B8621A;
   --dark: #16260C;
+  --choco:#2e1d0a;
 }
-
 
 @theme inline {
   --color-forest: var(--primary);
@@ -28,6 +28,7 @@
   --color-cream: var(--cream);
   --color-ash: var(--border);
   --color-highlight: var(--gold);
+  --color-highlight-dark: var(--choco);
   --color-tertiary: var(--tertiary);
   --font-serif: var(--font-serif);
 }

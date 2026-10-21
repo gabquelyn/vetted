@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden px-6 pt-24 pb-20 font-['DM_Sans',sans-serif] text-ink antialiased before:pointer-events-none before:absolute before:-right-55 before:-top-50 before:h-170 before:w-170 before:rounded-full before:bg-[radial-gradient(circle,rgba(45,80,22,0.09),transparent_68%)] before:content-[''] sm:px-8 sm:pt-28 sm:pb-24 xl:px-12">
+    <section className="relative flex flex-col h-screen items-center justify-center overflow-hidden px-6 pt-24 pb-20 font-['DM_Sans',sans-serif] text-ink antialiased before:pointer-events-none before:absolute before:-right-55 before:-top-50 before:h-170 before:w-170 before:rounded-full before:bg-[radial-gradient(circle,rgba(45,80,22,0.09),transparent_68%)] before:content-[''] sm:px-8 sm:pt-28 sm:pb-24 xl:px-12">
       <div className="relative z-1 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 xl:gap-16">
         {/* Copy */}
         <div className="min-w-0">
