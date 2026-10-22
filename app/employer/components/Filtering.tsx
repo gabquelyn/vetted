@@ -166,7 +166,7 @@ export default function Filtering({
           aria-pressed={pinned}
           aria-label={pinned ? "Unpin filters" : "Pin filters"}
           title={pinned ? "Unpin filters" : "Pin filters"}
-          className={`cursor-pointer p-2 px-3 rounded-lg border transition-colors ${
+          className={`hidden md:block cursor-pointer p-2 px-3 rounded-lg border transition-colors ${
             pinned
               ? "bg-forest text-white border-forest"
               : "bg-white text-ink border-ash hover:border-gray-300"

@@ -302,7 +302,7 @@ export function CandidateCompare({
                     key={c.id}
                     layout
                     {...fade}
-                    className="border-b border-r border-ash bg-forest-pale/40 p-3 text-left align-top"
+                    className={`border-b border-r border-ash  p-3 text-left align-top ${c.specialist ? "bg-highlight/5 border-b-highlight" : "bg-forest-pale/40"}`}
                   >
                     <div className="flex justify-between gap-2">
                       <div className="min-w-0">
@@ -310,7 +310,14 @@ export function CandidateCompare({
                           {c.title}
                         </div>
                         <div className="mt-0.5 text-xs font-normal text-ink-soft">
-                          {c.loc} · {c.id}
+                          <p>
+                            {c.loc} · {c.id}
+                          </p>
+                          {c.specialist && (
+                            <p className="mt-1 w-fit self-start rounded-full bg-highlight/15 px-2 py-0.5 font-semibold text-[.6rem] tracking-wide text-highlight">
+                              Specialist
+                            </p>
+                          )}
                         </div>
                         {c.discoverable === false && (
                           <span className="mt-1.5 inline-block rounded-full bg-ash px-2 py-0.5 text-[11px] font-medium text-ink-mid">

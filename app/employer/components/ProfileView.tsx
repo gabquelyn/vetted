@@ -95,54 +95,61 @@ export default function ProfileView({
   const { name, email, phone } = candidate.reveal;
 
   return (
-    <div className="grid h-full min-h-0 min-w-0 grid-cols-1 gap-5 md:grid-cols-[clamp(11rem,17vw,16rem)_minmax(0,1fr)]">
+    <div
+      className={`grid h-full min-h-0 min-w-0 grid-cols-1 gap-5 ${activeView == "urgent" ? "" : "md:grid-cols-[clamp(11rem,17vw,16rem)_minmax(0,1fr)]"}
+  `}
+    >
       {/* Side panel */}
-      <div className="hidden md:flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-ash bg-cream px-2 py-5 text-[.7rem] md:col-span-1">
-        <p className="mb-4 shrink-0 text-[.6rem] font-semibold uppercase tracking-widest text-ink-soft">
-          {results.length} {results.length === 1 ? "result" : "results"}
-        </p>
+      {activeView != "urgent" && (
+        <div className="hidden md:flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-ash bg-cream px-2 py-5 text-[.7rem] md:col-span-1">
+          <p className="mb-4 shrink-0 text-[.6rem] font-semibold uppercase tracking-widest text-ink-soft">
+            {results.length} {results.length === 1 ? "result" : "results"}
+          </p>
 
-        {/* left/top padding leaves room for the selected card's left shadow */}
-        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto py-1 pl-2 pr-1">
-          {results.map((c) => (
-            <div
-              key={c.id}
-              className={`flex min-w-0 shrink-0 cursor-pointer flex-col gap-1 wrap-break-word rounded-xl border px-4 py-3 transition-all ${
-                viewing === c.id
-                  ? "border-forest bg-forest-pale shadow-[-6px_0_14px_-4px] shadow-forest/50"
-                  : "border-ash bg-white hover:border-forest/60"
-              }`}
-              onClick={() => setView(c.id)}
-            >
-              {c.specialist && (
-                <span className="mb-1 self-start rounded-full bg-highlight/15 px-2 py-0.5 text-[.5rem] font-semibold uppercase tracking-wide text-highlight">
-                  Specialist
-                </span>
-              )}
+          {/* left/top padding leaves room for the selected card's left shadow */}
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto py-1 pl-2 pr-1">
+            {results.map((c) => (
+              <div
+                key={c.id}
+                className={`flex min-w-0 shrink-0 cursor-pointer flex-col gap-1 wrap-break-word rounded-xl border px-4 py-3 transition-all ${
+                  viewing === c.id
+                    ? "border-forest bg-forest-pale shadow-[-6px_0_14px_-4px] shadow-forest/50"
+                    : "border-ash bg-white hover:border-forest/60"
+                }`}
+                onClick={() => setView(c.id)}
+              >
+                {c.specialist && (
+                  <span className="mb-1 self-start rounded-full bg-highlight/15 px-2 py-0.5 text-[.5rem] font-semibold uppercase tracking-wide text-highlight">
+                    Specialist
+                  </span>
+                )}
 
-              <p className="text-xs font-semibold leading-snug text-forest">
-                {c.title}
-              </p>
-              <p className="text-[.55rem] uppercase tracking-wider text-ink-soft">
-                {c.code}
-              </p>
-              <p className="leading-relaxed text-ink-mid">{c.loc}</p>
-
-              <p className="flex items-center gap-2 text-forest">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                {c.activeAgo}
-              </p>
-              <p className="text-ink-soft">Confirmed {c.confirmedDays}d ago</p>
-
-              {reveals.includes(c.id) && (
-                <p className="flex items-center gap-1 text-xs text-ink-soft">
-                  Revealed <GiCheckMark size={8} />
+                <p className="text-xs font-semibold leading-snug text-forest">
+                  {c.title}
                 </p>
-              )}
-            </div>
-          ))}
+                <p className="text-[.55rem] uppercase tracking-wider text-ink-soft">
+                  {c.code}
+                </p>
+                <p className="leading-relaxed text-ink-mid">{c.loc}</p>
+
+                <p className="flex items-center gap-2 text-forest">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                  {c.activeAgo}
+                </p>
+                <p className="text-ink-soft">
+                  Confirmed {c.confirmedDays}d ago
+                </p>
+
+                {reveals.includes(c.id) && (
+                  <p className="flex items-center gap-1 text-xs text-ink-soft">
+                    Revealed <GiCheckMark size={8} />
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Profile results: relative wrapper so the button floats over the pane
           instead of scrolling away with the content */}

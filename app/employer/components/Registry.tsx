@@ -7,7 +7,7 @@ import Select from "@/app/components/CustomSelect";
 import Filtering from "./Filtering";
 import { applyFilters } from "@/app/utils/registry";
 import NavRail from "./NavRail";
-import { IoBookmarkOutline, IoClose, IoOptionsOutline } from "react-icons/io5";
+import { IoBookmarkOutline } from "react-icons/io5";
 import { toast } from "sonner";
 import Overlay from "./Overlay";
 import SearchItem from "./SearchItem";
@@ -16,11 +16,11 @@ import { searchCandidates } from "@/app/utils/search";
 import QueryBar from "./QueryBar";
 import ProfileView from "./ProfileView";
 import CandidateCompare from "./Compare";
-import SavedCandidate from "./SavedCandidate";
 import Modal from "./Modal";
 import CandidatePreview from "./CandidatePreview";
 import IntroductionFlow from "./IntroductionFlow";
 import Preview from "./Preview";
+import Urgent, { UrgentRequest } from "./Urgent";
 
 export default function Registry({
   revealsRemaining,
@@ -31,6 +31,7 @@ export default function Registry({
   useReveal: () => void;
   selectedProfessionsGate: Set<string>;
 }) {
+  const [requests, setRequests] = useState<UrgentRequest[]>([]);
   const [result, setResults] = useState("20");
   const [sort, setSort] = useState<"new" | "most">("new");
   const [query, setQuery] = useState("");
@@ -44,7 +45,8 @@ export default function Registry({
       id === "recent" ||
       id == "compare" ||
       id == "reveals" ||
-      id == "requests"
+      id == "requests" ||
+      id == "urgent"
     ) {
       setActiveView(id);
 
@@ -58,14 +60,17 @@ export default function Registry({
 
   const [saved, setSaved] = useState<string[]>([]);
   const [compare, setCompare] = useState<string[]>([]);
+
   const [filters, setFilters] = useState<Filters>({
-    profession:  [...selectedProfessionsGate],
+    profession: selectedProfessionsGate ? [...selectedProfessionsGate] : [],
     environment: [],
     shift: [],
     employment: [],
     mobility: [],
     profile: [],
   });
+
+  console.log(filters, selectedProfessionsGate);
   const [reveals, setReveals] = useState<string[]>([]);
   const [recents, setRecents] = useState<string[]>([]);
   const [introduced, setIntroduced] = useState<string[]>([]);
@@ -92,7 +97,7 @@ export default function Registry({
   const [recentSearch, setRecentSearch] = useState<
     { timestamp: string; id: string; search: Filters }[]
   >([]);
-  const [toggle, setToggle] = useState(() => !!selectedProfessionsGate);
+  const [toggle, setToggle] = useState(() => selectedProfessionsGate.size > 0);
 
   const data = useMemo(() => applyFilters(FULL_CANDIDATES, filters), [filters]);
   const count = useMemo(
@@ -165,7 +170,7 @@ export default function Registry({
 
   return (
     <>
-      {activeView !== "compare" && (
+      {!["compare", "urgent"].includes(activeView) && (
         <QueryBar
           query={query}
           setQuery={(e) => {
@@ -173,6 +178,7 @@ export default function Registry({
           }}
         />
       )}
+
       <section className="flex min-h-0 min-w-0 flex-1 flex-col items-stretch gap-2 sm:gap-3 lg:flex-row">
         <NavRail
           active={activeView}
@@ -185,16 +191,18 @@ export default function Registry({
           }}
         />
 
-        <div className="min-w-0 max-w-full">
-          <Filtering
-            onClear={clearFilters}
-            filters={filters}
-            setFilters={setFilters}
-            setActivatePanel={() => setActivePanel((prev) => !prev)}
-            activatePanel={activePanel}
-            count={count}
-          />
-        </div>
+        {!["compare", "urgent"].includes(activeView) && (
+          <div className="min-w-0 max-w-full">
+            <Filtering
+              onClear={clearFilters}
+              filters={filters}
+              setFilters={setFilters}
+              setActivatePanel={() => setActivePanel((prev) => !prev)}
+              activatePanel={activePanel}
+              count={count}
+            />
+          </div>
+        )}
 
         {/* Saved searches */}
         <Overlay
@@ -249,6 +257,7 @@ export default function Registry({
             ))}
           </div>
         </Overlay>
+
         {/* Saved professionals */}
         <Overlay
           open={activeView == "saved"}
@@ -259,14 +268,19 @@ export default function Registry({
 
           <div className="min-h-0 space-y-2 overflow-y-auto">
             {saved.map((s) => (
-              <SavedCandidate
+              <Preview
                 key={s}
-                id={s}
-                onRemove={(id) => onSave(id)}
-                onView={(id) => {
+                c={s}
+                onViewProfile={() => {
                   setActiveView("registry");
-                  setViewing(id);
+                  setViewing(s);
                 }}
+                onReveal={(c) => {
+                  if (revealsRemaining > 0) setRevealing(c);
+                }}
+                reveals={reveals}
+                onIntroduction={(c) => setIntroducing(c)}
+                introduced={introduced}
               />
             ))}
           </div>
@@ -385,93 +399,8 @@ export default function Registry({
 
         {/* Main content */}
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
-          {activeView != "compare" && (
+          {!["compare"].includes(activeView) && (
             <>
-              {/* Filters and results toolbar */}
-              {activeView !== "reveals" && (
-                <div className="">
-                  {/* Saved-search actions: always visible */}
-                  {/* Mobile trigger: replaces the whole toolbar on small screens */}
-                  <button
-                    type="button"
-                    onClick={() => setFiltersOpen(true)}
-                    aria-haspopup="dialog"
-                    aria-expanded={filtersOpen}
-                    className="flex w-full cursor-pointer items-center justify-between rounded-full border border-ash px-4 py-2.5 text-sm font-semibold text-ink md:hidden"
-                  >
-                    <span className="flex items-center gap-2">
-                      <IoOptionsOutline className="text-forest" />
-                      Filters &amp; sort
-                    </span>
-                    {count > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-forest px-1.5 text-[11px] font-bold text-white">
-                        {count}
-                      </span>
-                    )}
-                  </button>
-
-                  {/* Backdrop (mobile only) */}
-                  <div
-                    onClick={() => setFiltersOpen(false)}
-                    aria-hidden="true"
-                    className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 md:hidden ${
-                      filtersOpen
-                        ? "opacity-100"
-                        : "pointer-events-none opacity-0"
-                    }`}
-                  />
-
-                  {/* Same container is a drawer on mobile and the inline toolbar on md+ */}
-                  <div
-                    role={filtersOpen ? "dialog" : undefined}
-                    aria-modal={filtersOpen || undefined}
-                    aria-label="Filters and sort"
-                    className={`
-                    fixed inset-y-0 right-0 z-50 flex w-[88%] max-w-sm flex-col bg-white shadow-2xl
-                    transition-[transform,visibility] duration-200 ease-out
-                    ${filtersOpen ? "translate-x-0 visible" : "translate-x-full invisible"}
-                   md:visible md:static md:z-auto md:block md:w-auto md:max-w-none md:translate-x-0
-                    md:bg-transparent md:shadow-none md:transition-none
-                  `}
-                  >
-                    {/* Drawer header (mobile only) */}
-                    <div className="flex items-center justify-between border-b border-ash px-4 py-3 md:hidden">
-                      <h2 className="text-sm font-bold text-ink">
-                        Filters &amp; sort
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => setFiltersOpen(false)}
-                        aria-label="Close filters"
-                        className="cursor-pointer rounded-full p-1.5 text-ink-soft hover:bg-forest-light hover:text-forest"
-                      >
-                        <IoClose size={20} />
-                      </button>
-                    </div>
-
-                    {/* Scrollable body */}
-                  </div>
-
-                  {/* Drawer footer (mobile only) */}
-                  <div className="flex gap-3 border-t border-ash p-4 md:hidden">
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className="flex-1 cursor-pointer rounded-full border border-ash py-2.5 text-sm font-semibold text-ink-soft"
-                    >
-                      Clear all
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFiltersOpen(false)}
-                      className="flex-1 cursor-pointer rounded-full bg-forest py-2.5 text-sm font-semibold text-white"
-                    >
-                      Show results
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {/* Profile or candidate results */}
               {viewing ? (
                 <ProfileView
@@ -491,131 +420,133 @@ export default function Registry({
                   introduced={introduced}
                 />
               ) : (
-                <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-12">
-                  {sorted.length == 0 && (
-                    <div className="flex flex-col items-center justify-center gap-1 text-center text-sm text-ink-soft">
-                      <p>No professional with this record found</p>
+                activeView != "urgent" && (
+                  <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-12">
+                    {sorted.length == 0 && (
+                      <div className="flex flex-col items-center justify-center gap-1 text-center text-sm text-ink-soft">
+                        <p>No professional with this record found</p>
 
-                      <button
-                        className="cursor-pointer font-semibold text-forest underline"
-                        onClick={clearFilters}
-                      >
-                        Clear filters and try again
-                      </button>
-                    </div>
-                  )}
+                        <button
+                          className="cursor-pointer font-semibold text-forest underline"
+                          onClick={clearFilters}
+                        >
+                          Clear filters and try again
+                        </button>
+                      </div>
+                    )}
 
-                  {count > 0 && toggle && (
-                    <div className="flex items-center justify-between gap-2 text-xs md:justify-end mb-1">
-                      <button
-                        className="shrink-0 cursor-pointer font-semibold text-ink-soft underline"
-                        onClick={clearFilters}
-                      >
-                        Clear all
-                      </button>
-                      <button
-                        className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-ash px-3 py-1.5 font-bold text-forest md:py-2"
-                        onClick={() => {
-                          toast.info("Search saved");
-                          setRecentSearch((prev) => [
-                            ...prev,
-                            {
-                              search: filters,
-                              timestamp: new Date().toISOString(),
-                              id: uuid(),
-                            },
-                          ]);
-                          setToggle(false);
-                        }}
-                      >
-                        <IoBookmarkOutline />
-                        <span>Save search</span>
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-3 border-t border-ash md:flex-row md:justify-between py-4 md:items-center md:gap-x-4 md:border-t-0 md:pt-0">
-                    <div className="flex items-center justify-between gap-1.5 md:justify-start">
-                      <p className="whitespace-nowrap text-xs text-ink-soft">
-                        Results per page:
-                      </p>
-                      <Select
-                        options={[
-                          { value: "20", label: "20" },
-                          { value: "40", label: "40" },
-                          { value: "60", label: "60" },
-                        ]}
-                        onChange={(val) => setResults(val)}
-                        value={result}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between gap-1.5 md:justify-start">
-                      <p className="whitespace-nowrap text-xs text-ink-soft">
-                        Sort:
-                      </p>
-                      <Select
-                        options={[
-                          { value: "new", label: "Newest Confirmed" },
-                          { value: "most", label: "Most Experienced" },
-                        ]}
-                        onChange={(val) => setSort(val as "new" | "most")}
-                        value={sort}
-                      />
-                    </div>
-                  </div>
-
-                  <div
-                    className={`${activePanel ? "sm:grid-cols-1 xl:grid-cols-3 2xl:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"} grid grid-cols-1 gap-5`}
-                  >
-                    <AnimatePresence mode="popLayout" initial={false}>
-                      {sorted.slice(0, +result).map((candidate) => (
-                        <motion.div
-                          key={candidate.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          transition={{
-                            layout: {
-                              type: "spring",
-                              stiffness: 500,
-                              damping: 40,
-                            },
-                            opacity: { duration: 0.2 },
+                    {count > 0 && toggle && (
+                      <div className="flex items-center justify-between gap-2 text-xs md:justify-end mb-1">
+                        <button
+                          className="shrink-0 cursor-pointer font-semibold text-ink-soft underline"
+                          onClick={clearFilters}
+                        >
+                          Clear all
+                        </button>
+                        <button
+                          className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-ash px-3 py-1.5 font-bold text-forest md:py-2"
+                          onClick={() => {
+                            toast.info("Search saved");
+                            setRecentSearch((prev) => [
+                              ...prev,
+                              {
+                                search: filters,
+                                timestamp: new Date().toISOString(),
+                                id: uuid(),
+                              },
+                            ]);
+                            setToggle(false);
                           }}
                         >
-                          <CandidateCard
-                            c={candidate}
+                          <IoBookmarkOutline />
+                          <span>Save search</span>
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-3 border-t border-ash md:flex-row md:justify-between py-4 md:items-center md:gap-x-4 md:border-t-0 md:pt-0">
+                      <div className="flex items-center justify-between gap-1.5 md:justify-start">
+                        <p className="whitespace-nowrap text-xs text-ink-soft">
+                          Results per page:
+                        </p>
+                        <Select
+                          options={[
+                            { value: "20", label: "20" },
+                            { value: "40", label: "40" },
+                            { value: "60", label: "60" },
+                          ]}
+                          onChange={(val) => setResults(val)}
+                          value={result}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between gap-1.5 md:justify-start">
+                        <p className="whitespace-nowrap text-xs text-ink-soft">
+                          Sort:
+                        </p>
+                        <Select
+                          options={[
+                            { value: "new", label: "Newest Confirmed" },
+                            { value: "most", label: "Most Experienced" },
+                          ]}
+                          onChange={(val) => setSort(val as "new" | "most")}
+                          value={sort}
+                        />
+                      </div>
+                    </div>
+
+                    <div
+                      className={`${activePanel ? "sm:grid-cols-1 xl:grid-cols-3 2xl:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"} grid grid-cols-1 gap-5`}
+                    >
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        {sorted.slice(0, +result).map((candidate) => (
+                          <motion.div
                             key={candidate.id}
-                            saved={saved}
-                            onSave={(id) => onSave(id)}
-                            onCompare={(id) => onCompare(id)}
-                            onProfileView={() => {
-                              setRecents((prev) => {
-                                const val = new Set([...prev, candidate.id]);
-                                return [...val];
-                              });
-                              setViewing(candidate.id);
+                            layout
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{
+                              layout: {
+                                type: "spring",
+                                stiffness: 500,
+                                damping: 40,
+                              },
+                              opacity: { duration: 0.2 },
                             }}
-                            onReveal={(c) => {
-                              if (revealsRemaining > 0) setRevealing(c);
-                            }}
-                            reveals={reveals}
-                            onIntroduction={(c) => setIntroducing(c)}
-                            highlightActive={highlightActive == candidate.id}
-                            setHighlightActive={(id) => {
-                              setHighlightActive((prev) =>
-                                prev == id ? null : id,
-                              );
-                            }}
-                            introduced={introduced}
-                          />
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
+                          >
+                            <CandidateCard
+                              c={candidate}
+                              key={candidate.id}
+                              saved={saved}
+                              onSave={(id) => onSave(id)}
+                              onCompare={(id) => onCompare(id)}
+                              onProfileView={() => {
+                                setRecents((prev) => {
+                                  const val = new Set([...prev, candidate.id]);
+                                  return [...val];
+                                });
+                                setViewing(candidate.id);
+                              }}
+                              onReveal={(c) => {
+                                if (revealsRemaining > 0) setRevealing(c);
+                              }}
+                              reveals={reveals}
+                              onIntroduction={(c) => setIntroducing(c)}
+                              highlightActive={highlightActive == candidate.id}
+                              setHighlightActive={(id) => {
+                                setHighlightActive((prev) =>
+                                  prev == id ? null : id,
+                                );
+                              }}
+                              introduced={introduced}
+                            />
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
                   </div>
-                </div>
+                )
               )}
             </>
           )}
@@ -632,6 +563,15 @@ export default function Registry({
                 onRemove={(id) => onCompare(id)}
               />
             </div>
+          )}
+
+          {/* Urgent Hiring */}
+          {activeView === "urgent" && !viewing && (
+            <Urgent
+              onViewProfile={(c) => setViewing(c.id)}
+              requests={requests}
+              setRequests={setRequests}
+            />
           )}
         </main>
       </section>

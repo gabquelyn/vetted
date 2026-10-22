@@ -11,14 +11,13 @@ const GROUP_LABELS: Record<string, string> = {
   profile: "Profile",
 };
 
-// Turn stored values ("RN", "vehicle") back into display labels
 const VALUE_LABELS: Record<string, Record<string, string>> = {
   profession: Object.fromEntries(PROFESSIONS.map(([v, l]) => [v, l])),
   mobility: Object.fromEntries(MOBILITY.map(([v, l]) => [v, l])),
   profile: Object.fromEntries(PROFILE.map(([v, l]) => [v, l])),
 };
 
-const formatTime = (ts: string) => {
+const formatTime = (ts: string) => { 
   const d = new Date(ts);
   return isNaN(d.getTime())
     ? ts

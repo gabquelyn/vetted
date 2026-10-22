@@ -84,7 +84,7 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 8 }}
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-            className={`relative z-10 flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white text-ink shadow-2xl ${className}`}
+            className={`relative z-10 flex max-h-[80vh] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white text-ink shadow-2xl ${className}`}
           >
             {(title || !hideCloseButton) && (
               <div className={`flex items-center justify-between gap-4 border-b border-ash px-5 py-3.5 ${banner || "bg-forest-dark"}`}>

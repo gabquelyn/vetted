@@ -50,12 +50,12 @@ const ITEMS: Item[] = [
     aria: "Directory — Search the broader professional network",
     icon: FiArchive,
   },
-  // {
-  //   id: "urgent",
-  //   label: "Urgent",
-  //   aria: "Urgent Hiring",
-  //   icon: FiZap,
-  // },
+  {
+    id: "urgent",
+    label: "Urgent",
+    aria: "Urgent Hiring",
+    icon: FiZap,
+  },
   {
     id: "sep1",
     sep: true,
