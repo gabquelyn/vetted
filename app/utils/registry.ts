@@ -1,8 +1,5 @@
 import { Candidate } from "../data/registry";
 
-
-export type Filters = Record<string, string[]>;
-
 const norm = (s: string) => s.trim().toLowerCase();
 
 // For free-text fields like `float` and `relocation`: treat empty / "no" style values as false

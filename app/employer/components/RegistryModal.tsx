@@ -125,7 +125,11 @@ export default function RegistryModal() {
               />
               <div className="w-full bg-ash h-px" />
 
-              <Registry revealsRemaining={avail} useReveal = {useReveal}/>
+              <Registry
+                revealsRemaining={avail}
+                useReveal={useReveal}
+                selectedProfessionsGate={professions}
+              />
             </div>
           </div>
         </motion.div>

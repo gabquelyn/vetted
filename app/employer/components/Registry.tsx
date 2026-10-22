@@ -25,15 +25,15 @@ import Preview from "./Preview";
 export default function Registry({
   revealsRemaining,
   useReveal,
+  selectedProfessionsGate,
 }: {
   revealsRemaining: number;
   useReveal: () => void;
+  selectedProfessionsGate: Set<string>;
 }) {
   const [result, setResults] = useState("20");
   const [sort, setSort] = useState<"new" | "most">("new");
   const [query, setQuery] = useState("");
-  const [data, setData] = useState(FULL_CANDIDATES);
-
   const [activeView, setActiveView] = useState<ActiveView>("registry");
   const handleRailSelect = useCallback((id: string) => {
     if (
@@ -58,19 +58,20 @@ export default function Registry({
 
   const [saved, setSaved] = useState<string[]>([]);
   const [compare, setCompare] = useState<string[]>([]);
-  const [parties, setParties] = useState<string[]>([]);
-  const [environment, setEnvironment] = useState<string[]>([]);
-  const [shifts, setShifts] = useState<string[]>([]);
-  const [employment, setEmployment] = useState<string[]>([]);
-  const [mobility, setMobility] = useState<string[]>([]);
-  const [profile, setProfile] = useState<string[]>([]);
+  const [filters, setFilters] = useState<Filters>({
+    profession:  [...selectedProfessionsGate],
+    environment: [],
+    shift: [],
+    employment: [],
+    mobility: [],
+    profile: [],
+  });
   const [reveals, setReveals] = useState<string[]>([]);
   const [recents, setRecents] = useState<string[]>([]);
   const [introduced, setIntroduced] = useState<string[]>([]);
   const [revealing, setRevealing] = useState<Candidate | null>(null);
   const [viewing, setViewing] = useState("");
   const [introducing, setIntroducing] = useState<Candidate | null>(null);
-  const [count, setCount] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [highlightActive, setHighlightActive] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState(false);
@@ -89,39 +90,33 @@ export default function Registry({
     };
   }, [filtersOpen]);
   const [recentSearch, setRecentSearch] = useState<
-    { timestamp: string; id: string; search: Record<string, string[]> }[]
+    { timestamp: string; id: string; search: Filters }[]
   >([]);
-  const [toggle, setToggle] = useState(false);
+  const [toggle, setToggle] = useState(() => !!selectedProfessionsGate);
 
-  const clearFilters = () => {
-    setData(FULL_CANDIDATES);
-    setParties([]);
-    setEnvironment([]);
-    setShifts([]);
-    setEmployment([]);
-    setMobility([]);
-    setProfile([]);
-    setCount(0);
-  };
+  const data = useMemo(() => applyFilters(FULL_CANDIDATES, filters), [filters]);
+  const count = useMemo(
+    () => Object.values(filters).reduce((n, v) => n + v.length, 0),
+    [filters],
+  );
 
-  const filters = {
-    profession: parties,
-    environment,
-    shift: shifts,
-    employment,
-    mobility,
-    profile,
-  };
+  const clearFilters = useCallback(
+    () =>
+      setFilters({
+        profession: [],
+        environment: [],
+        shift: [],
+        employment: [],
+        mobility: [],
+        profile: [],
+      }),
+    [],
+  );
 
-  const onApply = (filters: Record<string, string[]>) => {
+  const onApply = useCallback((next: Filters) => {
     setToggle(true);
-    const data = applyFilters(FULL_CANDIDATES, filters);
-    setData(data);
-    const count = Object.entries(filters)
-      .map((d) => d[1].length)
-      .reduce((a, b) => a + b, 0);
-    setCount(count);
-  };
+    setFilters(next);
+  }, []);
 
   const deleteSearch = (id: string) => {
     setRecentSearch((prev) => prev.filter((search) => search.id !== id));
@@ -168,14 +163,6 @@ export default function Registry({
     }
   }, [searched, sort, query]);
 
-  const revealedCandidates = useMemo(() => {
-    const byId = new Map(FULL_CANDIDATES.map((c) => [c.id, c]));
-    const candidates = reveals
-      .map((id) => byId.get(id))
-      .filter((c): c is Candidate => c !== undefined);
-    return candidates;
-  }, [reveals]);
-
   return (
     <>
       {activeView !== "compare" && (
@@ -200,26 +187,12 @@ export default function Registry({
 
         <div className="min-w-0 max-w-full">
           <Filtering
-            onApply={() => {
-              onApply(filters);
-              setFiltersOpen(false);
-            }}
             onClear={clearFilters}
-            shifts={shifts}
-            setShifts={setShifts}
-            environment={environment}
-            setEnvironment={setEnvironment}
-            setEmployment={setEmployment}
-            employment={employment}
-            mobility={mobility}
-            setMobility={setMobility}
-            profile={profile}
-            setProfile={setProfile}
-            count={count}
-            parties={parties}
-            setParties={setParties}
-            activatePanel={activePanel}
+            filters={filters}
+            setFilters={setFilters}
             setActivatePanel={() => setActivePanel((prev) => !prev)}
+            activatePanel={activePanel}
+            count={count}
           />
         </div>
 
@@ -548,7 +521,7 @@ export default function Registry({
                             ...prev,
                             {
                               search: filters,
-                              timestamp: new Date().toDateString(),
+                              timestamp: new Date().toISOString(),
                               id: uuid(),
                             },
                           ]);

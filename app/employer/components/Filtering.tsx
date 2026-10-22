@@ -20,42 +20,18 @@ const PANEL_WIDTH = 288; // w-72
 const VIEWPORT_GUTTER = 8;
 const CLOSE_DELAY_MS = 120;
 
-type StringState = React.Dispatch<React.SetStateAction<string[]>>;
-
 export default function Filtering({
-  onApply,
-  onClear,
-  parties,
-  setParties,
-  setShifts,
-  setMobility,
-  setProfile,
-  environment,
-  setEnvironment,
-  setEmployment,
-  mobility,
-  profile,
-  shifts,
-  employment,
+  filters,
   count,
+  setFilters,
+  onClear,
   activatePanel,
   setActivatePanel, // toggles the pinned state in the parent
 }: {
-  onApply: () => void;
   onClear: () => void;
-  parties: string[];
-  mobility: string[];
-  profile: string[];
-  setParties: StringState;
-  setEnvironment: StringState;
-  setShifts: StringState;
-  setEmployment: StringState;
-  setMobility: StringState;
-  setProfile: StringState;
-  environment: string[];
-  shifts: string[];
-  employment: string[];
   count: number;
+  filters: Filters;
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   activatePanel: boolean;
   setActivatePanel: () => void;
 }) {
@@ -171,9 +147,7 @@ export default function Filtering({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <p className="uppercase">
-            Search and Filter
-          </p>
+          <p className="uppercase">Search and Filter</p>
           {count > 0 && (
             <motion.span
               key={count}
@@ -200,7 +174,10 @@ export default function Filtering({
         >
           <motion.span
             className="block"
-            animate={{ rotate: pinned ? 0 : 45, scale: pinned ? [1, 1.25, 1] : 1 }}
+            animate={{
+              rotate: pinned ? 0 : 45,
+              scale: pinned ? [1, 1.25, 1] : 1,
+            }}
             transition={{
               rotate: { type: "spring", stiffness: 400, damping: 18 },
               // keyframe arrays can't use springs, so the pop is a tween
@@ -216,8 +193,10 @@ export default function Filtering({
       <div>
         <p className="text-ink-soft font-bold mb-2">Primary Search</p>
         <MultiSelect
-          value={parties}
-          onChange={setParties}
+          value={filters.profession}
+          onChange={(val) =>
+            setFilters((prev) => ({ ...prev, profession: val }))
+          }
           className="relative inline-block w-20 overflow-y-auto bg-white "
           options={PROFESSIONS.map((p) => ({ label: p[1], value: p[0] }))}
           allowSearch
@@ -227,8 +206,10 @@ export default function Filtering({
       <div>
         <p className="text-ink-soft font-bold mb-2">Experienced environment</p>
         <MultiSelect
-          value={environment}
-          onChange={setEnvironment}
+          value={filters.environment}
+          onChange={(val) =>
+            setFilters((prev) => ({ ...prev, environment: val }))
+          }
           className="relative inline-block w-20 overflow-y-auto bg-white "
           options={ENVIRONMENT.map((e) => ({ label: e, value: e }))}
           allowSearch
@@ -238,8 +219,8 @@ export default function Filtering({
       <div>
         <p className="text-ink-soft font-bold mb-2">Shifts</p>
         <MultiSelect
-          value={shifts}
-          onChange={setShifts}
+          value={filters.shift}
+          onChange={(val) => setFilters((prev) => ({ ...prev, shift: val }))}
           className="relative inline-block w-20 overflow-y-auto bg-white "
           options={SHIFTS.map((e) => ({ label: e, value: e }))}
         />
@@ -248,8 +229,10 @@ export default function Filtering({
       <div>
         <p className="text-ink-soft font-bold mb-2">Employment</p>
         <MultiSelect
-          value={employment}
-          onChange={setEmployment}
+          value={filters.employment}
+          onChange={(val) =>
+            setFilters((prev) => ({ ...prev, employment: val }))
+          }
           className="relative inline-block w-20 overflow-y-auto bg-white "
           options={EMPLOYMENT.map((e) => ({ label: e, value: e }))}
         />
@@ -258,8 +241,8 @@ export default function Filtering({
       <div>
         <p className="text-ink-soft font-bold mb-2">Mobility</p>
         <MultiSelect
-          value={mobility}
-          onChange={setMobility}
+          value={filters.mobility}
+          onChange={(val) => setFilters((prev) => ({ ...prev, mobility: val }))}
           className="relative inline-block w-20 overflow-y-auto bg-white "
           options={MOBILITY.map((e) => ({ label: e[1], value: e[0] }))}
         />
@@ -268,21 +251,15 @@ export default function Filtering({
       <div>
         <p className="text-ink-soft font-bold mb-2">Profile</p>
         <MultiSelect
-          value={profile}
-          onChange={setProfile}
+          value={filters.profile}
+          onChange={(val) => setFilters((prev) => ({ ...prev, profile: val }))}
           className="relative inline-block w-20 overflow-y-auto bg-white "
           options={PROFILE.map((e) => ({ label: e[1], value: e[0] }))}
         />
       </div>
 
       {/* actions */}
-      <div className="flex items-center justify-between">
-        <button
-          className="cursor-pointer text-forest bg-forest-light p-2 rounded-md"
-          onClick={onApply}
-        >
-          Apply filters
-        </button>
+      <div className="flex items-center justify-end">
         <button className="cursor-pointer" onClick={onClear}>
           Clear filters
         </button>
@@ -385,7 +362,8 @@ export default function Filtering({
         )}
       </AnimatePresence>
 
-      {typeof document !== "undefined" && createPortal(floatingPanel, document.body)}
+      {typeof document !== "undefined" &&
+        createPortal(floatingPanel, document.body)}
     </div>
   );
 }

@@ -39,8 +39,8 @@ export default function SearchItem({
 }: {
   id: string;
   timestamp: string;
-  search: Record<string, string[]>;
-  onApply?: (search: Record<string, string[]>) => void;
+  search: Filters;
+  onApply?: (search: Filters) => void;
   onDelete?: () => void;
 }) {
   const groups = Object.entries(search).filter(([, v]) => v.length > 0);

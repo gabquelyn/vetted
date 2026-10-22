@@ -36,35 +36,34 @@ interface Candidate {
 }
 
 interface UICompare {
-      filters: {
-      role: string,
-      ic: boolean,
-      available: boolean,
-      vehicle: boolean,
-      days: boolean,
-      evenings: boolean,
-      nights: boolean,
-      minExp: number,
-      insured: boolean,
-      activeNow: boolean,
-      city: string,
-      radius: string,
-    },
-    sortBy: string,
-    unlocked: Record<string, string>,
-    compare: string[],
-    compareOpen: boolean,
-    cityInput: string,
+  filters: {
+    role: string;
+    ic: boolean;
+    available: boolean;
+    vehicle: boolean;
+    days: boolean;
+    evenings: boolean;
+    nights: boolean;
+    minExp: number;
+    insured: boolean;
+    activeNow: boolean;
+    city: string;
+    radius: string;
+  };
+  sortBy: string;
+  unlocked: Record<string, string>;
+  compare: string[];
+  compareOpen: boolean;
+  cityInput: string;
 }
 
-
 interface Article {
-  tag: string
-  tagClass: string
-  title: string
-  sub: string
-  date: string
-  read: string
+  tag: string;
+  tagClass: string;
+  title: string;
+  sub: string;
+  date: string;
+  read: string;
 }
 
 type ResolvedLocation = {
@@ -84,7 +83,7 @@ type Place = {
   lng: number;
 };
 
-type inputEvent = React.ChangeEvent<HTMLInputElement>
+type inputEvent = React.ChangeEvent<HTMLInputElement>;
 
 type ActiveView =
   | "registry"
@@ -93,6 +92,15 @@ type ActiveView =
   | "searches"
   | "recent"
   | "compare"
-  | "reveals" | "requests";
+  | "reveals"
+  | "requests";
 
- 
+interface Filters {
+  profession: string[];
+  environment: string[];
+  shift: string[];
+  employment: string[];
+  mobility: string[];
+  profile: string[];
+  [index: string] : string[]
+}

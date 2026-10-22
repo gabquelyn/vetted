@@ -216,7 +216,7 @@ export function CandidateCompare({
     return (
       <motion.div
         {...fade}
-        className="rounded-xl border border-ash p-8 text-center text-sm text-ink-soft"
+        className="rounded-xl border border-ash p-8 text-center text-xs text-ink-soft"
       >
         Select candidates to compare (up to {MAX_COMPARE}).
       </motion.div>
@@ -240,9 +240,9 @@ export function CandidateCompare({
     >
       {/* toolbar */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-lg font-semibold font-serif">
           Compare candidates{" "}
-          <span className="text-sm font-normal text-ink-soft">
+          <span className="text-xs font-normal text-ink-soft">
             ({shown.length}/{MAX_COMPARE})
           </span>
         </h2>
@@ -253,7 +253,7 @@ export function CandidateCompare({
             role="switch"
             aria-checked={highlightDiffs}
             onClick={() => setHighlightDiffs((v) => !v)}
-            className="flex items-center gap-2 text-sm text-ink-mid"
+            className="flex items-center gap-2 text-xs text-ink-mid"
           >
             <span
               className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors duration-200 ${
@@ -276,7 +276,7 @@ export function CandidateCompare({
               type="button"
               whileTap={{ scale: 0.96 }}
               onClick={onClose}
-              className="rounded-md border border-ash bg-white px-3 py-1.5 text-sm text-ink-mid hover:border-forest-mid hover:text-forest"
+              className="rounded-md border border-ash bg-white px-3 py-1.5 text-xs text-ink-mid hover:border-forest-mid hover:text-forest"
             >
               Close
             </motion.button>
@@ -374,7 +374,7 @@ export function CandidateCompare({
                     >
                       <th
                         scope="row"
-                        className="sticky left-0 z-10 border-b border-ash bg-white p-3 text-left text-sm font-medium text-ink-mid"
+                        className="sticky left-0 z-10 border-b border-ash bg-white p-3 text-left text-xs font-medium text-ink-mid"
                       >
                         <span className="flex items-center gap-2">
                           <AnimatePresence>
@@ -394,7 +394,7 @@ export function CandidateCompare({
                       {shown.map((c) => (
                         <td
                           key={c.id}
-                          className={`wrap-break-word border-b border-ash p-3 align-top text-sm text-ink transition-colors duration-300 ${
+                          className={`wrap-break-word border-b border-ash p-3 align-top text-xs text-ink transition-colors duration-300 ${
                             diff ? "bg-forest-pale/60" : "bg-white"
                           }`}
                         >
