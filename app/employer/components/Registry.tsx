@@ -62,7 +62,7 @@ export default function Registry({
   const [compare, setCompare] = useState<string[]>([]);
 
   const [filters, setFilters] = useState<Filters>({
-    profession: selectedProfessionsGate ? [...selectedProfessionsGate] : [],
+    profession: [],
     environment: [],
     shift: [],
     employment: [],
@@ -70,7 +70,6 @@ export default function Registry({
     profile: [],
   });
 
-  console.log(filters, selectedProfessionsGate);
   const [reveals, setReveals] = useState<string[]>([]);
   const [recents, setRecents] = useState<string[]>([]);
   const [introduced, setIntroduced] = useState<string[]>([]);
@@ -80,7 +79,21 @@ export default function Registry({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [highlightActive, setHighlightActive] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState(false);
+  const [toggle, setToggle] = useState(() => selectedProfessionsGate.size > 0);
 
+  const gateProfessions = selectedProfessionsGate
+    ? [...selectedProfessionsGate]
+    : [];
+  const gateKey = [...gateProfessions].sort().join("|");
+
+  const [prevGateKey, setPrevGateKey] = useState(gateKey);
+  if (gateKey !== prevGateKey) {
+    setPrevGateKey(gateKey);
+    if (gateProfessions.length > 0) {
+      setToggle(true);
+      setFilters((f) => ({ ...f, profession: gateProfessions }));
+    }
+  }
   // Close on Escape and lock page scroll while the mobile panel is open
   useEffect(() => {
     if (!filtersOpen) return;
@@ -97,7 +110,6 @@ export default function Registry({
   const [recentSearch, setRecentSearch] = useState<
     { timestamp: string; id: string; search: Filters }[]
   >([]);
-  const [toggle, setToggle] = useState(() => selectedProfessionsGate.size > 0);
 
   const data = useMemo(() => applyFilters(FULL_CANDIDATES, filters), [filters]);
   const count = useMemo(

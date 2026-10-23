@@ -13,12 +13,13 @@ export default function Navigation() {
   const pathname = usePathname()
 
   const links = [
-    { href: "/candidate#how-it-works", label: "How It Works" },
-    { href: "/insights", label: "Insights" },
+    // { href: "/candidate#how-it-works", label: "How It Works" },
     { href: "/employer", label: "For Employers" },
-    { href: "/join", label: "Join the Registry" },
+    { href: "/professional#join", label: "Join the Registry" },
     { href: "/bespoke", label: "Bespoke" },
+    { href: "/insights", label: "Insights" },
     { href: "/employer#pricing", label: "Pricing" },
+    { href: "/professional", label: "Professionals" },
     { href: "/findwork", label: "Find Work" },
   ];
 

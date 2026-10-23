@@ -6,21 +6,23 @@ const stats = [
   { num: "94%", label: "of Vetted profiles verified within the last 30 days" },
   { num: "18d", label: "median time from registry search to first contact" },
   { num: "3.2x", label: "more IC-tagged professionals added in Q1 vs Q4 2025" },
-  { num: "67%", label: "of PSW searches filtered for short-notice availability" },
+  {
+    num: "67%",
+    label: "of PSW searches filtered for short-notice availability",
+  },
 ];
 
 export default function TalentIndex() {
   return (
     <section className="border-b border-ash bg-white px-6 md:px-12 py-16">
       <div className="mx-auto max-w-245">
-        
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
             <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.09em] text-forest">
               Vetted Healthcare Talent Index
             </div>
-            <div className="font-serif text-[22px] font-light text-ink">
+            <div className="font-serif font-semibold text-[22px] text-ink">
               Q1 2026 — Ontario & British Columbia
             </div>
           </div>
@@ -45,7 +47,7 @@ export default function TalentIndex() {
               {/* subtle glow */}
               <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-linear-to-br from-forest/5 to-transparent rounded-xl" />
 
-              <div className="relative font-serif text-[34px] font-light text-forest leading-none mb-2">
+              <div className="relative font-serif font-semibold text-[34px] text-forest leading-none mb-2">
                 {num}
               </div>
 

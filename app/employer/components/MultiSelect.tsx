@@ -77,7 +77,7 @@ export default function MultiSelect({
         : `${value.length} selected`;
 
   return (
-    <div ref={ref} className={`relative inline-block w-60 ${className}`}>
+    <div ref={ref} className={`relative inline-block w-full ${className}`}>
       <button
         type="button"
         aria-haspopup="listbox"

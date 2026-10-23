@@ -80,7 +80,7 @@ export function OntarioCoverage() {
           </div>
 
           <Link
-            href="/join"
+            href="/employer#join"
             className="inline-flex items-center gap-2 px-6 py-3 bg-forest text-white rounded-lg text-sm font-medium hover:bg-[#3d6b1f] hover:-translate-y-0.5 hover:shadow-xl transition"
           >
             Join Today For Free →

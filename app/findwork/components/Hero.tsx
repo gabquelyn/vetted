@@ -23,7 +23,7 @@ export default function FindWorkHero({
   eyebrow = "For Ontario healthcare professionals",
   heading = "Find healthcare work across Ontario.",
   subheading = "Explore opportunities by profession or city, then join the Registry so employers can find you.",
-  joinHref = "#/join",
+  joinHref = "/employer#join",
   joinLabel = "Join the Registry →",
   howItWorksHref = "#/how-it-works",
   howItWorksLabel = "How It Works",

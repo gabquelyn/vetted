@@ -1,4 +1,5 @@
 "use client"
+import Link from "next/link";
 import React, { useState } from "react";
 import { IoCarSportOutline } from "react-icons/io5";
 import { MdOutlineLocationOn } from "react-icons/md";
@@ -278,12 +279,12 @@ export default function Filters() {
           </b>
         </div>
         <div className="mt-5.5 text-[13.5px] text-ink-soft text-center">
-          <a
-            href="employer.html"
+          <Link
+            href="/employer"
             className="text-forest font-semibold no-underline border-b border-transparent transition-[border-color] duration-150 hover:border-b-forest"
           >
             See how employer access works →
-          </a>
+          </Link>
         </div>
       </section>
     </div>

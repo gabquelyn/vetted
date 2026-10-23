@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import React from "react";
 
 export default function WayIn() {
@@ -44,12 +45,12 @@ export default function WayIn() {
                 them.
               </p>
 
-              <a className="group/btn relative inline-flex items-center gap-2.5 px-7 py-3.75 rounded-lg text-sm font-medium tracking-[0.01em] no-underline transition-all duration-250 self-start bg-forest text-white border border-forest hover:bg-forest-light hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(45,80,22,0.4)]">
+              <Link className="group/btn relative inline-flex items-center gap-2.5 px-7 py-3.75 rounded-lg text-sm font-medium tracking-[0.01em] no-underline transition-all duration-250 self-start bg-forest text-white border border-forest hover:bg-forest-light hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(45,80,22,0.4)]" href="/employer">
                 Explore for Employers{" "}
                 <span className="inline-block transition-transform duration-200 group-hover/btn:translate-x-1">
                   →
                 </span>
-              </a>
+              </Link>
 
               <div className="relative mt-4 text-[12.5px] text-white/40">
                 Employer workspace: $249/month or $2,490/year.
@@ -86,15 +87,16 @@ export default function WayIn() {
                 applying to every role.
               </p>
 
-              <a
+              <Link
                 className="group/btn relative inline-flex items-center gap-2.5 px-7 py-3.75 rounded-lg text-sm font-medium tracking-[0.01em] no-underline transition-all duration-250 self-start bg-ink text-white border border-ink hover:bg-ink-mid hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(26,26,24,0.2)]"
                 onClick={(e) => e.stopPropagation()}
+                href="/professional"
               >
                 Join the Registry{" "}
                 <span className="inline-block transition-transform duration-200 group-hover/btn:translate-x-1">
                   →
                 </span>
-              </a>
+              </Link>
             </div>
           </section>
         </div>

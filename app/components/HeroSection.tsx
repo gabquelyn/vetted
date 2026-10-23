@@ -310,7 +310,7 @@ export default function HeroSection() {
           </div>
           <span className="w-px h-4 bg-ash mx-0.5"></span>
           <Link
-            href="/employer"
+            href="/demo"
             className="border-b border-transparent text-[12.5px] font-semibold text-forest no-underline transition-[border-color] duration-150 hover:border-b-forest"
           >
             Explore the interactive Registry demo →

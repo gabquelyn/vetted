@@ -69,7 +69,7 @@ export default function RolesHero({
           className="flex gap-4 flex-wrap"
         >
           <Link
-            href="/join"
+            href="/employer#join"
             className="px-7 py-3.5 bg-[#2D5016] text-white rounded-lg text-sm font-medium hover:bg-[#3d6b1f] transition hover:-translate-y-0.5 shadow-md"
           >
             Join the Registry →

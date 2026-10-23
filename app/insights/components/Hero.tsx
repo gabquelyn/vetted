@@ -35,14 +35,13 @@ export default function InsightsHero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="font-serif text-[clamp(36px,4.5vw,58px)] font-light leading-[1.05] text-ink mb-5 max-w-405"
+          className="font-serif font-semibold text-[clamp(36px,4.5vw,58px)] leading-[1.05] text-ink mb-5 max-w-405"
         >
           Healthcare talent intelligence <br />
           and{" "}
-          <em className="italic relative text-forest-mid">
+          <span className="relative text-forest-mid">
             hiring resources.
-            <span className="absolute left-0 bottom-0 w-full h-1.5 bg-forest-mid/10 rounded-full -z-10" />
-          </em>
+          </span>
         </motion.h1>
 
         {/* Description */}

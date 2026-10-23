@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 import { IoCarSportOutline } from "react-icons/io5";
 import { MdOutlineLocationOn } from "react-icons/md";
@@ -188,12 +189,12 @@ export default function Urgent() {
           </div>
         </div>
         <div className="text-center mt-6.5">
-          <a
-            href="employer.html#urgent-hiring"
+          <Link
+            href="/demo"
             className="text-[#9FC47C] text-[13px] font-semibold no-underline border-b border-transparent transition-[border-color] duration-150 hover:border-b-[#9FC47C]"
           >
             Explore Urgent Hiring →
-          </a>
+          </Link>
         </div>
       </section>
     </div>
