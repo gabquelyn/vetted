@@ -159,7 +159,17 @@ export default function ProfileView({
           onScroll={updateScrollState}
           className="flex h-full min-h-0 min-w-0 flex-col overflow-y-auto rounded-2xl border border-ash bg-white gap-1 p-3 text-sm text-ink sm:p-5 lg:p-10"
         >
-          <div className="flex justify-between items-start">
+           {/* Back button */}
+            <div className="mb-3 flex shrink-0 justify-end text-xs font-semibold text-forest underline">
+              <button
+                className="flex items-center gap-2 rounded-full"
+                onClick={onClose}
+              >
+                <FaArrowLeft />
+                <p>Back to results</p>
+              </button>
+            </div>
+          <div className="flex  items-start">
             {/* Header */}
             <div className="flex shrink-0 flex-col gap-2 pb-5 md:flex-row md:items-start md:justify-between">
               <div className="flex min-w-0 flex-col text-xs">
@@ -169,7 +179,7 @@ export default function ProfileView({
                 <p className="text-[.65rem] font-semibold uppercase tracking-widest text-ink-soft">
                   {candidate.id}
                 </p>
-                <p className="text-[.65rem] font-semibold uppercase text-ink-soft">
+                <p className="text-[.65rem] truncate font-semibold uppercase text-ink-soft">
                   {candidate.snapshot}
                 </p>
 
@@ -207,16 +217,7 @@ export default function ProfileView({
                 </div>
               </div>
             </div>
-            {/* Back button */}
-            <div className="mb-3 flex shrink-0 justify-end text-xs font-semibold text-forest underline">
-              <button
-                className="flex items-center gap-2 rounded-full"
-                onClick={onClose}
-              >
-                <FaArrowLeft />
-                <p>Back to results</p>
-              </button>
-            </div>
+           
           </div>
 
           <div className="max-w-[80%] mb-2 text-ink-mid">
