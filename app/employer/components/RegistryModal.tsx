@@ -129,6 +129,7 @@ export default function RegistryModal() {
                 revealsRemaining={avail}
                 useReveal={useReveal}
                 selectedProfessionsGate={professions}
+                gateDone={gateDone}
               />
             </div>
           </div>

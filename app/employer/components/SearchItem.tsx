@@ -1,15 +1,5 @@
 import React from "react";
-import { LuClock, LuRotateCcw, LuTrash2 } from "react-icons/lu";
 import { MOBILITY, PROFESSIONS, PROFILE } from "@/app/data/professions";
-
-const GROUP_LABELS: Record<string, string> = {
-  profession: "Profession",
-  environment: "Environment",
-  shift: "Shifts",
-  employment: "Employment",
-  mobility: "Mobility",
-  profile: "Profile",
-};
 
 const VALUE_LABELS: Record<string, Record<string, string>> = {
   profession: Object.fromEntries(PROFESSIONS.map(([v, l]) => [v, l])),
@@ -17,7 +7,7 @@ const VALUE_LABELS: Record<string, Record<string, string>> = {
   profile: Object.fromEntries(PROFILE.map(([v, l]) => [v, l])),
 };
 
-const formatTime = (ts: string) => { 
+const formatTime = (ts: string) => {
   const d = new Date(ts);
   return isNaN(d.getTime())
     ? ts
@@ -33,78 +23,70 @@ export default function SearchItem({
   timestamp,
   id,
   search,
+  variant = "saved",
   onApply,
   onDelete,
 }: {
   id: string;
   timestamp: string;
   search: Filters;
+  /** "saved" shows a "Delete" link; "history" shows a small × (as in the HTML's Recent history) */
+  variant?: "saved" | "history";
   onApply?: (search: Filters) => void;
   onDelete?: () => void;
 }) {
   const groups = Object.entries(search).filter(([, v]) => v.length > 0);
-  const total = groups.reduce((n, [, v]) => n + v.length, 0);
-  console.log(timestamp);
-  return (
-    <div className="group rounded-xl border border-ash bg-white p-3 text-xs shadow-sm transition-shadow hover:shadow-md">
-      {/* header */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-ink-soft">
-          <LuClock className="h-3.5 w-3.5" />
-          <p>{formatTime(timestamp)}</p>
-          <span className="rounded-full bg-forest-light px-2 py-0.5 text-[.65rem] font-semibold text-forest">
-            {total} {total === 1 ? "filter" : "filters"}
-          </span>
-        </div>
 
-        <div className="flex items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-          {onApply && (
+  // Same shape as the HTML's currentSearchSummary(): values joined with "/"
+  // inside a group, groups joined with " · "
+  const summary = groups.length
+    ? groups
+        .map(([key, values]) =>
+          values.map((v: string) => VALUE_LABELS[key]?.[v] ?? v).join("/"),
+        )
+        .join(" · ")
+    : "All candidates";
+
+  return (
+    <div className="flex flex-col gap-1.5 rounded-xl border border-ash bg-white px-[15px] py-[13px]">
+      {/* top: summary + remove */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-[13.5px] font-bold text-ink">{summary}</div>
+
+        {onDelete &&
+          (variant === "history" ? (
             <button
               type="button"
-              title="Run this search again"
-              aria-label="Run this search again"
-              onClick={() => onApply(search)}
-              className="cursor-pointer rounded-md p-1.5 text-forest hover:bg-forest-light"
-            >
-              <LuRotateCcw className="h-3.5 w-3.5" />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              title="Remove from history"
-              aria-label="Remove from history"
               onClick={onDelete}
-              className="cursor-pointer rounded-md p-1.5 text-ink-soft hover:bg-gray-100"
+              aria-label="Remove from recent history"
+              className="cursor-pointer border-none bg-transparent px-1 py-0.5 text-[15px] leading-none text-[#8a8a84] hover:text-ink"
             >
-              <LuTrash2 className="h-3.5 w-3.5" />
+              ×
             </button>
-          )}
-        </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="cursor-pointer border-none bg-transparent p-0 text-[10.5px] text-[#8a8a84] hover:text-ink"
+            >
+              Delete
+            </button>
+          ))}
       </div>
 
-      {/* filter groups */}
-      {groups.length === 0 ? (
-        <p className="mt-2 text-ink-soft">No filters (all candidates)</p>
-      ) : (
-        <div className="mt-3 flex flex-col gap-2">
-          {groups.map(([key, values]) => (
-            <div key={key} className="flex items-start gap-2">
-              <p className="w-20 shrink-0 pt-1 font-semibold text-ink-soft">
-                {GROUP_LABELS[key] ?? key}
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {values.map((v) => (
-                  <span
-                    key={v}
-                    className="rounded-lg bg-forest-light px-2 py-1 text-ink-soft"
-                  >
-                    {VALUE_LABELS[key]?.[v] ?? v}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
+      {/* timestamp (not in the HTML — delete this block to match it exactly) */}
+      <div className="text-xs text-ink-soft">{formatTime(timestamp)}</div>
+
+      {/* actions */}
+      {onApply && (
+        <div className="mt-1 flex gap-[7px]">
+          <button
+            type="button"
+            onClick={() => onApply(search)}
+            className="flex-1 cursor-pointer rounded-[7px] border border-ash bg-white p-[7px] text-[11px] font-bold text-ink-soft transition-colors hover:border-ink-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+          >
+            Restore search
+          </button>
         </div>
       )}
     </div>

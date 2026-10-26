@@ -5282,3 +5282,6 @@ export const FULL_CANDIDATES: Candidate[] = [
     },
   },
 ];
+
+
+export const AVAILABILITY = ["Immediate", "2 Weeks Notice", "3+ Weeks Notice"];

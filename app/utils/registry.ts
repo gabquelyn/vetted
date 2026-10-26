@@ -7,7 +7,7 @@ const isAffirmative = (v?: string) => {
   if (!v) return false;
   const s = norm(v);
   return !["", "no", "none", "n/a", "na", "not open", "false"].some(
-    (neg) => s === neg || s.startsWith("no ")
+    (neg) => s === neg || s.startsWith("no "),
   );
 };
 
@@ -34,15 +34,28 @@ const PROFILE_CHECKS: Record<string, (c: Candidate) => boolean> = {
 
 export function applyFilters(
   candidates: Candidate[],
-  filters: Filters
+  filters: Filters,
 ): Candidate[] {
-  const { profession = [], environment = [], shift = [], employment = [], mobility = [], profile = [] } = filters;
+  const {
+    profession = [],
+    environment = [],
+    shift = [],
+    employment = [],
+    mobility = [],
+    profile = [],
+  } = filters;
 
   return candidates.filter((c) => {
     // Profession: OR within the group
-    if (profession.length && !profession.some((p) => norm(p) === norm(c.code))) {
+    if (
+      profession.length &&
+      !profession.some((p) => norm(p) === norm(c.code))
+    ) {
       return false;
     }
+    // checking availability
+    if (filters.availability.length && !filters.availability.includes(c.avail))
+      return false;
 
     // Environment: matches current env or environments they're open to
     if (
@@ -78,4 +91,3 @@ export function applyFilters(
     return true;
   });
 }
-

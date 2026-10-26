@@ -1,19 +1,82 @@
 "use client";
-import { Candidate } from "@/app/data/registry";
+import { Candidate, FULL_CANDIDATES } from "@/app/data/registry";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { FaArrowDown, FaArrowLeft } from "react-icons/fa6";
-import Divider from "./Divider";
-import Pill from "./Pill";
 import ExperienceList from "./ExperienceList";
-import { IoMdStarOutline } from "react-icons/io";
-import { MdArrowRightAlt } from "react-icons/md";
-import { FiCheckSquare } from "react-icons/fi";
 import RevealedContact from "./RevealedContact";
-import { GiCheckMark } from "react-icons/gi";
+import Chip from "./Chip";
+import Highlight from "./Highlight";
 
 // Show the "scroll to bottom" button only when more than this many px remain
-const SCROLL_BUTTON_THRESHOLD = 80;
+const SCROLL_BUTTON_THRESHOLD = 40;
+// Post-Reveal highlight timing (glide to top, then flash for ~2.2s)
+const REVEAL_SCROLL_SETTLE_MS = 420;
+const REVEAL_FLASH_MS = 2200;
+
+const BlockLabel = ({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div
+    className={`mb-3.5 text-[10px] font-bold uppercase tracking-[.06em] text-[#8a8a84] ${className}`}
+  >
+    {children}
+  </div>
+);
+
+const MicroLabel = ({ children }: { children: React.ReactNode }) => (
+  <span className="mb-[7px] block text-[10px] font-semibold text-[#8a8a84]">
+    {children}
+  </span>
+);
+
+const Muted = ({ children }: { children: React.ReactNode }) => (
+  <span className="font-medium text-[#8a8a84]">{children}</span>
+);
+
+const SideRow = ({
+  label,
+  children,
+  variant = "primary",
+}: {
+  label: string;
+  children: React.ReactNode;
+  variant?: "primary" | "quiet";
+}) =>
+  variant === "primary" ? (
+    <div className="flex justify-between border-b border-forest/15 py-2 text-[12.5px] last:border-b-0">
+      <span className="text-forest">{label}</span>
+      <span className="text-right font-semibold text-ink">{children}</span>
+    </div>
+  ) : (
+    <div className="flex justify-between border-b border-ash py-1.5 text-[11.5px] text-ink-soft last:border-b-0">
+      <span className="text-[#8a8a84]">{label}</span>
+      <span className="text-right font-semibold">{children}</span>
+    </div>
+  );
+
+const CarIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className="mr-[5px] inline-block align-[-2px] text-ink-soft"
+  >
+    <path d="M4 16v-3.2c0-.5.15-.9.5-1.3l1.8-4.2c.3-.7 1-1.2 1.8-1.2h7.8c.8 0 1.5.5 1.8 1.2l1.8 4.2c.35.4.5.8.5 1.3V16a1 1 0 0 1-1 1h-.5a1 1 0 0 1-1-1v-.5H6.5V16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
+    <circle cx="7.5" cy="14.5" r="1" />
+    <circle cx="16.5" cy="14.5" r="1" />
+  </svg>
+);
+
+const utilBtn =
+  "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-[13px] py-2 text-xs font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest";
+const utilIdle =
+  "border-ash bg-white text-ink-soft hover:border-[#8a8a84] hover:text-ink";
+const utilActive = "border-[#e8c9a3] bg-[#fbf1e2] text-[#b8722c]";
 
 export default function ProfileView({
   results,
@@ -30,6 +93,14 @@ export default function ProfileView({
   closed,
   onIntroduction,
   introduced,
+  onHide,
+  onOpenSibling,
+  hidden,
+  onPageChange,
+  total,
+  page,
+  totalPages,
+  terms,
 }: {
   results: Candidate[];
   viewing?: string;
@@ -42,11 +113,34 @@ export default function ProfileView({
   setReveal: (c: Candidate) => void;
   reveals: string[];
   activeView: ActiveView;
+  /** True once the reveal modal has closed — the highlight fires at that point. */
   closed: boolean;
   onIntroduction: (c: Candidate) => void;
   introduced: string[];
+  /** Optional. When provided, a "Hide" action appears beside Save / Compare. */
+  onHide?: (id: string) => void;
+  /** Optional. Opens a sibling profile. Defaults to setView(c.id). */
+  onOpenSibling?: (c: Candidate) => void;
+  hidden: string[];
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  total: number;
+  page: number;
+  terms: string[];
 }) {
-  const candidate = results.find((c) => c.id == viewing) || results[0];
+  const candidate =
+    results.find((c) => c.id == viewing) ||
+    FULL_CANDIDATES.find((c) => c.id == viewing);
+
+  const candidateId = candidate?.id;
+  const revealedNow = candidate ? reveals.includes(candidate.id) : false;
+
+  // rail ref
+  const railRef = useRef<HTMLDivElement>(null);
+  const goToPage = (p: number) => {
+    onPageChange?.(p);
+    railRef.current?.scrollTo({ top: 0 });
+  };
 
   // --- scroll-to-bottom button ---
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -56,18 +150,21 @@ export default function ProfileView({
     const el = scrollRef.current;
     if (!el) return;
     const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setShowDown(remaining > SCROLL_BUTTON_THRESHOLD);
+    const meaningfullyLong = el.scrollHeight > el.clientHeight * 1.25;
+    setShowDown(meaningfullyLong && remaining > SCROLL_BUTTON_THRESHOLD);
   }, []);
 
-  // Re-measure whenever the pane or its content changes size (switching
-  // candidate, expanding roles, resizing the window). setState only happens
-  // inside the observer callback.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+
+    // Reset scroll whenever the selected candidate changes
+    el.scrollTo({ top: 0, behavior: "instant" });
+
     const ro = new ResizeObserver(updateScrollState);
     ro.observe(el);
     Array.from(el.children).forEach((child) => ro.observe(child));
+
     return () => ro.disconnect();
   }, [updateScrollState, candidate?.id]);
 
@@ -76,6 +173,53 @@ export default function ProfileView({
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   };
+
+  // --- post-Reveal highlight (the HTML's .ve-just-revealed) ---
+  // When the profile being viewed goes from not-revealed to revealed, and the
+  // reveal modal has closed: glide the pane to the top, then flash the header.
+  // Stored as the candidate id so switching candidates hides it automatically.
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const revealTrackRef = useRef<{ id?: string; revealed: boolean } | null>(
+    null,
+  );
+  const pendingRevealRef = useRef(false);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  useEffect(() => {
+    const prev = revealTrackRef.current;
+    revealTrackRef.current = { id: candidateId, revealed: revealedNow };
+
+    // First run, or a different candidate: just record state, never flash.
+    if (!prev || prev.id !== candidateId) {
+      pendingRevealRef.current = false;
+      return;
+    }
+    if (!prev.revealed && revealedNow) pendingRevealRef.current = true;
+    if (!pendingRevealRef.current || !closed) return;
+    pendingRevealRef.current = false;
+
+    const pane = scrollRef.current;
+    const alreadyAtTop = !pane || pane.scrollTop <= 2;
+    if (pane && !alreadyAtTop) pane.scrollTo({ top: 0, behavior: "smooth" });
+
+    const id = candidateId ?? null;
+    timersRef.current.push(
+      setTimeout(
+        () => {
+          setFlashId(id);
+          timersRef.current.push(
+            setTimeout(() => setFlashId(null), REVEAL_FLASH_MS),
+          );
+        },
+        alreadyAtTop ? 0 : REVEAL_SCROLL_SETTLE_MS,
+      ),
+    );
+  }, [candidateId, revealedNow, closed]);
 
   if (!candidate) {
     return (
@@ -90,365 +234,558 @@ export default function ProfileView({
     );
   }
 
-  // Read after the guard so an empty result set can't throw here.
   const intro = introduced.includes(candidate.id);
+  const revealed = revealedNow;
+  const justRevealed = flashId === candidate.id;
+  const isSaved = saved.includes(candidate.id);
+  const inCompare = compare.includes(candidate.id);
+  const inHidden = hidden.includes(candidate.id);
   const { name, email, phone } = candidate.reveal;
+  const reg = candidate.professionalRegistration?.[0];
 
+  // Other discoverable profiles belonging to the same person.
+  const personKey = candidate.personId ?? candidate.id;
+  const otherProfiles = Object.values(
+    FULL_CANDIDATES as Record<string, Candidate> | Candidate[],
+  ).filter(
+    (x) =>
+      (x.personId ?? x.id) === personKey &&
+      x.id !== candidate.id &&
+      x.discoverable !== false,
+  );
+  const reloc = candidate.relocation as unknown;
+  const relocOpen = !!reloc && reloc !== "Not open";
+
+  const fitRows: [string, React.ReactNode][] = (
+    [
+      ["Availability", candidate.avail],
+      ["Shift preference", candidate.shift.join(", ")],
+      ["Employment preference", candidate.empType],
+      candidate.acceptedEmpTypes && candidate.acceptedEmpTypes.length > 1
+        ? [
+            "Also open to",
+            candidate.acceptedEmpTypes
+              .filter((t) => t !== candidate.empType)
+              .join(" · "),
+          ]
+        : null,
+      ["Open to working in", candidate.openToWorkingIn?.join(", ")],
+      [
+        "Own vehicle",
+        candidate.vehicle ? (
+          <>
+            <CarIcon />
+            Yes
+          </>
+        ) : (
+          <Muted>No</Muted>
+        ),
+      ],
+      ["Driver's licence", candidate.licence ? "Yes" : <Muted>No</Muted>],
+      [
+        "Rural roles",
+        candidate.rural && candidate.rural !== "No" ? (
+          candidate.rural
+        ) : (
+          <Muted>Not open</Muted>
+        ),
+      ],
+      [
+        "Travel / fly-in",
+        candidate.travelOpen ? "Open" : <Muted>Not open</Muted>,
+      ],
+      [
+        "Relocation",
+        relocOpen ? (
+          typeof reloc === "string" ? (
+            reloc
+          ) : (
+            "Open"
+          )
+        ) : (
+          <Muted>Not open</Muted>
+        ),
+      ],
+    ] as ([string, React.ReactNode] | null)[]
+  ).filter((r): r is [string, React.ReactNode] => !!r && !!r[1]);
+
+  const revealBtnBase =
+    "w-full max-w-[220px] flex-1 cursor-pointer rounded-[7px] px-4 py-1.5 text-center text-[11px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-default";
   return (
     <div
-      className={`grid h-full min-h-0 min-w-0 grid-cols-1 gap-5 ${activeView == "urgent" ? "" : "md:grid-cols-[clamp(11rem,17vw,16rem)_minmax(0,1fr)]"}
-  `}
+      className={`grid h-full min-h-0 min-w-0 grid-cols-1 gap-5.5 ${
+        activeView == "urgent" ? "" : "md:grid-cols-[220px_minmax(0,1fr)]"
+      }`}
     >
-      {/* Side panel */}
+      {/* ---------- Candidate rail ---------- */}
       {activeView != "urgent" && (
-        <div className="hidden md:flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-ash bg-cream px-2 py-5 text-[.7rem] md:col-span-1">
-          <p className="mb-4 shrink-0 text-[.6rem] font-semibold uppercase tracking-widest text-ink-soft">
-            {results.length} {results.length === 1 ? "result" : "results"}
-          </p>
+        <div
+          className="hidden min-h-0 min-w-0 flex-col overflow-y-auto rounded-[14px] border border-ash bg-cream p-1.5 md:flex"
+          ref={railRef}
+        >
+          <div className="px-2 py-1 text-[10px] font-semibold tracking-[.01em] text-ink-soft">
+            Showing {results.length} of {total ?? results.length} matching ·
+            Page {page}
+          </div>
 
-          {/* left/top padding leaves room for the selected card's left shadow */}
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto py-1 pl-2 pr-1">
-            {results.map((c) => (
+          {totalPages > 1 && (
+            <div className="mb-2 flex items-center justify-between text-[10px] text-ink-soft">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => goToPage(page - 1)}
+                aria-label="Previous page"
+                className="cursor-pointer rounded-[7px] border border-ash bg-white px-[9px] py-[3px] text-[10px] font-semibold text-forest enabled:hover:border-forest disabled:cursor-default disabled:border-ash disabled:text-[#8a8a84] disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+              >
+                ‹ Prev
+              </button>
+              <span className="whitespace-nowrap">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => goToPage(page + 1)}
+                aria-label="Next page"
+                className="cursor-pointer rounded-[7px] border border-ash bg-white px-[9px] py-[3px] text-[10px] font-semibold text-forest enabled:hover:border-forest disabled:cursor-default disabled:border-ash disabled:text-[#8a8a84] disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+              >
+                Next ›
+              </button>
+            </div>
+          )}
+
+          {results.map((c) => {
+            const isActive = viewing === c.id;
+            const isRevealed = reveals.includes(c.id);
+            return (
               <div
                 key={c.id}
-                className={`flex min-w-0 shrink-0 cursor-pointer flex-col gap-1 wrap-break-word rounded-xl border px-4 py-3 transition-all ${
-                  viewing === c.id
-                    ? "border-forest bg-forest-pale shadow-[-6px_0_14px_-4px] shadow-forest/50"
-                    : "border-ash bg-white hover:border-forest/60"
-                }`}
+                role="button"
+                tabIndex={0}
                 onClick={() => setView(c.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setView(c.id);
+                  }
+                }}
+                className={`mb-1 min-w-0 cursor-pointer rounded-[10px] border border-l-[3px] px-3.5 py-3 transition-[border-color,box-shadow] duration-100 last:mb-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-forest ${
+                  isActive
+                    ? "border-forest border-l-forest bg-forest-light"
+                    : "border-ash border-l-transparent bg-white hover:border-forest hover:shadow-[0_2px_8px_rgba(28,52,16,.08)]"
+                }`}
               >
-                {c.specialist && (
-                  <span className="mb-1 self-start rounded-full bg-highlight/15 px-2 py-0.5 text-[.5rem] font-semibold uppercase tracking-wide text-highlight">
-                    Specialist
+                <div className="mb-0.75 flex items-center justify-between gap-1.5">
+                  <span
+                    className={`text-xs font-bold leading-tight ${
+                      isActive ? "text-[#16260c]" : "text-ink"
+                    }`}
+                  >
+                    {isRevealed && c.reveal?.name ? c.reveal.name : c.title}
                   </span>
-                )}
-
-                <p className="text-xs font-semibold leading-snug text-forest">
-                  {c.title}
-                </p>
-                <p className="text-[.55rem] uppercase tracking-wider text-ink-soft">
-                  {c.code}
-                </p>
-                <p className="leading-relaxed text-ink-mid">{c.loc}</p>
-
-                <p className="flex items-center gap-2 text-forest">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                  {c.activeAgo}
-                </p>
-                <p className="text-ink-soft">
-                  Confirmed {c.confirmedDays}d ago
-                </p>
-
-                {reveals.includes(c.id) && (
-                  <p className="flex items-center gap-1 text-xs text-ink-soft">
-                    Revealed <GiCheckMark size={8} />
-                  </p>
-                )}
+                  {c.specialist && (
+                    <span className="shrink-0 rounded-[5px] bg-[#fbe8d6] px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-[.02em] text-[#b8621a]">
+                      Specialist
+                    </span>
+                  )}
+                </div>
+                <div className="mb-1 font-mono text-[10px] text-[#8a8a84]">
+                  {isRevealed ? `${c.title} · ${c.id}` : c.id}
+                </div>
+                <div className="mb-[3px] text-[11.5px] text-ink-soft">
+                  {c.loc}
+                </div>
+                <div className="flex flex-wrap items-center gap-[7px] text-[10.5px] font-semibold text-ink-soft">
+                  <span className="flex items-center gap-1 font-bold text-forest">
+                    <span className="h-1.25 w-1.25 shrink-0 rounded-full bg-[#22c55e]" />
+                    {c.activeAgo}
+                  </span>
+                  <span className="text-[#8a8a84]">
+                    Confirmed {c.confirmedDays}d
+                  </span>
+                  {isRevealed && (
+                    <span className="font-bold text-forest">✓ Revealed</span>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Profile results: relative wrapper so the button floats over the pane
-          instead of scrolling away with the content */}
-      <div className="relative h-full min-h-0 min-w-0 md:col-span-1">
+      {/* ---------- Profile pane (relative wrapper so the scroll button floats) ---------- */}
+      <div className="relative h-full min-h-0 min-w-0" data-tour="profile-pane">
         <div
           ref={scrollRef}
           onScroll={updateScrollState}
-          className="flex h-full min-h-0 min-w-0 flex-col overflow-y-auto rounded-2xl border border-ash bg-white gap-1 p-3 text-sm text-ink sm:p-5 lg:p-10"
+          className="h-full min-h-0 min-w-0 overflow-y-auto rounded-2xl border border-ash bg-white text-ink shadow-[0_18px_44px_rgba(28,52,16,.09)]"
         >
-           {/* Back button */}
-            <div className="mb-3 flex shrink-0 justify-end text-xs font-semibold text-forest underline">
-              <button
-                className="flex items-center gap-2 rounded-full"
-                onClick={onClose}
-              >
-                <FaArrowLeft />
-                <p>Back to results</p>
-              </button>
-            </div>
-          <div className="flex  items-start">
-            {/* Header */}
-            <div className="flex shrink-0 flex-col gap-2 pb-5 md:flex-row md:items-start md:justify-between">
-              <div className="flex min-w-0 flex-col text-xs">
-                <h2 className="wrap-break-word font-serif text-xl mb-1 font-semibold leading-tight text-ink">
+          <div
+            className={`px-5 py-6 md:px-10 md:py-[34px] ${
+              candidate.specialist
+                ? "border-t-[2.5px] border-t-[#b8621a] md:pt-[31.5px]"
+                : ""
+            }`}
+          >
+            {/* Head — flashes stone-tan right after a Reveal (.ve-just-revealed) */}
+            <div
+              className={`mb-[18px] flex flex-wrap items-start justify-between gap-3.5 rounded-[10px] transition-[background-color,box-shadow] duration-700 ease-in-out motion-reduce:transition-none ${
+                justRevealed
+                  ? "bg-[#DDD6BC] shadow-[0_0_0_8px_#DDD6BC]"
+                  : "bg-transparent shadow-[0_0_0_0_transparent]"
+              }`}
+            >
+              <div className="min-w-0">
+                <h2 className="font-serif text-[19px] font-semibold text-ink">
+                  {revealed && name ? `${name} — ` : ""}
                   {candidate.title} · {candidate.loc}
                 </h2>
-                <p className="text-[.65rem] font-semibold uppercase tracking-widest text-ink-soft">
+                <div className="mb-0.5 font-mono text-[11px] font-semibold tracking-[.02em] text-[#8a8a84]">
                   {candidate.id}
-                </p>
-                <p className="text-[.65rem] truncate font-semibold uppercase text-ink-soft">
-                  {candidate.snapshot}
-                </p>
-
-                <div className="flex items-center gap-2">
-                  <p className="flex items-center gap-2 text-xs text-forest-mid">
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
-                    {candidate.activeAgo}
-                  </p>
-
-                  <p className="text-xs text-ink-soft">
-                    Confirmed {candidate.confirmedDays}d ago
-                  </p>
                 </div>
-                {reveals.includes(candidate.id) && (
-                  <RevealedContact
-                    values={[name, email, phone]}
-                    active={closed}
-                  />
+                {candidate.snapshot && (
+                  <div className="mb-1.5 mt-0.5 text-[12.5px] text-ink-soft">
+                    <Highlight text={candidate.snapshot} terms={terms} />
+                  </div>
+                )}
+
+                {revealed && (
+                  <div className="mb-1.5">
+                    <RevealedContact
+                      values={[name, email, phone]}
+                      active={closed}
+                    />
+                  </div>
+                )}
+
+                <div className="mt-1.5 flex flex-wrap items-center gap-3.5">
+                  <span className="flex items-center gap-1.5 text-[11.5px] font-semibold text-forest">
+                    <span
+                      className={`h-[7px] w-[7px] shrink-0 rounded-full ${
+                        revealed ? "bg-forest" : "bg-[#22c55e]"
+                      }`}
+                    />
+                    {candidate.activeAgo}
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[11.5px] font-medium text-[#8a8a84]">
+                    ✓ Confirmed · {candidate.confirmedDays} day
+                    {candidate.confirmedDays === 1 ? "" : "s"} ago
+                  </span>
+                  {candidate.confirmedDays >= 25 && (
+                    <span className="rounded-full bg-[#f7ead9] px-2 py-0.5 text-[10.5px] font-semibold text-[#b8722c]">
+                      Reconfirmation due soon
+                    </span>
+                  )}
+                </div>
+
+                {(candidate.ic || candidate.specialist || revealed) && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {candidate.ic && (
+                      <span className="inline-flex items-center rounded-md bg-[#f7ead9] px-[9px] py-1 text-[9.5px] font-bold uppercase tracking-[.03em] text-[#b8722c]">
+                        Independent Contractor
+                      </span>
+                    )}
+                    {candidate.specialist && (
+                      <span className="inline-flex items-center rounded-md bg-[#fbe8d6] px-[9px] py-1 text-[9.5px] font-bold uppercase tracking-[.03em] text-[#b8621a]">
+                        Specialist
+                      </span>
+                    )}
+                    {revealed && !candidate.specialist && (
+                      <span className="inline-flex items-center rounded-md bg-forest-light px-[9px] py-1 text-[9.5px] font-bold uppercase tracking-[.03em] text-forest">
+                        ✓ Revealed
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
 
-              <div className="flex min-w-0 shrink-0 flex-col items-start gap-2 md:items-end">
-                <div className="flex flex-wrap gap-1.5">
-                  {candidate.specialist && (
-                    <p className="text-highlight border rounded-full px-2 p-1 border-highlight text-[.6rem]">
-                      Specialist
-                    </p>
-                  )}
+              <button
+                type="button"
+                data-tour="profile-back"
+                onClick={onClose}
+                className="inline-flex cursor-pointer items-center gap-[5px] rounded-[3px] py-1 text-[12.5px] font-bold text-forest hover:text-[#1e3a0f] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+              >
+                <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                  <path
+                    d="M4.5 1L1 4.5l3.5 3.5M1 4.5h9"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Back to results
+              </button>
+            </div>
 
-                  {candidate.ic && (
-                    <p className="text-highlight border rounded-full px-2 p-1 border-highlight text-[.6rem]">
-                      Independent contractor
-                    </p>
-                  )}
-                </div>
+            {/* Summary */}
+            <p className="mb-6.5 max-w-190 border-b border-ash pb-6.5 text-[14.5px] leading-[1.7] text-[#3d3d39]">
+              <Highlight text={candidate.summary} terms={terms} />
+            </p>
+
+            {/* Also available on Vetted as */}
+            {otherProfiles.length > 0 && (
+              <div className="mb-4 rounded-[10px] border border-ash bg-cream px-3.5 py-[11px]">
+                <span className="mb-1.75 block text-[9.5px] font-bold uppercase tracking-[.05em] text-[#8a8a84]">
+                  Also available on Vetted as
+                </span>
+                {otherProfiles.map((op) => (
+                  <div
+                    key={op.id}
+                    className="flex flex-wrap items-center gap-2 py-0.5"
+                  >
+                    <span className="text-[12.5px] font-bold text-ink">
+                      {op.title}
+                    </span>
+                    <span className="flex-1 text-[11px] text-[#8a8a84]">
+                      {op.empType} · {op.avail}
+                      {reveals.includes(op.id) ? " · Already revealed" : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenSibling ? onOpenSibling(op) : setView(op.id)
+                      }
+                      className="cursor-pointer whitespace-nowrap rounded-[7px] border border-forest bg-transparent px-2.25 py-1 text-[10.5px] font-semibold text-forest transition-colors hover:bg-forest hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                    >
+                      View {op.code} →
+                    </button>
+                  </div>
+                ))}
               </div>
-            </div>
-           
-          </div>
+            )}
 
-          <div className="max-w-[80%] mb-2 text-ink-mid">
-            <p>{candidate.summary}</p>
-          </div>
-
-          <Divider />
-
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
-            <div className="flex gap-2 flex-col">
-              {/* Experience */}
-              <Section title="Experience">
-                <Divider />
+            {/* Two columns */}
+            <div className="grid grid-cols-1 gap-9 min-[820px]:grid-cols-[1.3fr_1fr]">
+              {/* Left column */}
+              <div className="min-w-0">
+                <BlockLabel>Experience</BlockLabel>
                 {/* key resets the expanded state when switching candidates */}
-                <ExperienceList key={candidate.id} roles={candidate.exp} />
-              </Section>
-              {/* Skills and specialties */}
-              <Section title="Key Skills">
-                <div className="flex flex-wrap gap-2">
+                <ExperienceList key={candidate.id} roles={candidate.exp} terms={terms}/>
+
+                <BlockLabel className="mt-[22px]">Key skills</BlockLabel>
+                <div className="mb-2 mt-2 flex flex-wrap gap-1.5">
                   {candidate.skills.map((s) => (
-                    <Pill key={s} s={s} />
+                    <Chip key={s}>{s}</Chip>
                   ))}
                 </div>
-              </Section>
-              <Section title="credentials & Certifications">
-                <div className="flex flex-wrap gap-2">
-                  {candidate.certs.map((c) => (
-                    <Pill key={c} s={c} />
-                  ))}
-                </div>
-              </Section>
 
-              <Section title="EMR systems">
-                <div className="flex flex-wrap gap-2">
-                  {candidate.emr.map((c) => (
-                    <Pill key={c} s={c} />
+                <BlockLabel className="mt-[22px]">
+                  Credentials and Certificates
+                </BlockLabel>
+                <div className="mb-2 mt-2 flex flex-wrap gap-1.5">
+                  {candidate.certs.map((s) => (
+                    <Chip key={s}>{s}</Chip>
                   ))}
                 </div>
-              </Section>
-            </div>
-            <div>
-              <Section title="Availability & practical fit">
-                <div className="bg-forest-light flex flex-col gap-2 p-3 px-4 text-xs text-forest rounded-2xl">
-                  <Fact label="Availability" value={candidate.avail} />
-                  <Divider />
-                  <Fact label="Shift" value={candidate.shift.join(", ")} />
-                  <Divider />
-                  <Fact
-                    label="Open to working in"
-                    value={candidate.openToWorkingIn[0]}
-                  />
-                  <Divider />
-                  <Fact label="Employment" value={candidate.empType} />
-                  <Divider />
-                  <Fact
-                    label="Own vehicle"
-                    value={candidate.vehicle ? "Yes" : "No"}
-                  />
-                  <Divider />
-                  <Fact
-                    label="Licence"
-                    value={candidate.licence ? "Yes" : "No"}
-                  />
-                  <Divider />
-                  <Fact label="Credential" value={candidate.credential} />
-                  <Divider />
-                  <Fact label="Rural roles" value={candidate.rural} />
-                  <Divider />
-                  <Fact
-                    label="Travel/Fly in"
-                    value={candidate.travelOpen ? "Open" : "Not open"}
-                  />
-                  <Divider />
-                  <Fact
-                    label="Relocation"
-                    value={candidate.relocation ? "Open" : "Not open"}
-                  />
-                </div>
-              </Section>
 
-              <div className="text-ink-soft pt-5 text-xs space-y-2">
-                <p className="mb-3 text-[.65rem] font-semibold uppercase tracking-widest text-ink-soft">
-                  Additional profile details
-                </p>
-                {candidate.professionalRegistration && (
-                  <div className="border-l-4 border-forest-dark pl-3 space-y-1">
-                    <p className="text-xs mb-1">Professional registration</p>
-                    <p className="font-semibold text-ink-mid">
-                      {candidate.professionalRegistration?.[0]?.regulator}{" "}
-                      <span>
-                        ({candidate.professionalRegistration[0].regulatorShort})
-                      </span>
-                    </p>
-                    <div>
-                      {!candidate.professionalRegistration?.[0]
-                        ?.candidateReported ? (
-                        <div>
-                          <p>Registration details not provided </p>
-                          <p className="text-xs italic">
-                            Employer should verify current standing with CNO
-                          </p>
-                        </div>
-                      ) : (
-                        "Candidate standing confirmed"
-                      )}
+                {candidate.emr?.length > 0 && (
+                  <div className="mt-0.5">
+                    <MicroLabel>EMR &amp; clinical systems</MicroLabel>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {candidate.emr.map((s) => (
+                        <Chip key={s}>{s}</Chip>
+                      ))}
                     </div>
                   </div>
                 )}
-                <div>
-                  <p className="text-xs mb-1">Education</p>
-                  <p className="font-semibold text-ink-mid">{candidate.edu}</p>
+              </div>
+
+              {/* Right column */}
+              <div className="min-w-0">
+                <BlockLabel>Availability &amp; Practical Fit</BlockLabel>
+                <div className="rounded-[10px] bg-forest-light px-3.5 py-0.5">
+                  {fitRows.map(([label, value]) => (
+                    <SideRow key={label} label={label}>
+                      {value}
+                    </SideRow>
+                  ))}
                 </div>
 
-                <div className=" flex items-center justify-between">
-                  <p className="text-xs mb-1">Language</p>
-                  <p className="font-semibold text-ink-mid">
-                    {candidate.lang.join(", ")}
-                  </p>
-                </div>
+                <BlockLabel className="mt-6 !text-[#c9c4b0]">
+                  Additional Profile Detail
+                </BlockLabel>
+
+                {reg && (
+                  <div className="mb-3.5 mt-0.5 border-l-[3px] border-forest pl-2.5">
+                    <MicroLabel>Professional registration</MicroLabel>
+                    <div className="text-[13.5px] font-semibold text-ink">
+                      {reg.regulator}
+                      {reg.regulatorShort &&
+                        reg.regulatorShort !== reg.regulator &&
+                        ` (${reg.regulatorShort})`}
+                    </div>
+                    <div
+                      className={`mt-[3px] text-xs leading-[1.4] ${
+                        reg.candidateReported
+                          ? "font-medium text-ink-soft"
+                          : "font-medium text-[#8a8a84]"
+                      }`}
+                    >
+                      {reg.candidateReported
+                        ? "Candidate-reported"
+                        : "Registration details not provided"}
+                    </div>
+                    <div className="mt-[3px] text-[10.5px] italic leading-[1.4] text-[#8a8a84]">
+                      Employer should verify current standing with{" "}
+                      {reg.regulatorShort || reg.regulator}.
+                    </div>
+                  </div>
+                )}
+
+                {candidate.edu && (
+                  <div className="mt-0.5">
+                    <MicroLabel>Education</MicroLabel>
+                    <div className="text-[13px] font-semibold leading-[1.4] text-ink">
+                      {candidate.edu}
+                    </div>
+                  </div>
+                )}
+
+                {candidate.lang?.length > 0 && (
+                  <div className="mt-2.5">
+                    <SideRow label="Languages" variant="quiet">
+                      {candidate.lang.join(", ")}
+                    </SideRow>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Actions */}
-          <div className="mt-4">
-            <div className="h-px w-full bg-ash" />
-
-            <div className="my-4 flex flex-col gap-3 text-xs sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap justify-between md:justify-center gap-2">
+            {/* Actions */}
+            <div className="mt-6.5 flex flex-wrap items-center justify-end gap-3.5 border-t border-ash pt-[22px]">
+              <div
+                className="mr-auto flex flex-wrap gap-2"
+                data-tour="profile-actions"
+              >
                 <button
-                  className={`cursor-pointer flex items-center gap-1 rounded-md border px-4 py-2 ${
-                    saved.includes(candidate.id)
-                      ? "border-highlight bg-highlight/10 text-highlight"
-                      : "border-ash text-ink-mid"
-                  }`}
+                  type="button"
+                  aria-pressed={isSaved}
                   onClick={() => onSave(candidate.id)}
+                  className={`${utilBtn} ${isSaved ? utilActive : utilIdle}`}
                 >
-                  <IoMdStarOutline className="shrink-0" />
-                  {saved.includes(candidate.id) ? "Saved" : "Save"}
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill={isSaved ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-3.5 w-3.5"
+                  >
+                    <path d="M12 3.5l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17.3l-5.4 3.1 1-6.1-4.4-4.3 6.1-.9L12 3.5Z" />
+                  </svg>
+                  {isSaved ? "Saved" : "Save"}
                 </button>
 
                 <button
-                  className={`cursor-pointer rounded-md flex items-center gap-1 border px-4 py-2 ${
-                    compare.includes(candidate.id)
-                      ? "border-highlight bg-highlight/10 text-highlight"
-                      : "border-ash text-ink-mid"
-                  }`}
+                  type="button"
+                  aria-pressed={inCompare}
                   onClick={() => onCompare(candidate.id)}
+                  className={`${utilBtn} ${inCompare ? utilActive : utilIdle}`}
                 >
-                  <FiCheckSquare className="shrink-0" />
-                  {compare.includes(candidate.id) ? "In compare" : "Compare"}
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-3.5 w-3.5"
+                  >
+                    <path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                  </svg>
+                  {inCompare ? "In Compare" : "Compare"}
                 </button>
+
+                {onHide && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onHide(candidate.id);
+                      setView(results[0].id);
+                    }}
+                    className={`${utilBtn} ${inHidden ? utilActive : utilIdle}`}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-3.5 w-3.5"
+                    >
+                      <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
+                      <path d="M9 9l6 6M15 9l-6 6" />
+                    </svg>
+                    Hide
+                  </button>
+                )}
               </div>
 
               {candidate.specialist ? (
-                <button
-                  className={`cursor-pointer flex items-center gap-1 justify-center w-40 rounded-lg px-4 font-semibold py-2 ${intro ? "text-highlight border-highlight border" : "text-white bg-highlight"}`}
-                  onClick={() => onIntroduction(candidate)}
-                  disabled={intro}
-                >
-                  {intro ? "Requested" : "Request introduction"}
-                </button>
+                <div className="flex max-w-[220px] flex-1 flex-col">
+                  <button
+                    type="button"
+                    disabled={intro}
+                    onClick={() => onIntroduction(candidate)}
+                    className={`${revealBtnBase} focus-visible:outline-[#b8621a] ${
+                      intro
+                        ? "border-[1.5px] border-[#d9a878] bg-white text-[#b8621a]"
+                        : "border-none bg-[#b8621a] text-white hover:bg-[#96500f]"
+                    }`}
+                  >
+                    {intro
+                      ? "Introduction requested ✓"
+                      : "Request introduction"}
+                  </button>
+                  <div className="mt-2 text-center text-[10.5px] text-[#8a8a84]">
+                    Specialist · recruiter-assisted
+                  </div>
+                </div>
               ) : (
                 <button
-                  className={`cursor-pointer flex items-center gap-1 justify-center w-40 rounded-lg px-4 py-2 disabled:cursor-not-allowed ${
-                    reveals.includes(candidate.id)
-                      ? "border border-forest bg-transparent text-forest-dark"
-                      : "bg-forest text-white"
-                  }`}
+                  type="button"
+                  data-tour="profile-reveal"
+                  // disabled={revealed}
                   onClick={() => setReveal(candidate)}
-                  disabled={reveals.includes(candidate.id)}
+                  className={`${revealBtnBase} focus-visible:outline-[#16260c] ${
+                    revealed
+                      ? "border-[1.5px] border-forest bg-white text-forest hover:bg-forest-light"
+                      : "border-none bg-forest text-white hover:bg-[#3d6b1f]"
+                  }`}
                 >
-                  {reveals.includes(candidate.id) ? "Revealed" : "Reveal"}
-                  {reveals.includes(candidate.id) ? (
-                    <GiCheckMark />
-                  ) : (
-                    <MdArrowRightAlt />
-                  )}
+                  {revealed ? "Revealed ✓" : "Reveal →"}
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Scroll to bottom */}
+        {/* Scroll to bottom — centered over the pane */}
         <AnimatePresence>
           {showDown && (
             <motion.button
               key="scroll-down"
               type="button"
-              aria-label="Scroll to bottom"
+              aria-label="Scroll down for more profile detail"
               title="Scroll to bottom"
-              initial={{ opacity: 0, y: 8, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.9 }}
+              initial={{ opacity: 0, y: 8, x: "-50%", scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, x: "-50%", scale: 1 }}
+              exit={{ opacity: 0, y: 8, x: "-50%", scale: 0.9 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
               onClick={scrollToBottom}
-              className="absolute bottom-5 right-6 z-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-forest text-white shadow-lg transition-colors hover:bg-forest-dark"
+              className="absolute bottom-[18px] left-1/2 z-10 flex h-[38px] w-[38px] cursor-pointer items-center justify-center rounded-full bg-[#16260c] text-white shadow-[0_6px_18px_rgba(22,38,12,.28)] transition-colors hover:bg-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
-              <FaArrowDown size={14} />
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
+                <path d="M12 4v14M6 12l6 6 6-6" />
+              </svg>
             </motion.button>
           )}
         </AnimatePresence>
       </div>
-    </div>
-  );
-}
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="mt-6">
-      <h3 className="mb-3 text-[.65rem] font-semibold uppercase tracking-widest text-ink-soft">
-        {title}
-      </h3>
-
-      {children}
-    </section>
-  );
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <p className="text-forest">{label}</p>
-      <p className="text-xs font-semibold text-ink-mid">{value}</p>
     </div>
   );
 }

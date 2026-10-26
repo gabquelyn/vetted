@@ -13,7 +13,7 @@ type ProfessionGateProps = {
 };
 
 const pillBase =
-  "cursor-pointer text-xs md:text-[.6rem] flex px-2 md:px-4 items-center gap-[7px] rounded-full border py-[5px] md:py-[9px] font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest";
+  "cursor-pointer text-xs md:tex-sm flex px-2 md:px-4 items-center gap-[7px] rounded-full border py-[5px] md:py-[9px] font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest";
 
 export default function ProfessionGate({
   selected,

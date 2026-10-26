@@ -9,9 +9,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { LuFilter, LuX } from "react-icons/lu";
-import { GoPin } from "react-icons/go";
-import Divider from "./Divider";
+import { LuX } from "react-icons/lu";
 import MultiSelect from "./MultiSelect";
 import {
   EMPLOYMENT,
@@ -21,13 +19,14 @@ import {
   PROFILE,
   SHIFTS,
 } from "@/app/data/professions";
+import { AVAILABILITY } from "@/app/data/registry";
 
 const PANEL_WIDTH = 288; // w-72
 const VIEWPORT_GUTTER = 8;
 const CLOSE_DELAY_MS = 120;
 
 /** Subscribes to a media query without setting state from an effect. */
-function useMediaQuery(query: string) {
+export function useMediaQuery(query: string) {
   return useSyncExternalStore(
     (onChange) => {
       const mql = window.matchMedia(query);
@@ -39,7 +38,68 @@ function useMediaQuery(query: string) {
   );
 }
 
+/** Number of selected values, whether the filter holds an array, a Set or a scalar. */
+const selectedCount = (v: unknown): number =>
+  Array.isArray(v) ? v.length : v instanceof Set ? v.size : v ? 1 : 0;
+
 type CardMode = "floating" | "pinned" | "sheet";
+
+/* ---------- small building blocks (mirror .fd-filters-core-label, .fd-more-label, .fd-group-toggle) ---------- */
+const FieldLabel = ({ children }: { children: React.ReactNode }) => (
+  <p className="mb-1.5 text-[10px] font-semibold text-[#8a8a84]">{children}</p>
+);
+
+function FilterGroup({
+  title,
+  count,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-b border-ash last:border-b-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={onToggle}
+        className={`flex w-full cursor-pointer select-none items-center gap-[7px] rounded-[3px] py-2.5 text-left text-xs hover:text-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest ${
+          count > 0 ? "font-bold text-[#16260c]" : "font-semibold text-ink"
+        }`}
+      >
+        <span className="flex-1">{title}</span>
+        {count > 0 && (
+          <span className="shrink-0 rounded-full bg-forest-light px-[7px] py-0.5 text-[10px] font-bold text-forest">
+            {count}
+          </span>
+        )}
+        <svg
+          width="10"
+          height="6"
+          viewBox="0 0 10 6"
+          fill="none"
+          className={`shrink-0 text-[#8a8a84] transition-transform duration-150 ${
+            open ? "rotate-180" : ""
+          }`}
+        >
+          <path
+            d="M1 1l4 4 4-4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open && <div className="flex flex-col gap-2 pb-3">{children}</div>}
+    </div>
+  );
+}
 
 export default function Filtering({
   filters,
@@ -66,6 +126,10 @@ export default function Filtering({
   // Clip only while the pinned block is animating its height, so inner
   // dropdowns (MultiSelect lists) aren't cut off once it has settled.
   const [clip, setClip] = useState(false);
+  // Refine groups: 1 = Role & Setting, 2 = Location & Mobility, 3 = Profile & Status
+  const [openGroups, setOpenGroups] = useState<Record<number, boolean>>({});
+  const toggleGroup = (n: number) =>
+    setOpenGroups((g) => ({ ...g, [n]: !g[n] }));
 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -79,16 +143,16 @@ export default function Filtering({
     }
   }, []);
 
-  // Measure the trigger and place the floating panel under it. Only called
-  // from event handlers and external-event subscriptions, never from an
-  // effect body, so it doesn't cause cascading renders.
+  // Measure the trigger and place the floating panel over it (top-left aligned,
+  // like the HTML dock). Only called from event handlers and external-event
+  // subscriptions, never from an effect body.
   const updatePosition = useCallback(() => {
     const el = buttonRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const maxLeft = window.innerWidth - PANEL_WIDTH - VIEWPORT_GUTTER;
     setPos({
-      top: rect.bottom,
+      top: rect.top,
       left: Math.max(VIEWPORT_GUTTER, Math.min(rect.left, maxLeft)),
     });
   }, []);
@@ -122,7 +186,6 @@ export default function Filtering({
   };
 
   // --- keep the floating panel anchored while the page scrolls / resizes ---
-  // Desktop only. Pure subscription: setState happens inside the callback.
   useEffect(() => {
     if (!open || pinned || isMobile) return;
     window.addEventListener("resize", updatePosition);
@@ -134,8 +197,6 @@ export default function Filtering({
   }, [open, pinned, isMobile, updatePosition]);
 
   // --- Escape closes both modes; outside-click closes the desktop popup only.
-  // On mobile the sheet stays until the user closes it (backdrop, ✕ or
-  // "Show results"), so a stray tap inside a nested dropdown can't dismiss it.
   useEffect(() => {
     if (!open || pinned) return;
 
@@ -167,15 +228,24 @@ export default function Filtering({
     };
   }, [open, isMobile]);
 
+  const roleCount =
+    selectedCount(filters.environment) +
+    selectedCount(filters.shift) +
+    selectedCount(filters.employment);
+  const mobilityCount = selectedCount(filters.mobility);
+  const profileCount = selectedCount(filters.profile);
+
+  const msClass = "relative inline-block w-20 overflow-y-auto bg-white ";
+
   // --- the card itself, shared by the floating, pinned and sheet modes ---
   const renderCard = (mode: CardMode) => (
     <div
-      className={`text-xs flex flex-col gap-2 bg-[#FCFAF5] p-4 overflow-y-auto overscroll-contain [&>*]:shrink-0 ${
+      className={`flex flex-col bg-[#fcfaf5] p-4 text-xs overflow-y-auto overscroll-contain [scrollbar-color:#b7bcc3_transparent] [scrollbar-width:thin] [&>*]:shrink-0 ${
         mode === "sheet"
-          ? "rounded-t-2xl border-t border-ash pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_32px_rgba(0,0,0,.18)]"
+          ? "rounded-t-2xl border-t border-[#ece5d3] pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_32px_rgba(0,0,0,.18)]"
           : mode === "floating"
-            ? "rounded-xl border border-ash shadow-lg"
-            : "rounded-xl border border-ash"
+            ? "rounded-2xl border border-[#ece5d3] shadow-[0_20px_48px_rgba(28,52,16,.16)]"
+            : "rounded-2xl border border-[#ece5d3]"
       }`}
       style={{
         maxHeight:
@@ -183,24 +253,15 @@ export default function Filtering({
             ? "85vh"
             : mode === "pinned"
               ? "calc(100vh - 2rem)"
-              : // floating: cap to the space below the trigger
-                `max(15rem, calc(100vh - ${pos.top}px - 1.5rem))`,
+              : // floating: cap to the space below the panel's top edge
+                `max(15rem, calc(100vh - ${pos.top}px - 1rem))`,
       }}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <p className="uppercase">Search and Filter</p>
-          {count > 0 && (
-            <motion.span
-              key={count}
-              initial={{ scale: 0.6 }}
-              animate={{ scale: 1 }}
-              className="h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-forest text-white text-[.55rem]"
-            >
-              {count}
-            </motion.span>
-          )}
-        </div>
+      {/* Header: "Search & Filter" + Pin / Collapse */}
+      <div className="mb-2.5 flex items-center justify-between border-b border-ash pb-[9px]">
+        <span className="text-[10px] font-bold uppercase tracking-[.05em] text-[#8a8a84]">
+          Search &amp; Filter
+        </span>
 
         {mode === "sheet" ? (
           <button
@@ -216,117 +277,169 @@ export default function Filtering({
             type="button"
             onClick={handlePinToggle}
             aria-pressed={pinned}
-            aria-label={pinned ? "Unpin filters" : "Pin filters"}
-            title={pinned ? "Unpin filters" : "Pin filters"}
-            className={`cursor-pointer p-2 px-3 rounded-lg border transition-colors ${
+            aria-label={pinned ? "Collapse filters" : "Pin filters open"}
+            title={pinned ? "Collapse filters" : "Pin filters open"}
+            className={`flex cursor-pointer items-center gap-[5px] rounded-[7px] border px-2.5 py-1.5 text-[11px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest ${
               pinned
-                ? "bg-forest text-white border-forest"
-                : "bg-white text-ink border-ash hover:border-gray-300"
+                ? "border-forest bg-forest text-white"
+                : "border-ash bg-white text-ink-soft hover:border-forest hover:text-forest"
             }`}
           >
-            <motion.span
-              className="block"
-              animate={{
-                rotate: pinned ? 0 : 45,
-                scale: pinned ? [1, 1.25, 1] : 1,
-              }}
-              transition={{
-                rotate: { type: "spring", stiffness: 400, damping: 18 },
-                // keyframe arrays can't use springs, so the pop is a tween
-                scale: { duration: 0.25, ease: "easeOut" },
-              }}
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              <GoPin />
-            </motion.span>
+              <path d="M12 2v8m0 0-4 2 1 3h6l1-3-4-2Zm0 10v4" />
+            </svg>
+            {pinned ? "Collapse" : "Pin"}
           </button>
         )}
       </div>
-      <Divider />
 
+      {/* Primary Search */}
       <div>
-        <p className="text-ink-soft font-bold mb-2">Primary Search</p>
-        <MultiSelect
-          value={filters.profession}
-          onChange={(val) =>
-            setFilters((prev) => ({ ...prev, profession: val }))
-          }
-          className="relative inline-block w-20 overflow-y-auto bg-white "
-          options={PROFESSIONS.map((p) => ({ label: p[1], value: p[0] }))}
-          allowSearch
-        />
+        <div className="mb-[9px] text-[10px] font-bold uppercase tracking-[.05em] text-forest">
+          Primary Search
+        </div>
+        <div className="grid grid-cols-1 gap-[9px]">
+          <div>
+            <FieldLabel>Profession</FieldLabel>
+            <MultiSelect
+              value={filters.profession}
+              onChange={(val) =>
+                setFilters((prev) => ({ ...prev, profession: val }))
+              }
+              className={msClass}
+              options={PROFESSIONS.map((p) => ({ label: p[1], value: p[0] }))}
+              allowSearch
+            />
+          </div>
+          <div>
+            <FieldLabel>Availability</FieldLabel>
+            <MultiSelect
+              value={filters.availability}
+              onChange={(val) =>
+                setFilters((prev) => ({ ...prev, availability: val }))
+              }
+              className={msClass}
+              options={AVAILABILITY.map((a) => ({ label: a, value: a }))}
+            />
+          </div>
+        </div>
       </div>
 
-      <div>
-        <p className="text-ink-soft font-bold mb-2">Experienced environment</p>
-        <MultiSelect
-          value={filters.environment}
-          onChange={(val) =>
-            setFilters((prev) => ({ ...prev, environment: val }))
-          }
-          className="relative inline-block w-20 overflow-y-auto bg-white "
-          options={ENVIRONMENT.map((e) => ({ label: e, value: e }))}
-          allowSearch
-        />
+      {/* Refine */}
+      <div className="mt-[18px] border-t border-ash pt-[15px] text-[9.5px] font-bold uppercase tracking-[.05em] text-[#8a8a84]">
+        Refine
       </div>
 
-      <div>
-        <p className="text-ink-soft font-bold mb-2">Shifts</p>
-        <MultiSelect
-          value={filters.shift}
-          onChange={(val) => setFilters((prev) => ({ ...prev, shift: val }))}
-          className="relative inline-block w-20 overflow-y-auto bg-white "
-          options={SHIFTS.map((e) => ({ label: e, value: e }))}
-        />
-      </div>
+      <FilterGroup
+        title="Role & Setting"
+        count={roleCount}
+        open={!!openGroups[1]}
+        onToggle={() => toggleGroup(1)}
+      >
+        <div>
+          <FieldLabel>Experienced environment</FieldLabel>
+          <MultiSelect
+            value={filters.environment}
+            onChange={(val) =>
+              setFilters((prev) => ({ ...prev, environment: val }))
+            }
+            className={msClass}
+            options={ENVIRONMENT.map((e) => ({ label: e, value: e }))}
+            allowSearch
+          />
+        </div>
+        <div>
+          <FieldLabel>Shifts</FieldLabel>
+          <MultiSelect
+            value={filters.shift}
+            onChange={(val) => setFilters((prev) => ({ ...prev, shift: val }))}
+            className={msClass}
+            options={SHIFTS.map((e) => ({ label: e, value: e }))}
+          />
+        </div>
+        <div>
+          <FieldLabel>Employment</FieldLabel>
+          <MultiSelect
+            value={filters.employment}
+            onChange={(val) =>
+              setFilters((prev) => ({ ...prev, employment: val }))
+            }
+            className={msClass}
+            options={EMPLOYMENT.map((e) => ({ label: e, value: e }))}
+          />
+        </div>
+      </FilterGroup>
 
-      <div>
-        <p className="text-ink-soft font-bold mb-2">Employment</p>
-        <MultiSelect
-          value={filters.employment}
-          onChange={(val) =>
-            setFilters((prev) => ({ ...prev, employment: val }))
-          }
-          className="relative inline-block w-20 overflow-y-auto bg-white "
-          options={EMPLOYMENT.map((e) => ({ label: e, value: e }))}
-        />
-      </div>
+      <FilterGroup
+        title="Location & Mobility"
+        count={mobilityCount}
+        open={!!openGroups[2]}
+        onToggle={() => toggleGroup(2)}
+      >
+        <div className="w-full">
+          <FieldLabel>Mobility</FieldLabel>
+          <MultiSelect
+            value={filters.mobility}
+            onChange={(val) =>
+              setFilters((prev) => ({ ...prev, mobility: val }))
+            }
+            className={msClass}
+            options={MOBILITY.map((e) => ({ label: e[1], value: e[0] }))}
+          />
+        </div>
+      </FilterGroup>
 
-      <div className="w-full">
-        <p className="text-ink-soft font-bold mb-2">Mobility</p>
-        <MultiSelect
-          value={filters.mobility}
-          onChange={(val) => setFilters((prev) => ({ ...prev, mobility: val }))}
-          className="relative inline-block w-20 overflow-y-auto bg-white "
-          options={MOBILITY.map((e) => ({ label: e[1], value: e[0] }))}
-        />
-      </div>
-
-      <div>
-        <p className="text-ink-soft font-bold mb-2">Profile</p>
-        <MultiSelect
-          value={filters.profile}
-          onChange={(val) => setFilters((prev) => ({ ...prev, profile: val }))}
-          className="relative inline-block w-20 overflow-y-auto bg-white "
-          options={PROFILE.map((e) => ({ label: e[1], value: e[0] }))}
-        />
-      </div>
+      <FilterGroup
+        title="Profile & Status"
+        count={profileCount}
+        open={!!openGroups[3]}
+        onToggle={() => toggleGroup(3)}
+      >
+        <div>
+          <FieldLabel>Profile</FieldLabel>
+          <MultiSelect
+            value={filters.profile}
+            onChange={(val) =>
+              setFilters((prev) => ({ ...prev, profile: val }))
+            }
+            className={msClass}
+            options={PROFILE.map((e) => ({ label: e[1], value: e[0] }))}
+          />
+        </div>
+      </FilterGroup>
 
       {/* actions */}
       {mode === "sheet" ? (
-        <div className="flex items-center justify-between gap-3 pt-1">
-          <button className="cursor-pointer text-ink-soft" onClick={onClear}>
+        <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-ash pt-3">
+          <button
+            type="button"
+            className="cursor-pointer text-[11.5px] font-semibold text-forest hover:text-[#1e3a0f] hover:underline"
+            onClick={onClear}
+          >
             Clear filters
           </button>
           <button
-            className="cursor-pointer rounded-full bg-forest px-5 py-2 font-semibold text-white"
+            type="button"
+            className="cursor-pointer rounded-full bg-forest px-5 py-2 font-semibold text-white hover:bg-[#3d6b1f]"
             onClick={() => setOpen(false)}
           >
             Show results
           </button>
         </div>
       ) : (
-        <div className="flex items-center justify-end">
-          <button className="cursor-pointer" onClick={onClear}>
+        <div className="mt-2.5 flex gap-[18px] border-t border-ash pt-3">
+          <button
+            type="button"
+            className="cursor-pointer rounded-[3px] text-[11.5px] font-semibold text-forest transition-colors hover:text-[#1e3a0f] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+            onClick={onClear}
+          >
             Clear filters
           </button>
         </div>
@@ -335,6 +448,8 @@ export default function Filtering({
   );
 
   // --- desktop floating popup (portaled so no ancestor can cover or clip it) ---
+  // It opens directly over the strip, top-left aligned, so the pointer never
+  // leaves the panel and no hover bridge is needed.
   const floatingPanel = (
     <AnimatePresence>
       {open && !pinned && !isMobile && (
@@ -352,7 +467,6 @@ export default function Filtering({
             transformOrigin: "top left",
             zIndex: 9999,
           }}
-          className="pt-2" // invisible hover bridge between button and panel
           onMouseEnter={openPanel}
           onMouseLeave={scheduleClose}
         >
@@ -397,12 +511,13 @@ export default function Filtering({
   );
 
   return (
-    <div className="relative">
-      {/* When pinned, the card takes the button's place in the layout as a block */}
+    <div className="relative" data-tour="filters">
+      {/* When pinned, the card takes the strip's place in the layout as a block */}
       <AnimatePresence mode="wait" initial={false}>
         {pinned ? (
           <motion.div
             key="pinned"
+            data-tour="filters-heading"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -429,6 +544,7 @@ export default function Filtering({
               type="button"
               aria-haspopup="dialog"
               aria-expanded={open}
+              aria-label="Open filters"
               // Desktop: hover opens, a click doesn't fight it. Mobile: plain click toggles.
               onMouseEnter={isMobile ? undefined : openPanel}
               onMouseLeave={isMobile ? undefined : scheduleClose}
@@ -443,35 +559,55 @@ export default function Filtering({
                   togglePanel();
                 }
               }}
-              className={`relative cursor-pointer border border-ash bg-white text-xs ${
+              className={`relative cursor-pointer border border-ash bg-white text-ink-soft transition-colors hover:border-forest hover:text-forest focus-visible:border-forest focus-visible:text-forest focus-visible:outline-none ${
                 isMobile
-                  ? "flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold text-ink"
-                  : "flex flex-col items-center gap-2 rounded-xl p-4 uppercase text-ink-soft"
+                  ? "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+                  : "flex w-[52px] flex-col items-center gap-[9px] rounded-[14px] px-1.5 py-3.5"
               }`}
             >
-              {count > 0 && (
+              {isMobile && count > 0 && (
                 <motion.span
                   key={count}
                   initial={{ scale: 0.6 }}
                   animate={{ scale: 1 }}
-                  className={`absolute flex h-4 w-4 items-center justify-center rounded-full bg-forest text-[.5rem] text-white ${
-                    isMobile ? "-right-1 -top-1.5" : "-right-1.5 -top-2"
-                  }`}
+                  className="absolute -right-1 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-forest px-1 text-[9.5px] font-bold text-white"
                 >
                   {count}
                 </motion.span>
               )}
-              <LuFilter />
+
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="M4 6h16M7 12h10M10 18h4" />
+              </svg>
+
               {/* desktop: vertical-rl + rotate-180 reads bottom-to-top */}
               <span
                 className={
                   isMobile
                     ? ""
-                    : "text-ink tracking-wide [writing-mode:vertical-rl] rotate-180"
+                    : "text-[10px] font-bold uppercase tracking-[.09em] [writing-mode:vertical-rl] rotate-180"
                 }
               >
                 Filters
               </span>
+
+              {!isMobile && count > 0 && (
+                <motion.span
+                  key={count}
+                  initial={{ scale: 0.6 }}
+                  animate={{ scale: 1 }}
+                  className="flex h-4 min-w-4 items-center justify-center rounded-full bg-forest px-1 text-[9.5px] font-bold text-white"
+                >
+                  {count}
+                </motion.span>
+              )}
             </button>
           </motion.div>
         )}

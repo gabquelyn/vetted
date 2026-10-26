@@ -51,8 +51,11 @@ const countOccurrences = (text: string, term: string) => {
   return count;
 };
 
-export function searchCandidates(candidates: Candidate[], query: string): Candidate[] {
-  const terms = norm(query).split(/\s+/).filter(Boolean);
+export function searchCandidates(
+  candidates: Candidate[],
+  query: string[],
+): Candidate[] {
+  const terms = [...new Set(query.flatMap((q) => norm(q).split(/\s+/).filter(Boolean)))];
   if (!terms.length) return candidates;
 
   const scored: { c: Candidate; score: number }[] = [];
@@ -60,22 +63,73 @@ export function searchCandidates(candidates: Candidate[], query: string): Candid
   for (const c of candidates) {
     const index = getIndex(c);
     let total = 0;
-    let matchesAll = true;
 
     for (const term of terms) {
-      let termScore = 0;
       for (const field of index) {
-        termScore += countOccurrences(field.text, term) * field.weight;
+        total += countOccurrences(field.text, term) * field.weight;
       }
-      if (termScore === 0) {
-        matchesAll = false; // every word must match somewhere
-        break;
-      }
-      total += termScore;
     }
 
-    if (matchesAll) scored.push({ c, score: total });
+    if (total > 0) {
+      scored.push({ c, score: total });
+    }
   }
 
-  return scored.sort((a, b) => b.score - a.score).map((s) => s.c);
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .map(({ c }) => c);
+}
+
+type CandidateMatch = {
+  key: string;
+  value: unknown;
+  term: string;
+};
+
+export function findCandidateMatches(
+  candidate: Candidate,
+  terms: string[],
+): CandidateMatch[] {
+  const normalizedTerms = [
+    ...new Set(terms.map((term) => term.trim().toLowerCase()).filter(Boolean)),
+  ];
+
+  if (!normalizedTerms.length) return [];
+
+  const matches: CandidateMatch[] = [];
+
+  function search(value: unknown, key: string): void {
+    if (value == null) return;
+
+    if (typeof value === "string" || typeof value === "number") {
+      const text = String(value).toLowerCase();
+
+      for (const term of normalizedTerms) {
+        if (text.includes(term)) {
+          matches.push({ key, value, term });
+        }
+      }
+
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => search(item, key));
+      return;
+    }
+
+    if (typeof value === "object") {
+      Object.entries(value as Record<string, unknown>).forEach(
+        ([childKey, childValue]) => {
+          search(childValue, childKey);
+        },
+      );
+    }
+  }
+
+  Object.entries(candidate).forEach(([key, value]) => {
+    search(value, key);
+  });
+
+  return matches;
 }

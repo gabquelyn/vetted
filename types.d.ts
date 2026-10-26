@@ -93,7 +93,9 @@ type ActiveView =
   | "recent"
   | "compare"
   | "reveals"
-  | "requests" | "urgent";
+  | "requests"
+  | "urgent"
+  | "hidden";
 
 interface Filters {
   profession: string[];
@@ -102,5 +104,6 @@ interface Filters {
   employment: string[];
   mobility: string[];
   profile: string[];
-  [index: string] : string[]
+  availability: string[];
+  [index: string]: string[];
 }

@@ -1,179 +1,88 @@
-import React, { useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import React from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { Candidate, FULL_CANDIDATES } from "@/app/data/registry";
 
 const MAX_COMPARE = 3;
 const EMPTY = "—";
 
-/* ---------- row / section definitions ---------- */
+/* ---------- row / section definitions (mirror FD_COMPARE_SECTIONS) ---------- */
 
 interface Row {
   label: string;
-  /** Plain string used to detect differences between candidates */
+  /** Plain string — also used to detect differences between candidates */
   value: (c: Candidate) => string;
-  /** Optional richer rendering; falls back to the plain value */
-  render?: (c: Candidate) => React.ReactNode;
+  /** Clamp long text to 3 lines */
+  wrap?: boolean;
 }
 
 interface Section {
   title: string;
   rows: Row[];
+  secondary?: boolean;
 }
 
 const list = (v?: string[]) => (v && v.length ? v.join(", ") : EMPTY);
-const yesNo = (v?: boolean) => (v === undefined ? EMPTY : v ? "Yes" : "No");
-
-/** ProfessionalRegistration shape isn't known here: join its string/number values */
-const describeRecord = (r: unknown): string => {
-  if (typeof r === "string") return r;
-  if (r && typeof r === "object") {
-    return Object.values(r as Record<string, unknown>)
-      .filter(
-        (x): x is string | number =>
-          typeof x === "string" || typeof x === "number",
-      )
-      .join(" · ");
-  }
-  return "";
-};
-
-const Chips = ({ items }: { items?: string[] }) =>
-  items && items.length ? (
-    <div className="flex flex-wrap gap-1.5">
-      {items.map((i) => (
-        <span
-          key={i}
-          className="rounded-full bg-forest-pale px-2 py-0.5 text-xs font-medium text-forest"
-        >
-          {i}
-        </span>
-      ))}
-    </div>
-  ) : (
-    <span className="text-ink-soft">{EMPTY}</span>
-  );
+const yesNo = (v?: boolean) => (v ? "Yes" : "No");
 
 const SECTIONS: Section[] = [
   {
-    title: "Overview",
+    title: "Role & Experience",
     rows: [
-      { label: "Role", value: (c) => c.title },
-      { label: "Location", value: (c) => c.loc },
+      { label: "Profession", value: (c) => c.title },
       {
         label: "Experience",
         value: (c) => `${c.years} ${c.years === 1 ? "year" : "years"}`,
       },
+      {
+        label: "Experience context",
+        value: (c) => c.exp?.[0]?.context || EMPTY,
+        wrap: true,
+      },
+      { label: "Work environments", value: (c) => list(c.env) },
+      { label: "Skills & specialty", value: (c) => list(c.skills), wrap: true },
+    ],
+  },
+  {
+    title: "Availability & Schedule",
+    rows: [
       { label: "Availability", value: (c) => c.avail },
-      { label: "Last active", value: (c) => c.activeAgo },
-      { label: "Snapshot", value: (c) => c.snapshot },
-    ],
-  },
-  {
-    title: "Work preferences",
-    rows: [
-      { label: "Preferred employment", value: (c) => c.empType },
+      { label: "Shift preference", value: (c) => list(c.shift) },
       {
-        label: "Accepted employment types",
-        value: (c) => list(c.acceptedEmpTypes),
-        render: (c) => <Chips items={c.acceptedEmpTypes} />,
-      },
-      {
-        label: "Shifts",
-        value: (c) => list(c.shift),
-        render: (c) => <Chips items={c.shift} />,
-      },
-      {
-        label: "Current environment",
-        value: (c) => list(c.env),
-        render: (c) => <Chips items={c.env} />,
-      },
-      {
-        label: "Open to working in",
-        value: (c) => list(c.openToWorkingIn),
-        render: (c) => <Chips items={c.openToWorkingIn} />,
-      },
-      {
-        label: "Independent contractor",
+        label: "Employment type",
         value: (c) =>
-          c.ic
-            ? ["Yes", c.icShiftType, c.icNotice].filter(Boolean).join(" · ")
-            : c.ic === false
-              ? "No"
-              : EMPTY,
+          c.empType +
+          ((c.acceptedEmpTypes?.length ?? 0) > 1
+            ? ` (+${(c.acceptedEmpTypes?.length ?? 1) - 1} accepted)`
+            : ""),
       },
+      { label: "Independent Contractor", value: (c) => yesNo(c.ic) },
     ],
   },
   {
-    title: "Logistics",
+    title: "Relevant Qualifications",
     rows: [
-      { label: "Confirmed days / week", value: (c) => String(c.confirmedDays) },
-      { label: "Vehicle", value: (c) => yesNo(c.vehicle) },
-      { label: "Driver's licence", value: (c) => yesNo(c.licence) },
-      { label: "Rural / remote", value: (c) => c.rural || EMPTY },
-      {
-        label: "Relocation",
-        value: (c) =>
-          [
-            c.relocation,
-            c.relocationReach?.length
-              ? `(${c.relocationReach.join(", ")})`
-              : "",
-          ]
-            .filter(Boolean)
-            .join(" ") || EMPTY,
-      },
-      { label: "Float pool", value: (c) => c.float || EMPTY },
-    ],
-  },
-  {
-    title: "Skills & credentials",
-    rows: [
-      {
-        label: "Skills",
-        value: (c) => list(c.skills),
-        render: (c) => <Chips items={c.skills} />,
-      },
-      {
-        label: "Specialties",
-        value: (c) => list(c.specialties),
-        render: (c) => <Chips items={c.specialties} />,
-      },
       { label: "Credential", value: (c) => c.credential || EMPTY },
+      { label: "Certifications", value: (c) => list(c.certs), wrap: true },
+    ],
+  },
+  {
+    title: "Practical Fit",
+    rows: [
+      { label: "Open to working in", value: (c) => list(c.openToWorkingIn) },
+      { label: "Location", value: (c) => c.loc },
+      { label: "Relocation", value: (c) => c.relocation || "Not specified" },
+      { label: "Own vehicle", value: (c) => yesNo(c.vehicle) },
+      { label: "Driver's licence", value: (c) => yesNo(c.licence) },
+    ],
+  },
+  {
+    title: "Trust & Logistics",
+    secondary: true,
+    rows: [
       {
-        label: "Professional registration",
+        label: "Confirmation recency",
         value: (c) =>
-          c.professionalRegistration?.length
-            ? c.professionalRegistration
-                .map(describeRecord)
-                .filter(Boolean)
-                .join("; ")
-            : EMPTY,
-        render: (c) =>
-          c.professionalRegistration?.length ? (
-            <ul className="list-disc space-y-0.5 pl-4">
-              {c.professionalRegistration.map((r, i) => (
-                <li key={i}>{describeRecord(r) || EMPTY}</li>
-              ))}
-            </ul>
-          ) : (
-            <span className="text-ink-soft">{EMPTY}</span>
-          ),
-      },
-      { label: "Education", value: (c) => c.edu || EMPTY },
-      {
-        label: "Certifications",
-        value: (c) => list(c.certs),
-        render: (c) => <Chips items={c.certs} />,
-      },
-      {
-        label: "EMR systems",
-        value: (c) => list(c.emr),
-        render: (c) => <Chips items={c.emr} />,
-      },
-      {
-        label: "Languages",
-        value: (c) => list(c.lang),
-        render: (c) => <Chips items={c.lang} />,
+          `${c.confirmedDays} day${c.confirmedDays === 1 ? "" : "s"} ago`,
       },
     ],
   },
@@ -185,238 +94,269 @@ export interface CandidateCompareProps {
   ids: string[];
   onRemove?: (id: string) => void;
   onClose?: () => void;
+  /** Shows "Clear comparison" next to Close */
+  onClear?: () => void;
   onViewProfile?: (id: string) => void;
+  /** Header actions — each button only renders if its handler is provided */
+  onReveal?: (c: Candidate) => void;
+  onIntroduction?: (c: Candidate) => void;
+  reveals?: string[];
+  introduced?: string[];
 }
 
 export function CandidateCompare({
   ids,
   onRemove,
   onClose,
+  onClear,
   onViewProfile,
+  onReveal,
+  onIntroduction,
+  reveals = [],
+  introduced = [],
 }: CandidateCompareProps) {
-  const byId = new Map(FULL_CANDIDATES.map((c) => [c.id, c]));
+  const reduce = useReducedMotion();
 
+  const byId = new Map(FULL_CANDIDATES.map((c) => [c.id, c]));
   const candidates = ids
     .map((id) => byId.get(id))
     .filter((c): c is Candidate => c !== undefined);
+  const shown = candidates.slice(0, MAX_COMPARE);
 
-  const [highlightDiffs, setHighlightDiffs] = useState(false);
-  const reduce = useReducedMotion();
-  const shown = useMemo(() => candidates.slice(0, MAX_COMPARE), [candidates]);
+  const cols = `150px repeat(${shown.length || 1}, minmax(0, 1fr))`;
+  const anyRevealed = shown.some((c) => reveals.includes(c.id));
 
-  const fade = reduce
-    ? {}
-    : {
-        initial: { opacity: 0, y: 6 },
-        animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: -6 },
-      };
-
-  if (shown.length === 0) {
-    return (
-      <motion.div
-        {...fade}
-        className="rounded-xl border border-ash p-8 text-center text-xs text-ink-soft"
-      >
-        Select candidates to compare (up to {MAX_COMPARE}).
-      </motion.div>
-    );
-  }
-
-  const isDifferent = (row: Row) => {
-    if (shown.length < 2) return false;
-    const first = row.value(shown[0]);
-    return shown.some((c) => row.value(c) !== first);
-  };
-
-  let rowIndex = 0;
+  const note =
+    shown.length === 0
+      ? "Compare Professionals"
+      : shown.length === 1
+        ? `You have selected ${shown[0].id} for comparison. Select Compare on another candidate to compare them side by side.`
+        : `${
+            anyRevealed ? "Structured" : "Pre-Reveal"
+          } comparison. Meaningful differences are emphasized; identical information stays quiet. Vetted does not rank, score or recommend a candidate — you decide.`;
 
   return (
-    <motion.section
-      initial={reduce ? false : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="text-ink"
+    <
     >
-      {/* toolbar */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold font-serif">
-          Compare candidates{" "}
-          <span className="text-xs font-normal text-ink-soft">
-            ({shown.length}/{MAX_COMPARE})
-          </span>
-        </h2>
+      {/* head */}
+      <div className="mb-1.5 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="font-serif text-2xl font-semibold">
+            Compare professionals
+          </h3>
+          <div className="mt-1 text-[12.5px] text-[#8a8a84]">
+            {shown.length === 1 ? "1 selected" : `${shown.length} selected`}
+          </div>
+        </div>
 
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={highlightDiffs}
-            onClick={() => setHighlightDiffs((v) => !v)}
-            className="flex items-center gap-2 text-xs text-ink-mid"
-          >
-            <span
-              className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors duration-200 ${
-                highlightDiffs
-                  ? "bg-forest justify-end"
-                  : "bg-ash justify-start"
-              }`}
-            >
-              <motion.span
-                layout
-                transition={{ type: "spring", stiffness: 500, damping: 32 }}
-                className="h-4 w-4 rounded-full bg-white shadow"
-              />
-            </span>
-            Highlight differences
-          </button>
-
-          {onClose && (
-            <motion.button
+        <div className="flex shrink-0 items-center gap-3.5">
+          {onClear && shown.length > 0 && (
+            <button
               type="button"
-              whileTap={{ scale: 0.96 }}
-              onClick={onClose}
-              className="rounded-md border border-ash bg-white px-3 py-1.5 text-xs text-ink-mid hover:border-forest-mid hover:text-forest"
+              onClick={onClear}
+              className="cursor-pointer text-[12.5px] font-semibold text-forest underline underline-offset-2 hover:text-[#16260c]"
             >
-              Close
-            </motion.button>
+              Clear comparison
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="cursor-pointer rounded-full border border-ash bg-white px-4 py-[9px] text-[12.5px] font-semibold text-[#8a8a84] transition-colors hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+            >
+              Close ✕
+            </button>
           )}
         </div>
       </div>
 
-      {candidates.length > MAX_COMPARE && (
-        <p className="mb-2 text-xs text-ink-soft">
-          Only the first {MAX_COMPARE} candidates are shown.
-        </p>
-      )}
+      {/* note */}
+      <div className="mb-5 mt-3.5 border-b border-ash pb-4 text-xs text-ink-soft">
+        {note}
+        {candidates.length > MAX_COMPARE &&
+          ` Only the first ${MAX_COMPARE} candidates are shown.`}
+      </div>
 
-      {/* table */}
-      <div className="overflow-x-auto rounded-xl border border-ash">
-        <table className="w-full min-w-160 table-fixed border-collapse">
-          <thead>
-            <tr>
-              <th className="sticky left-0 z-10 w-44 border-b border-ash bg-white p-3" />
-              <AnimatePresence initial={false} mode="popLayout">
-                {shown.map((c) => (
-                  <motion.th
+      {shown.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-ash bg-white p-12 text-center text-[13.5px] leading-[1.8] text-[#8a8a84]">
+          Select Compare on candidate cards (or from a profile) to review
+          professionals side by side. Selected professionals will appear here.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-[14px] border border-ash bg-white [scrollbar-color:#b7bcc3_transparent] [scrollbar-width:thin]">
+          <div style={{ minWidth: 150 + shown.length * 210 }}>
+            {/* header row */}
+            <div
+              className="grid bg-[#16260c]"
+              style={{ gridTemplateColumns: cols }}
+            >
+              <div className="sticky left-0 z-[3] bg-[#16260c]" />
+
+              {shown.map((c, i) => {
+                const authorized = reveals.includes(c.id);
+                const pendingIntro =
+                  !!c.specialist && introduced.includes(c.id) && !authorized;
+                const identityLine =
+                  authorized && c.reveal?.name
+                    ? `${c.reveal.name} · ${c.title} · ${c.loc}`
+                    : `${c.title} · ${c.loc}`;
+
+                const rvlLabel = c.specialist
+                  ? pendingIntro
+                    ? "Introduction requested ✓"
+                    : authorized
+                      ? "Introduced ✓"
+                      : "Request introduction"
+                  : authorized
+                    ? "Revealed ✓"
+                    : "Reveal";
+
+                const rvlClass = c.specialist
+                  ? pendingIntro
+                    ? "border-[1.5px] border-[#d9a878] bg-white px-2.5 py-[6.5px] text-[10px] text-[#b8621a] hover:bg-[#fdf3e8]"
+                    : authorized
+                      ? "bg-[#B9D8A0] text-[#16260c] hover:bg-[#a8cc8a]"
+                      : "bg-[#e0b579] px-2.5 py-[7px] text-[10px] text-[#3a2610] hover:bg-[#a8cc8a]"
+                  : "bg-[#B9D8A0] text-[#16260c] hover:bg-[#a8cc8a]";
+
+                const showReveal = c.specialist
+                  ? !!onIntroduction || authorized
+                  : !!onReveal;
+
+                return (
+                  <div
                     key={c.id}
-                    layout
-                    {...fade}
-                    className={`border-b border-r border-ash  p-3 text-left align-top ${c.specialist ? "bg-highlight/5 border-b-highlight" : "bg-forest-pale/40"}`}
+                    className={`min-w-0 p-4 text-white ${
+                      i < shown.length - 1 ? "border-r border-white/12" : ""
+                    } ${c.specialist ? "shadow-[inset_0_4px_0_#c17a3a]" : ""}`}
+                    style={
+                      c.specialist
+                        ? {
+                            background:
+                              "linear-gradient(180deg, rgba(193,122,58,.14) 0%, rgba(193,122,58,.03) 60%, transparent 100%), #16260c",
+                          }
+                        : undefined
+                    }
                   >
-                    <div className="flex justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-forest">
-                          {c.title}
-                        </div>
-                        <div className="mt-0.5 text-xs font-normal text-ink-soft">
-                          <p>
-                            {c.loc} · {c.id}
-                          </p>
-                          {c.specialist && (
-                            <p className="mt-1 w-fit self-start rounded-full bg-highlight/15 px-2 py-0.5 font-semibold text-[.6rem] tracking-wide text-highlight">
-                              Specialist
-                            </p>
-                          )}
-                        </div>
-                        {c.discoverable === false && (
-                          <span className="mt-1.5 inline-block rounded-full bg-ash px-2 py-0.5 text-[11px] font-medium text-ink-mid">
-                            Not in Registry discovery
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1 text-xs">
-                        {onViewProfile && (
-                          <button
-                            type="button"
-                            onClick={() => onViewProfile(c.id)}
-                            className="font-medium text-forest-mid text-xs underline hover:text-forest hover:underline cursor-pointer"
-                          >
-                            View
-                          </button>
-                        )}
-
-                        {onRemove && (
-                          <button
-                            type="button"
-                            aria-label={`Remove ${c.id} from comparison`}
-                            onClick={() => onRemove(c.id)}
-                            className="text-ink-soft text-xs cursor-pointer hover:text-inkcs hover:underline"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
+                    {onRemove && (
+                      <button
+                        type="button"
+                        onClick={() => onRemove(c.id)}
+                        aria-label={`Remove ${c.id} from comparison`}
+                        className="mb-2.5 inline-block cursor-pointer border-none bg-transparent p-0 text-[10.5px] font-semibold text-white/60 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      >
+                        Remove ✕
+                      </button>
+                    )}
+                    <div className="mb-0.5 flex items-center gap-1.5 font-mono text-[10.5px] text-white/55">
+                      {c.id}
+                      {c.specialist && (
+                        <span className="font-sans text-[9px] font-bold uppercase tracking-[.04em] text-[#e0b579]">
+                          Specialist
+                        </span>
+                      )}
                     </div>
-                  </motion.th>
-                ))}
-              </AnimatePresence>
-            </tr>
-          </thead>
+                    <div
+                      className="mb-2 truncate text-sm font-bold"
+                      title={identityLine}
+                    >
+                      {identityLine}
+                    </div>
+                    <div className="flex flex-wrap gap-[7px]">
+                      {onViewProfile && (
+                        <button
+                          type="button"
+                          onClick={() => onViewProfile(c.id)}
+                          className="cursor-pointer rounded-lg border-none bg-white/14 px-3 py-2 text-[11px] font-bold text-white hover:bg-white/22 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                        >
+                          View Profile
+                        </button>
+                      )}
+                      {showReveal && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            c.specialist && !authorized
+                              ? onIntroduction?.(c)
+                              : onReveal?.(c)
+                          }
+                          className={`cursor-pointer rounded-lg border-none px-3 py-2 text-[11px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${rvlClass}`}
+                        >
+                          {rvlLabel}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-          <tbody>
+            {/* sections */}
             {SECTIONS.map((section) => (
-              <React.Fragment key={section.title}>
-                <tr>
-                  <td
-                    colSpan={shown.length + 1}
-                    className="border-b border-ash bg-ash/40 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-mid"
-                  >
-                    {section.title}
-                  </td>
-                </tr>
+              <div key={section.title}>
+                <div
+                  className={`bg-[#fbf8f2] px-[18px] pb-[7px] pt-3.5 text-[9.5px] font-bold uppercase tracking-[.06em] ${
+                    section.secondary
+                      ? "mt-1 border-t border-ash text-[#8a8a84]"
+                      : "text-forest"
+                  }`}
+                >
+                  {section.title}
+                </div>
 
                 {section.rows.map((row) => {
-                  const diff = highlightDiffs && isDifferent(row);
-                  const i = rowIndex++;
+                  const values = shown.map(row.value);
+                  const allSame = values.every((v) => v === values[0]);
                   return (
-                    <motion.tr
+                    <div
                       key={row.label}
-                      initial={reduce ? false : { opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{
-                        delay: Math.min(i * 0.02, 0.4),
-                        duration: 0.25,
-                      }}
+                      className={`grid border-b border-[#f2efe6] last:border-b-0 ${
+                        section.secondary ? "opacity-[.72]" : ""
+                      }`}
+                      style={{ gridTemplateColumns: cols }}
                     >
-                      <th
-                        scope="row"
-                        className="sticky left-0 z-10 border-b border-ash bg-white p-3 text-left text-xs font-medium text-ink-mid"
+                      <div
+                        className={`sticky left-0 z-[2] flex items-center border-r border-ash bg-cream px-[18px] py-[13px] font-bold uppercase tracking-[.05em] ${
+                          section.secondary ? "text-[9px]" : "text-[9.5px]"
+                        } ${
+                          allSame
+                            ? "text-[#8a8a84]"
+                            : "text-forest shadow-[inset_3px_0_0_#2D5016]"
+                        }`}
                       >
-                        <span className="flex items-center gap-2">
-                          <AnimatePresence>
-                            {diff && (
-                              <motion.span
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                exit={{ scale: 0 }}
-                                className="h-1.5 w-1.5 shrink-0 rounded-full bg-forest-mid"
-                              />
-                            )}
-                          </AnimatePresence>
-                          {row.label}
-                        </span>
-                      </th>
+                        {row.label}
+                      </div>
 
-                      {shown.map((c) => (
-                        <td
-                          key={c.id}
-                          className={`wrap-break-word border-b border-ash p-3 align-top text-xs text-ink transition-colors duration-300 ${
-                            diff ? "bg-forest-pale/60" : "bg-white"
+                      {values.map((v, i) => (
+                        <div
+                          key={shown[i].id}
+                          className={`flex min-w-0 items-center px-[18px] py-[13px] ${
+                            row.wrap ? "!items-start" : ""
+                          } ${
+                            allSame
+                              ? "text-xs font-normal text-[#8a8a84]"
+                              : "text-[13px] font-bold text-[#16260c]"
                           }`}
                         >
-                          {row.render ? row.render(c) : row.value(c)}
-                        </td>
+                          {row.wrap ? (
+                            <div className="line-clamp-3 leading-[1.45]">
+                              {v}
+                            </div>
+                          ) : (
+                            v
+                          )}
+                        </div>
                       ))}
-                    </motion.tr>
+                    </div>
                   );
                 })}
-              </React.Fragment>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </motion.section>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
