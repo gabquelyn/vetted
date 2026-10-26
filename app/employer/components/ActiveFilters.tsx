@@ -94,7 +94,7 @@ export default function ActiveFilters({
 
         {/* Committed search phrases (.fd-query-chip) */}
         {terms.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {terms.map((term) => (
               <span
                 key={term}
