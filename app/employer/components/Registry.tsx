@@ -283,7 +283,7 @@ export default function Registry({
     <>
       <TourController
         activeView={activeView}
-        condition = {gateDone}
+        condition={gateDone}
         surface={
           activePanel
             ? "results-pinned"
@@ -302,6 +302,11 @@ export default function Registry({
           }}
           terms={terms}
           onTermsChange={(t) => setTerms(t)}
+          onBuild={() =>
+            toast.info(
+              "AI-assisted search construction is available in the full Employer Workspace.",
+            )
+          }
         />
       )}
 
