@@ -283,7 +283,7 @@ export default function Registry({
     <>
       <TourController
         activeView={activeView}
-        condition
+        condition = {gateDone}
         surface={
           activePanel
             ? "results-pinned"
