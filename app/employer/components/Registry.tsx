@@ -592,7 +592,7 @@ export default function Registry({
             </p>
           )}
 
-          {!["compare"].includes(activeView) && (
+          {!["compare", "urgent"].includes(activeView) && (
             <>
               {/* Profile or candidate results */}
               {viewing ? (
