@@ -7,8 +7,9 @@ export default function Highlight({
   text: string;
   terms: string[];
 }) {
-  const matches = [...new Set(terms.map((term) => term.trim()).filter(Boolean))]
-    .sort((a, b) => b.length - a.length);
+  const matches = [
+    ...new Set(terms.map((term) => term.trim()).filter(Boolean)),
+  ].sort((a, b) => b.length - a.length);
 
   if (!matches.length) return <>{text}</>;
 
@@ -22,10 +23,11 @@ export default function Highlight({
   return (
     <>
       {parts.map((part, index) =>
-        matches.some(
-          (term) => term.toLowerCase() === part.toLowerCase(),
-        ) ? (
-          <span key={index} className="rounded-sm border border-[#ddd6bc] bg-[#DDD6BC]/50 p-px px-0.5">
+        matches.some((term) => term.toLowerCase() === part.toLowerCase()) ? (
+          <span
+            key={index}
+            className="rounded-[3px] bg-[#DDD6BC] px-1 py-px text-[#3d3d39] shadow-[inset_0_0_0_1px_rgba(61,61,57,.18)]"
+          >
             {part}
           </span>
         ) : (
