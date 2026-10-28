@@ -28,7 +28,7 @@ export default function Preview({
   if (!candidate) return null;
 
   const intro = introduced.includes(candidate.id);
-  const revealed = reveals.includes(candidate.id);
+  const revealed = reveals.includes(candidate.personId || candidate.id);
   const { name, email, phone } = candidate.reveal;
 
   const metaLine =

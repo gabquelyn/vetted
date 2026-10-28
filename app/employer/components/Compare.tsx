@@ -194,7 +194,7 @@ export function CandidateCompare({
               <div className="sticky left-0 z-[3] bg-[#16260c]" />
 
               {shown.map((c, i) => {
-                const authorized = reveals.includes(c.id);
+                const authorized = reveals.includes(c.personId || c.id);
                 const pendingIntro =
                   !!c.specialist && introduced.includes(c.id) && !authorized;
                 const identityLine =

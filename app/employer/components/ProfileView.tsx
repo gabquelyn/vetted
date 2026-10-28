@@ -133,7 +133,7 @@ export default function ProfileView({
     FULL_CANDIDATES.find((c) => c.id == viewing);
 
   const candidateId = candidate?.id;
-  const revealedNow = candidate ? reveals.includes(candidate.id) : false;
+  const revealedNow = candidate ? reveals.includes(candidate?.personId || candidate.id) : false;
 
   // rail ref
   const railRef = useRef<HTMLDivElement>(null);
@@ -356,7 +356,7 @@ export default function ProfileView({
 
           {results.map((c) => {
             const isActive = viewing === c.id;
-            const isRevealed = reveals.includes(c.id);
+            const isRevealed = reveals.includes(c.personId || c.id);
             return (
               <div
                 key={c.id}
@@ -539,7 +539,7 @@ export default function ProfileView({
                     </span>
                     <span className="flex-1 text-[11px] text-[#8a8a84]">
                       {op.empType} · {op.avail}
-                      {reveals.includes(op.id) ? " · Already revealed" : ""}
+                      {reveals.includes(op.personId || op.id) ? " · Already revealed" : ""}
                     </span>
                     <button
                       type="button"

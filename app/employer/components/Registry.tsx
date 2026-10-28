@@ -134,6 +134,7 @@ export default function Registry({
     { timestamp: string; id: string; search: Filters }[]
   >([]);
 
+  console.log(filters)
   const data = useMemo(
     () =>
       applyFilters(
@@ -522,7 +523,7 @@ export default function Registry({
           open={!!revealing}
           onClose={() => setRevealing(null)}
           title={
-            reveals.includes(revealing?.id || "") ? (
+            reveals.includes(revealing?.personId || revealing?.id || "") ? (
               /* .vr-identity-block */
               <div className="bg-[#16260c] pb-5 pl-8 pr-24 pt-5.5 text-white">
                 <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[.05em] text-[#B9D8A0]">
@@ -758,6 +759,7 @@ export default function Registry({
                                 introduced={introduced}
                                 onHide={onHide}
                                 terms={terms}
+                                compared={compare.includes(candidate.id)}
                               />
                             </motion.div>
                           ))}

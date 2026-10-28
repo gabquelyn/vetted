@@ -129,12 +129,13 @@ export default function CanCard({
   introduced: string[];
   terms: string[];
 }) {
-  const revealed = reveals.includes(c.id);
+  const revealed = reveals.includes(c.personId || c.id);
   const intro = introduced.includes(c.id);
   const isSaved = saved.includes(c.id);
   const extraSkills = c.skills.length - 2;
   const stop = (e: MouseEvent) => e.stopPropagation();
   const matches = findCandidateMatches(c, terms);
+  console.log(matches, c);
   return (
     <div
       onClick={() => setHighlightActive(c.id)}
@@ -214,6 +215,7 @@ export default function CanCard({
           >
             <input
               type="checkbox"
+              checked={compared}
               className="peer sr-only"
               {...(compared !== undefined ? { checked: compared } : {})}
               onChange={() => onCompare(c.id)}
@@ -256,7 +258,9 @@ export default function CanCard({
         {(() => {
           const match =
             matches.find((m) => m.key === "context") ??
-            matches.find((m) => m.key === "summary");
+            matches.find((m) => m.key === "summary") ??
+            matches.find((m) => m.key === "env") ??
+            matches.find((m) => m.key === "openToWorkingIn")
 
           return match ? (
             <div className="mb-1.75 text-[11px] flex items-center gap-1 text-ink-soft/80">

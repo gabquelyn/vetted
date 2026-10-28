@@ -61,7 +61,7 @@ export default function CandidatePreview({
   reveals,
   deductReveal,
 }: CandidatePreviewProps) {
-  const [revealed, setRevealed] = useState(reveals.includes(c.id));
+  const [revealed, setRevealed] = useState(reveals.includes(c.personId || c.id));
   const reg = c.professionalRegistration?.[0];
 
   // Other discoverable profiles of the same person (personId is optional, so
@@ -213,7 +213,7 @@ export default function CandidatePreview({
               type="button"
               onClick={() => {
                 setRevealed(true);
-                onReveal(c.id);
+                onReveal(c.personId || c.id);
                 deductReveal();
               }}
               className="w-full max-w-[300px] cursor-pointer rounded-[7px] border-none bg-forest px-1.5 py-1.5 text-center text-[11px] font-bold text-white transition-colors hover:bg-[#3d6b1f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16260c]"

@@ -23,7 +23,7 @@ export const ENVIRONMENT = [
   "Home Care",
   "Laboratory",
   "Hospital",
-  "Long Term Care (LTC)",
+  "Long-Term Care (LTC)",
   "Private Practice",
   "Retirement Home",
   "Residential Hospice",
