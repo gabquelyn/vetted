@@ -215,7 +215,6 @@ export default function CanCard({
           >
             <input
               type="checkbox"
-              checked={compared}
               className="peer sr-only"
               {...(compared !== undefined ? { checked: compared } : {})}
               onChange={() => onCompare(c.id)}
