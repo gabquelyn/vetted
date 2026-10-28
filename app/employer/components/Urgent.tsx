@@ -38,6 +38,10 @@ export type UrgentRequest = {
 const randomBetween = (min: number, max: number) =>
   Math.round(min + Math.random() * (max - min));
 
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const shuffle = <T,>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
+
 const humanize = (key: string) =>
   key
     .replace(/([A-Z])/g, " $1")
@@ -69,25 +73,33 @@ const formatTime = (iso: string) =>
 
 /**
  * DEMO ONLY: decides which candidates will respond to a request.
- * Prefers candidates whose title or location appears in the submitted values,
- * then the most recently confirmed. Replace with the real responders.
+ * Picks randomly among candidates whose title matches the requested
+ * profession (regex, case-insensitive, any significant word). If there
+ * aren't enough matches, the rest is topped up with non-matching candidates.
+ * Replace with the real responders.
  */
 function planDemoResponders(values: unknown, exclude: string[]): string[] {
-  const haystack = Object.values((values ?? {}) as Record<string, unknown>)
-    .filter((v): v is string => typeof v === "string")
-    .join(" ")
-    .toLowerCase();
+  const profession = String(
+    (values as { profession?: unknown } | null)?.profession ?? "",
+  ).trim();
 
-  return FULL_CANDIDATES.filter((c) => !exclude.includes(c.id))
-    .map((c) => ({
-      c,
-      score: [c.title, c.loc].filter(
-        (t) => t && haystack.includes(t.toLowerCase()),
-      ).length,
-    }))
-    .sort((a, b) => b.score - a.score || a.c.confirmedDays - b.c.confirmedDays)
+  // "Registered Nurse" -> /\b(registered|nurse)/i
+  const words = profession.split(/[\s/,&-]+/).filter((w) => w.length > 2);
+  const professionRe = words.length
+    ? new RegExp(`\\b(${words.map(escapeRegExp).join("|")})`, "i")
+    : null;
+
+  const pool = FULL_CANDIDATES.filter((c) => !exclude.includes(c.id));
+
+  const matching = professionRe
+    ? pool.filter((c) => c.title && professionRe.test(c.title))
+    : [];
+  const others = pool.filter((c) => !matching.includes(c));
+
+  return [...shuffle(matching)]
+  // return [...shuffle(matching), ...shuffle(others)]
     .slice(0, RESPONSES_PER_REQUEST)
-    .map(({ c }) => c.id);
+    .map((c) => c.id);
 }
 
 /** DEMO ONLY: the details a real response would carry. */
@@ -112,9 +124,13 @@ function useNow(intervalMs = 10_000) {
 }
 
 export default function Urgent({
-  onViewProfile, requests, setRequests
+  onViewProfile,
+  requests,
+  setRequests,
 }: {
-  onViewProfile?: (c: Candidate) => void; requests: UrgentRequest[], setRequests: React.Dispatch<React.SetStateAction<UrgentRequest[]>>
+  onViewProfile?: (c: Candidate) => void;
+  requests: UrgentRequest[];
+  setRequests: React.Dispatch<React.SetStateAction<UrgentRequest[]>>;
 }) {
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);

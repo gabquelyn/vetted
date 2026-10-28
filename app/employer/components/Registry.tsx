@@ -134,7 +134,6 @@ export default function Registry({
     { timestamp: string; id: string; search: Filters }[]
   >([]);
 
-  console.log(filters)
   const data = useMemo(
     () =>
       applyFilters(

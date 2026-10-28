@@ -135,7 +135,6 @@ export default function CanCard({
   const extraSkills = c.skills.length - 2;
   const stop = (e: MouseEvent) => e.stopPropagation();
   const matches = findCandidateMatches(c, terms);
-  console.log(matches, c);
   return (
     <div
       onClick={() => setHighlightActive(c.id)}
