@@ -206,7 +206,7 @@ export default function CanCard({
           {revealed && c.reveal?.name ? (
             c.reveal.name
           ) : (
-            <Highlight text={c.title} terms={terms} />
+            c.title
           )}
         </div>
         <div className="mb-0.5 font-mono text-[10.5px] font-semibold tracking-[.02em] text-white/50">

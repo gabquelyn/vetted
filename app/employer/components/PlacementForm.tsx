@@ -4,9 +4,9 @@ import React, { useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   DEMO_ONLY_ONTARIO_MUNICIPALITIES,
-  PROFESSIONS,
 } from "@/app/professional/components/data";
 import SearchableSelect from "./SearchableSelect";
+import { PROFESSIONS } from "@/app/data/professions";
 
 export interface PlacementRequestValues {
   profession: string;
@@ -153,7 +153,7 @@ export default function PlacementRequestForm({
   onSubmit,
   onBack,
   initialValues,
-  professions = PROFESSIONS,
+  professions = PROFESSIONS.map(p => p[1]),
   submitting = false,
   submitLabel = "Continue",
 }: PlacementRequestFormProps) {

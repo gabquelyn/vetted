@@ -2498,6 +2498,7 @@ export const FULL_CANDIDATES: Candidate[] = [
     vehicle: true,
     licence: true,
     confirmedDays: 2,
+    ruralOpen: true,
     activeAgo: "Active today",
     snapshot: "Home Care · Rural client roster",
     skills: [

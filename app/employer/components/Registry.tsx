@@ -11,7 +11,11 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import CandidateCard from "./CanCard";
 import Select from "@/app/components/CustomSelect";
 import Filtering from "./Filtering";
-import { applyFilters, matchesLocation } from "@/app/utils/registry";
+import {
+  applyFilters,
+  matchesLocation,
+  withMobilityFlags,
+} from "@/app/utils/registry";
 import NavRail from "./NavRail";
 import { toast } from "sonner";
 import Overlay from "./Overlay";
@@ -30,6 +34,7 @@ import RevealedPreview from "./RevealedPreview";
 import ActiveFilters from "./ActiveFilters";
 import Pagination from "./Pagination";
 import { TourController } from "./TourController";
+import { locationMatch } from "@/app/utils/geo";
 
 const CARD = 316;
 const GAP = 16;
@@ -43,7 +48,7 @@ export default function Registry({
 }: {
   revealsRemaining: number;
   useReveal: () => void;
-  selectedProfessionsGate: Set<string>;
+  selectedProfessionsGate: Set<ProfessionCode>;
   gateDone: boolean;
 }) {
   const [requests, setRequests] = useState<UrgentRequest[]>([]);
@@ -88,6 +93,7 @@ export default function Registry({
     mobility: [],
     profile: [],
     availability: [],
+    openTo: [],
   });
 
   const [reveals, setReveals] = useState<string[]>([]);
@@ -101,6 +107,7 @@ export default function Registry({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [highlightActive, setHighlightActive] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState(false);
+  const [radius, setRadius] = useState(25);
   const [toggle, setToggle] = useState(() => selectedProfessionsGate.size > 0);
   const [viewAll, setViewAll] = useState(false);
   const [location, setLocation] = useState("");
@@ -131,18 +138,21 @@ export default function Registry({
       document.body.style.overflow = prev;
     };
   }, [filtersOpen]);
-  const [recentSearch, setRecentSearch] = useState<
-    { timestamp: string; id: string; search: Filters }[]
-  >([]);
+  const [recentSearch, setRecentSearch] = useState<Search[]>([]);
 
-  const data = useMemo(
-    () =>
-      applyFilters(
-        FULL_CANDIDATES.filter((candidate) => !hidden.includes(candidate.id)),
-        filters,
+  const data = useMemo(() => {
+    const candidates = applyFilters(
+      FULL_CANDIDATES.map(withMobilityFlags).filter(
+        (candidate) =>
+          candidate.discoverable !== false && !hidden.includes(candidate.id),
       ),
-    [filters, hidden],
-  );
+      filters,
+    );
+
+    const searched = searchCandidates(candidates, terms);
+
+    return searched.filter((c) => locationMatch(c, location, radius) !== null);
+  }, [filters, hidden, terms, location, radius]);
 
   const count = useMemo(
     () => Object.values(filters).reduce((n, v) => n + v.length, 0),
@@ -185,14 +195,27 @@ export default function Registry({
       mobility: [],
       profile: [],
       availability: [],
+      openTo: [],
     });
     setTerms([]);
+    setLocation("");
   }, []);
 
-  const onApply = useCallback((next: Filters) => {
-    setToggle(true);
-    setFilters(next);
-  }, []);
+  const onApply = useCallback(
+    (next: {
+      filters: Filters;
+      location: string;
+      radius: number;
+      terms: string[];
+    }) => {
+      setToggle(true);
+      setFilters(next.filters);
+      setLocation(next.location);
+      setRadius(next.radius);
+      setTerms(next.terms);
+    },
+    [],
+  );
 
   const onHide = (id: string) => {
     const existing = hidden.find((h) => h == id);
@@ -206,13 +229,6 @@ export default function Registry({
   const deleteSearch = (id: string) => {
     setRecentSearch((prev) => prev.filter((search) => search.id !== id));
   };
-
-  // const searched = useMemo(() => searchCandidates(data, terms), [data, terms]);
-
-  const searched = useMemo(() => {
-  const searched = searchCandidates(data, terms);
-  return searched.filter((c) => matchesLocation(c, location));
-}, [data, terms, location]);
 
   const onSave = (id: string) => {
     const isExisting = saved.find((i) => i == id);
@@ -250,7 +266,7 @@ export default function Registry({
 
   const sorted = useMemo(() => {
     // if (query.trim()) return searched; // relevance order wins
-    const list = [...searched];
+    const list = [...data];
     switch (sort) {
       case "new":
         return list.sort((a, b) => a.confirmedDays - b.confirmedDays);
@@ -259,7 +275,7 @@ export default function Registry({
       default:
         return list;
     }
-  }, [searched, sort, ]);
+  }, [data, sort]);
 
   const [page, setPage] = useState(1);
 
@@ -305,6 +321,8 @@ export default function Registry({
           query={query}
           location={location}
           setLocation={setLocation}
+          radiusKm={radius}
+          setRadius={setRadius}
           setQuery={(e) => {
             setQuery(e);
           }}
@@ -360,9 +378,9 @@ export default function Registry({
                 key={search.id}
                 timestamp={search.timestamp}
                 id={search.id}
-                search={search.search}
+                search={search}
                 onApply={() => {
-                  onApply(search.search);
+                  onApply(search);
                   setActiveView("registry");
                 }}
                 onDelete={() => deleteSearch(search.id)}
@@ -596,7 +614,7 @@ export default function Registry({
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
           {!viewing && activeView == "registry" && (
             <p className="text-xs py-3 text-ink-soft px-8 lg:px-12 font-semibold">
-              {searched.length} results
+              {data.length} results
             </p>
           )}
 
@@ -649,14 +667,18 @@ export default function Registry({
                         filters={filters}
                         setFilters={setFilters}
                         onClear={clearFilters}
+                        location={{ radius, location }}
                         onSave={() => {
                           toast.info("Search saved");
                           setRecentSearch((prev) => [
                             ...prev,
                             {
-                              search: filters,
+                              filters,
                               timestamp: new Date().toISOString(),
                               id: uuid(),
+                              location,
+                              radius,
+                              terms,
                             },
                           ]);
                           setToggle(false);
@@ -665,6 +687,7 @@ export default function Registry({
                         removeTerm={(term: string) =>
                           setTerms(terms.filter((t) => t !== term))
                         }
+                        removeLoc={() => setLocation("")}
                       />
                       <div className="hidden md:flex justify-end gap-3 py-2">
                         <div className="flex items-center justify-between gap-1.5 md:justify-start">
@@ -806,6 +829,7 @@ export default function Registry({
             <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
               <CandidateCompare
                 ids={compare}
+                clearComparison={() => setCompare([])}
                 onViewProfile={(id) => {
                   setActiveView("registry");
                   setViewing(id);

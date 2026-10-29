@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
-import { FD_REVEAL_ALLOWANCE, PROFESSIONS } from "@/app/data/professions";
+import { FD_REVEAL_ALLOWANCE } from "@/app/data/professions";
 import ProfessionGate from "./ProfessionGate";
 import TopBar from "./TopBar";
 import Registry from "./Registry";
 import { useRouter } from "next/navigation";
 
-type ProfessionCode = (typeof PROFESSIONS)[number][0];
 
 export default function RegistryModal() {
   const router = useRouter();

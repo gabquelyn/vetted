@@ -15,6 +15,7 @@ import {
   EMPLOYMENT,
   ENVIRONMENT,
   MOBILITY,
+  PROFESSIONALENV,
   PROFESSIONS,
   PROFILE,
   SHIFTS,
@@ -96,7 +97,7 @@ function FilterGroup({
           />
         </svg>
       </button>
-      {open && <div className="flex flex-col gap-2 pb-3">{children}</div>}
+      {open && <div className="flex flex-col pb-3">{children}</div>}
     </div>
   );
 }
@@ -116,6 +117,8 @@ export default function Filtering({
   activatePanel: boolean;
   setActivatePanel: () => void;
 }) {
+
+  console.log(filters)
   // Below Tailwind's md breakpoint: small button + bottom sheet, no hover logic.
   const isMobile = useMediaQuery("(max-width: 767px)");
   // The inline pinned block is a desktop-only idea; mobile never uses it.
@@ -228,6 +231,22 @@ export default function Filtering({
     };
   }, [open, isMobile]);
 
+  function getProfessionalEnvironments(
+    professions: ProfessionCode[],
+  ): string[] {
+    const selectedProfessions =
+      professions.length > 0
+        ? professions
+        : (Object.keys(PROFESSIONALENV) as ProfessionCode[]);
+
+    return [
+      ...new Set(
+        selectedProfessions.flatMap(
+          (profession) => PROFESSIONALENV[profession],
+        ),
+      ),
+    ];
+  }
   const roleCount =
     selectedCount(filters.environment) +
     selectedCount(filters.shift) +
@@ -305,21 +324,25 @@ export default function Filtering({
         <div className="mb-[9px] text-[10px] font-bold uppercase tracking-[.05em] text-forest">
           Primary Search
         </div>
-        <div className="grid grid-cols-1 gap-[9px]">
+        <div className="grid grid-cols-1 gap-[1px]">
           <div>
-            <FieldLabel>Profession</FieldLabel>
             <MultiSelect
               value={filters.profession}
               onChange={(val) =>
-                setFilters((prev) => ({ ...prev, profession: val }))
+                setFilters((prev) => ({
+                  ...prev,
+                  profession: val as ProfessionCode[],
+                  openTo: [],
+                  environment: [],
+                }))
               }
               className={msClass}
               options={PROFESSIONS.map((p) => ({ label: p[1], value: p[0] }))}
               allowSearch
+              placeholder="Any Profession"
             />
           </div>
           <div>
-            <FieldLabel>Availability</FieldLabel>
             <MultiSelect
               value={filters.availability}
               onChange={(val) =>
@@ -327,6 +350,7 @@ export default function Filtering({
               }
               className={msClass}
               options={AVAILABILITY.map((a) => ({ label: a, value: a }))}
+              placeholder="Any availability"
             />
           </div>
         </div>
@@ -344,28 +368,32 @@ export default function Filtering({
         onToggle={() => toggleGroup(1)}
       >
         <div>
-          <FieldLabel>Experienced environment</FieldLabel>
           <MultiSelect
             value={filters.environment}
             onChange={(val) =>
               setFilters((prev) => ({ ...prev, environment: val }))
             }
             className={msClass}
-            options={ENVIRONMENT.map((e) => ({ label: e, value: e }))}
+            options={getProfessionalEnvironments(filters.profession).map(
+              (e) => ({
+                label: e,
+                value: e,
+              }),
+            )}
             allowSearch
+            placeholder="Any experienced environment"
           />
         </div>
         <div>
-          <FieldLabel>Shifts</FieldLabel>
           <MultiSelect
             value={filters.shift}
             onChange={(val) => setFilters((prev) => ({ ...prev, shift: val }))}
             className={msClass}
+            placeholder="Any shift"
             options={SHIFTS.map((e) => ({ label: e, value: e }))}
           />
         </div>
         <div>
-          <FieldLabel>Employment</FieldLabel>
           <MultiSelect
             value={filters.employment}
             onChange={(val) =>
@@ -373,6 +401,7 @@ export default function Filtering({
             }
             className={msClass}
             options={EMPLOYMENT.map((e) => ({ label: e, value: e }))}
+            placeholder="Any employment"
           />
         </div>
       </FilterGroup>
@@ -384,9 +413,26 @@ export default function Filtering({
         onToggle={() => toggleGroup(2)}
       >
         <div className="w-full">
-          <FieldLabel>Mobility</FieldLabel>
+          <MultiSelect
+            placeholder="Open to any settings"
+            value={filters.openTo}
+            onChange={(val) => setFilters((prev) => ({ ...prev, openTo: val }))}
+            className={msClass}
+            options={[
+              {
+                label: "Any work environment",
+                value: "Any work environment",
+              },
+              ...getProfessionalEnvironments(filters.profession).map((e) => ({
+                label: e,
+                value: e,
+              })),
+            ]}
+            allowSearch
+          />
           <MultiSelect
             value={filters.mobility}
+            placeholder="Any mobility"
             onChange={(val) =>
               setFilters((prev) => ({ ...prev, mobility: val }))
             }
@@ -403,8 +449,9 @@ export default function Filtering({
         onToggle={() => toggleGroup(3)}
       >
         <div>
-          <FieldLabel>Profile</FieldLabel>
+          {/* <FieldLabel>Profile</FieldLabel> */}
           <MultiSelect
+            placeholder="Profile"
             value={filters.profile}
             onChange={(val) =>
               setFilters((prev) => ({ ...prev, profile: val }))

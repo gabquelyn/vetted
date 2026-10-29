@@ -102,6 +102,7 @@ export interface CandidateCompareProps {
   onIntroduction?: (c: Candidate) => void;
   reveals?: string[];
   introduced?: string[];
+  clearComparison: () => void
 }
 
 export function CandidateCompare({
@@ -114,6 +115,7 @@ export function CandidateCompare({
   onIntroduction,
   reveals = [],
   introduced = [],
+  clearComparison
 }: CandidateCompareProps) {
   const reduce = useReducedMotion();
 
@@ -136,8 +138,7 @@ export function CandidateCompare({
           } comparison. Meaningful differences are emphasized; identical information stays quiet. Vetted does not rank, score or recommend a candidate — you decide.`;
 
   return (
-    <
-    >
+    <>
       {/* head */}
       <div className="mb-1.5 flex items-start justify-between gap-4">
         <div>
@@ -172,10 +173,14 @@ export function CandidateCompare({
       </div>
 
       {/* note */}
-      <div className="mb-5 mt-3.5 border-b border-ash pb-4 text-xs text-ink-soft">
-        {note}
-        {candidates.length > MAX_COMPARE &&
-          ` Only the first ${MAX_COMPARE} candidates are shown.`}
+      <div className="flex justify-between mb-5 mt-3.5 border-b border-ash pb-4 text-xs text-ink-soft">
+        <p>{note}</p>
+
+        {candidates.length > 1 && (
+          <button className="font-semibold text-forest-deep underline" onClick={clearComparison}>
+            Clear comparison
+          </button>
+        )}
       </div>
 
       {shown.length === 0 ? (
@@ -192,7 +197,7 @@ export function CandidateCompare({
               style={{ gridTemplateColumns: cols }}
             >
               <div className="sticky left-0 z-[3] bg-[#16260c]" />
- 
+
               {shown.map((c, i) => {
                 const authorized = reveals.includes(c.personId || c.id);
                 const pendingIntro =

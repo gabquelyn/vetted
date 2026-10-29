@@ -315,15 +315,11 @@ export default function ProfileView({
       ["Driver's licence", candidate.licence ? "Yes" : <Muted>No</Muted>],
       [
         "Rural roles",
-        candidate.rural && candidate.rural !== "No" ? (
-          candidate.rural
-        ) : (
-          <Muted>Not open</Muted>
-        ),
+        candidate?.ruralOpen === true ? <p>Open</p> : <Muted>Not open</Muted>,
       ],
       [
         "Travel / fly-in",
-        candidate.travelOpen ? "Open" : <Muted>Not open</Muted>,
+        candidate.travelOpen === true ? "Open" : <Muted>Not open</Muted>,
       ],
       [
         "Relocation",

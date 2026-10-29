@@ -3,11 +3,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import { v4 as uuid } from "uuid";
-import { LuPlus, LuClock, LuTrash2, LuZap } from "react-icons/lu";
+import { LuPlus, LuClock, LuZap } from "react-icons/lu";
 import { Candidate, FULL_CANDIDATES } from "@/app/data/registry";
+// Adjust to wherever CITY_COORDS / haversineKm / resolveCity live
+
 import PlacementRequestForm from "./PlacementForm";
 import Modal from "./Modal";
 import ResponseCard, { ResponseMeta } from "./ResponseCard";
+import { distanceBetweenCitiesKm } from "@/app/utils/geo";
 
 const MAX_REQUESTS = 2;
 const RESPONSES_PER_REQUEST = 6;
@@ -71,6 +74,10 @@ const formatTime = (iso: string) =>
     minute: "2-digit",
   });
 
+/** The post's location, read from the form values. Change `location` if your field is named differently. */
+const getPostLocation = (values: unknown): string =>
+  String((values as { location?: unknown } | null)?.location ?? "").trim();
+
 /**
  * DEMO ONLY: decides which candidates will respond to a request.
  * Picks randomly among candidates whose title matches the requested
@@ -94,22 +101,30 @@ function planDemoResponders(values: unknown, exclude: string[]): string[] {
   const matching = professionRe
     ? pool.filter((c) => c.title && professionRe.test(c.title))
     : [];
-  const others = pool.filter((c) => !matching.includes(c));
+  // const others = pool.filter((c) => !matching.includes(c));
 
-  return [...shuffle(matching)]
-  // return [...shuffle(matching), ...shuffle(others)]
-    .slice(0, RESPONSES_PER_REQUEST)
-    .map((c) => c.id);
+  return (
+    [...shuffle(matching)]
+      // return [...shuffle(matching), ...shuffle(others)]
+      .slice(0, RESPONSES_PER_REQUEST)
+      .map((c) => c.id)
+  );
 }
 
 /** DEMO ONLY: the details a real response would carry. */
-function makeDemoResponse(candidateId: string): Response {
+function makeDemoResponse(
+  candidate: { id: string; loc: string },
+  postLocation: string,
+): Response {
   return {
-    candidateId,
+    candidateId: candidate.id,
     respondedAt: new Date().toISOString(),
     earliestStart:
       EARLIEST_START[Math.floor(Math.random() * EARLIEST_START.length)],
-    distanceKm: randomBetween(2, 45),
+    // Real straight-line distance; random fallback only if a city isn't in CITY_COORDS
+    distanceKm:
+      distanceBetweenCitiesKm(postLocation, candidate.loc) ||
+      randomBetween(2, 45),
   };
 }
 
@@ -158,7 +173,11 @@ export default function Urgent({
 
   // Simulates responses trickling in: the first after a short wait, then one
   // every few seconds. Replace with websocket / polling updates in a real app.
-  const scheduleResponses = (requestId: string, candidateIds: string[]) => {
+  const scheduleResponses = (
+    requestId: string,
+    candidateIds: string[],
+    postLocation: string,
+  ) => {
     let delay = 0;
     const handles = candidateIds.map((candidateId, i) => {
       delay +=
@@ -166,12 +185,18 @@ export default function Urgent({
           ? FIRST_RESPONSE_MS
           : randomBetween(NEXT_RESPONSE_MS[0], NEXT_RESPONSE_MS[1]);
       return setTimeout(() => {
+        const candidate = CANDIDATES_BY_ID.get(candidateId);
+        if (!candidate) return;
+
         setRequests((prev) =>
           prev.map((r) =>
             r.id === requestId
               ? {
                   ...r,
-                  responses: [makeDemoResponse(candidateId), ...r.responses],
+                  responses: [
+                    makeDemoResponse(candidate, postLocation),
+                    ...r.responses,
+                  ],
                 }
               : r,
           ),
@@ -204,7 +229,7 @@ export default function Urgent({
       ...prev,
     ]);
     setSelectedId(id);
-    scheduleResponses(id, plannedIds);
+    scheduleResponses(id, plannedIds, getPostLocation(values));
     setOpen(false);
     toast.success("Urgent request created");
   };
@@ -320,7 +345,8 @@ export default function Urgent({
                           </span>
                         </div>
 
-                        {/* <button
+                        {/* Remove button (re-enable together with removeRequest and the LuTrash2 import)
+                        <button
                           type="button"
                           aria-label="Remove request"
                           title="Remove request"
@@ -338,7 +364,7 @@ export default function Urgent({
                         {summary.map(({ label, value }) => (
                           <div key={label} className="min-w-0">
                             <dt className="text-ink-soft">{label}</dt>
-                            <dd className="wrap-break-word font-semibold text-ink-mid truncate">
+                            <dd className="wrap-break-word truncate font-semibold text-ink-mid">
                               {value}
                             </dd>
                           </div>
@@ -360,8 +386,7 @@ export default function Urgent({
                     Responses
                   </h2>
                   <p className="mt-0.5 text-xs text-ink-soft">
-                    {selected.responses.length} of {selected.plannedIds.length}{" "}
-                    professionals have responded
+                    {selected.responses.length} professionals have responded
                   </p>
                 </div>
 

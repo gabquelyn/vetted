@@ -20,7 +20,8 @@ const hasAny = (haystack: string[] | undefined, needles: string[]) => {
 const MOBILITY_CHECKS: Record<string, (c: Candidate) => boolean> = {
   vehicle: (c) => c.vehicle,
   licence: (c) => c.licence,
-  travel: (c) => !!c.travelOpen,
+  travel: (c) => c.travelOpen === true,
+  rural: (c) => c.ruralOpen === true,
   relocation: (c) =>
     isAffirmative(c.relocation) || (c.relocationReach?.length ?? 0) > 0,
 };
@@ -42,6 +43,8 @@ export function applyFilters(
     employment = [],
     mobility = [],
     profile = [],
+    openTo = [],
+    availability = [],
   } = filters;
 
   return candidates.filter((c) => {
@@ -52,34 +55,55 @@ export function applyFilters(
     ) {
       return false;
     }
-    // checking availability
-    if (filters.availability.length && !filters.availability.includes(c.avail))
-      return false;
 
-    // Environment: matches current env or environments they're open to
-    // !hasAny(c.openToWorkingIn, environment)
-    if (environment.length && !hasAny(c.env, environment)) {
+    // Availability
+    if (availability.length && !availability.includes(c.avail)) {
+      return false;
+    }
+
+    // Candidate is open to any work environment
+    const acceptsAnyEnvironment = c.openToWorkingIn.some(
+      (env) => norm(env) === norm("Any work environment"),
+    );
+
+    // Environment: current experience or willingness to work there
+    if (
+      environment.length &&
+      !acceptsAnyEnvironment &&
+      !hasAny([...c.env, ...c.openToWorkingIn], environment)
+    ) {
+      return false;
+    }
+
+    // Open-to environment
+    if (
+      openTo.length &&
+      !acceptsAnyEnvironment &&
+      !hasAny(c.openToWorkingIn, openTo)
+    ) {
       return false;
     }
 
     // Shifts
-    if (shift.length && !hasAny(c.shift, shift)) return false;
+    if (shift.length && !hasAny(c.shift, shift)) {
+      return false;
+    }
 
     // Employment type: primary or any accepted type
     if (
       employment.length &&
       !employment.some((e) => norm(e) === norm(c.empType)) &&
-      !hasAny(c.acceptedEmpTypes, employment)
+      !hasAny(c.acceptedEmpTypes ?? [], employment)
     ) {
       return false;
     }
 
-    // Mobility: AND, candidate must satisfy every checked option
+    // Mobility: AND — candidate must satisfy every checked option
     if (!mobility.every((key) => MOBILITY_CHECKS[key]?.(c) ?? true)) {
       return false;
     }
 
-    // Profile: AND as well
+    // Profile: AND
     if (!profile.every((key) => PROFILE_CHECKS[key]?.(c) ?? true)) {
       return false;
     }
@@ -87,6 +111,16 @@ export function applyFilters(
     return true;
   });
 }
+
+export const withMobilityFlags = (c: Candidate): Candidate => {
+  const r = (c.rural ?? "").toLowerCase();
+  return {
+    ...c,
+    ruralOpen:
+      r.toLowerCase().includes("rural") || r.toLowerCase().includes("anywhere"),
+    travelOpen: r.toLowerCase().includes("fly-in"),
+  };
+};
 
 export const matchesLocation = (c: Candidate, location: string) =>
   !location || norm(c.loc) === norm(location);

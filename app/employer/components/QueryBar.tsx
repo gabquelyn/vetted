@@ -1,6 +1,7 @@
 import React from "react";
 import AddressAutocomplete from "@/app/components/AutoComplete";
 import LocationSelect from "./LocationSelect";
+import RadiusSelect from "./RadiusSelector";
 import HelpButton from "./HelpButton";
 import { restartTour } from "./TourController";
 
@@ -11,8 +12,7 @@ export default function QueryBar({
   onTermsChange,
   onHelp,
   radiusKm,
-  radiusDisabled = false,
-  onRadiusClick,
+  setRadius,
   onBuild,
   location,
   setLocation,
@@ -26,10 +26,10 @@ export default function QueryBar({
   /** Opens the help / tour popover */
   onHelp?: () => void;
   /** When provided, the "Within N km" control is shown */
-  radiusKm?: number;
+  radiusKm: number;
   /** Disabled until a supported city is chosen (as in the HTML) */
   radiusDisabled?: boolean;
-  onRadiusClick?: () => void;
+  setRadius: React.Dispatch<React.SetStateAction<number>>;
   onBuild?: () => void;
   location: string;
   setLocation: React.Dispatch<React.SetStateAction<string>>;
@@ -115,46 +115,16 @@ export default function QueryBar({
               <LocationSelect value={location} onChange={setLocation} />
             </div>
           </div>
-
-          {/* Distance */}
-          {radiusKm !== undefined && (
-            <>
-              <div className={divider} />
-              <div
-                className={`${seg} w-full min-[900px]:w-auto min-[900px]:flex-none`}
-              >
-                <button
-                  type="button"
-                  disabled={radiusDisabled}
-                  onClick={onRadiusClick}
-                  aria-haspopup="true"
-                  title={
-                    radiusDisabled
-                      ? "Select a supported city to enable distance search"
-                      : undefined
-                  }
-                  className="flex w-full items-center gap-[7px] py-1.5 text-left text-[12.5px] font-medium text-ink enabled:cursor-pointer disabled:cursor-not-allowed disabled:text-[#8a8a84]"
-                >
-                  <span>Within {radiusKm} km</span>
-                  <svg
-                    width="9"
-                    height="6"
-                    viewBox="0 0 10 6"
-                    fill="none"
-                    className="ml-auto shrink-0 text-[#8a8a84]"
-                  >
-                    <path
-                      d="M1 1l4 4 4-4"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </>
-          )}
+          <div
+            className={`${seg} w-full min-w-0 min-[900px]:w-auto min-[900px]:flex-[0_0_145px]`}
+          >
+            <RadiusSelect
+              value={radiusKm}
+              onChange={setRadius}
+              className="w-full min-w-0"
+              disabled={!location}
+            />
+          </div>
         </div>
 
         {/* Build from job description */}

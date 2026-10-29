@@ -16,7 +16,8 @@ type FilterKey =
   | "employment"
   | "mobility"
   | "profile"
-  | "availability";
+  | "availability"
+  | "openTo";
 
 const ORDER: FilterKey[] = [
   "profession",
@@ -26,6 +27,7 @@ const ORDER: FilterKey[] = [
   "mobility",
   "profile",
   "availability",
+  "openTo",
 ];
 
 const VALUE_LABELS: Partial<Record<FilterKey, Record<string, string>>> = {
@@ -36,6 +38,7 @@ const VALUE_LABELS: Partial<Record<FilterKey, Record<string, string>>> = {
   availability: Object.fromEntries(AVAILABILITY.map((e) => [e, e])),
   shift: Object.fromEntries(SHIFTS.map((e) => [e, e])),
   employment: Object.fromEntries(EMPLOYMENT.map((e) => [e, e])),
+  openTo: Object.fromEntries(ENVIRONMENT.map((e) => [`Open to:${e}`, e])),
 };
 
 export default function ActiveFilters({
@@ -44,7 +47,9 @@ export default function ActiveFilters({
   onClear,
   onSave,
   terms,
-  removeTerm
+  removeTerm,
+  location,
+  removeLoc,
 }: {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
@@ -53,7 +58,9 @@ export default function ActiveFilters({
   /** Optional. Shows the "Save search" button */
   onSave?: () => void;
   terms: string[];
-  removeTerm: (term: string) => void
+  removeTerm: (term: string) => void;
+  location: { radius: number; location: string };
+  removeLoc: () => void;
 }) {
   const chips = ORDER.flatMap((key) =>
     ((filters[key] as string[] | undefined) ?? []).map((value) => ({
@@ -63,7 +70,8 @@ export default function ActiveFilters({
     })),
   );
 
-  if (chips.length === 0 && terms.length === 0) return null;
+  if (chips.length === 0 && terms.length === 0 && !location.location)
+    return null;
 
   const removeChip = (key: FilterKey, value: string) =>
     setFilters((prev) => ({
@@ -73,6 +81,19 @@ export default function ActiveFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-5">
+      {location.location && (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]">
+          {location.location} · within {location.radius}km
+          <button
+            type="button"
+            aria-label={`Remove location search`}
+            onClick={() => removeLoc()}
+            className="flex h-3.75 w-3.75 cursor-pointer items-center justify-center rounded-full border-none bg-forest/15 p-0 text-[11px] leading-none text-[#16260c] transition-colors hover:bg-forest/25 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest"
+          >
+            ×
+          </button>
+        </span>
+      )}
       {/* .fd-query-chips */}
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
         {chips.map((chip) => (
@@ -80,7 +101,7 @@ export default function ActiveFilters({
             key={`${chip.key}:${chip.value}`}
             className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]"
           >
-            {chip.label}
+            {chip.key == "openTo" ? `${chip.key}: ${chip.value}` : chip.label}
             <button
               type="button"
               aria-label={`Remove ${chip.label}`}

@@ -97,13 +97,40 @@ type ActiveView =
   | "urgent"
   | "hidden";
 
+type ProfessionCode =
+  | "COOK"
+  | "DSW"
+  | "MOA"
+  | "NP"
+  | "OT"
+  | "PSW"
+  | "PHL"
+  | "PT"
+  | "RMT"
+  | "RN"
+  | "RPN"
+  | "RP"
+  | "RSW"
+  | "SCHED"
+  | "UCP";
+
 interface Filters {
-  profession: string[];
+  profession: ProfessionCode[];
   environment: string[];
   shift: string[];
   employment: string[];
   mobility: string[];
   profile: string[];
   availability: string[];
+  openTo: string[];
   [index: string]: string[];
+}
+
+interface Search {
+  timestamp: string;
+  id: string;
+  filters: Filters;
+  terms: string[];
+  location: string;
+  radius: number;
 }

@@ -29,29 +29,19 @@ export default function SearchItem({
 }: {
   id: string;
   timestamp: string;
-  search: Filters;
+  search: Search;
   /** "saved" shows a "Delete" link; "history" shows a small × (as in the HTML's Recent history) */
   variant?: "saved" | "history";
-  onApply?: (search: Filters) => void;
+  onApply?: (search: Search) => void;
   onDelete?: () => void;
 }) {
-  const groups = Object.entries(search).filter(([, v]) => v.length > 0);
-
-  // Same shape as the HTML's currentSearchSummary(): values joined with "/"
-  // inside a group, groups joined with " · "
-  const summary = groups.length
-    ? groups
-        .map(([key, values]) =>
-          values.map((v: string) => VALUE_LABELS[key]?.[v] ?? v).join("/"),
-        )
-        .join(" · ")
-    : "All candidates";
-
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-ash bg-white px-[15px] py-[13px]">
       {/* top: summary + remove */}
       <div className="flex items-start justify-between gap-2">
-        <div className="text-[13.5px] font-bold text-ink">{summary}</div>
+        <div className="text-[13.5px] font-bold text-ink">
+          {getSearchSummary(search)}
+        </div>
 
         {onDelete &&
           (variant === "history" ? (
@@ -91,4 +81,32 @@ export default function SearchItem({
       )}
     </div>
   );
+}
+
+function getSearchSummary(search: Search): string {
+  const groups: string[] = [];
+
+  // Filter selections
+  for (const [key, values] of Object.entries(search.filters)) {
+    if (!Array.isArray(values) || values.length === 0) continue;
+
+    const labels = values.map(
+      (value: string) => VALUE_LABELS[key as string]?.[value] ?? value,
+    );
+
+    groups.push(labels.join("/"));
+  }
+
+  // Committed search terms
+  if (search.terms.length > 0) {
+    groups.push(search.terms.join("/"));
+  }
+
+  // Location and radius
+  if (search.location) {
+    groups.push(search.location);
+    groups.push(`${search.radius} km`);
+  }
+
+  return groups.length ? groups.join(" · ") : "All candidates";
 }
