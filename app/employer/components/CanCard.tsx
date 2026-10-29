@@ -1,6 +1,11 @@
 import type { MouseEvent } from "react";
 import { Candidate } from "@/app/data/registry";
-import { findCandidateMatches } from "@/app/utils/search";
+import {
+  fieldLabel,
+  findCandidateMatches,
+  matchText,
+  pickDisplayMatch,
+} from "@/app/utils/search";
 import Highlight from "./Highlight";
 
 const PinIcon = () => (
@@ -136,6 +141,7 @@ export default function CanCard({
   const stop = (e: MouseEvent) => e.stopPropagation();
   const matches = findCandidateMatches(c, terms);
   console.log(matches);
+
   return (
     <div
       onClick={() => setHighlightActive(c.id)}
@@ -255,36 +261,17 @@ export default function CanCard({
         {/* occourence */}
 
         {(() => {
-          const match =
-            matches.find((m) => m.key === "empType") ??
-            matches.find((m) => m.key === "acceptedEmpTypes") ??
-            matches.find((m) => m.key === "context") ??
-            matches.find((m) => m.key === "summary") ??
-            matches.find((m) => m.key === "env") ??
-            matches.find((m) => m.key === "openToWorkingIn");
+          const match = pickDisplayMatch(matches);
+          if (!match) return null;
 
-          return match ? (
-            <div className="mb-1.75 text-[11px] flex items-center gap-1 text-ink-soft/80">
-              <p className="font-semibold">
-                {match.key== "empType" ? "Employment type" :match.key == "acceptedEmpTypes"
-                  ? "Employment preference"
-                  : match.key == "summary"
-                    ? "Profile summary"
-                    : match.key == "context"
-                      ? "Past experience"
-                      : match.key}
-              </p>
-              ·
-              <p
-                key={match.key}
-                className="truncate whitespace-nowrap text-ink-mid rounded-sm border border-[#C0BAA4] bg-[#ddd6bc] px-0.5 p-px"
-              >
-                {match.key == "summary" || match.key == "context"
-                  ? match.term
-                  : `${match.value}`}
+          return (
+            <div className="mb-1.75 flex items-center gap-1 text-[11px] text-ink-soft/80">
+              <p className="font-semibold">{fieldLabel(match.key)}</p>·
+              <p className="truncate whitespace-nowrap rounded-sm border border-[#C0BAA4] bg-[#ddd6bc] px-0.5 p-px text-ink-mid">
+                {matchText(match)}
               </p>
             </div>
-          ) : null;
+          );
         })()}
 
         {/* Key facts */}

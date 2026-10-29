@@ -6,6 +6,7 @@ import ExperienceList from "./ExperienceList";
 import RevealedContact from "./RevealedContact";
 import Chip from "./Chip";
 import Highlight from "./Highlight";
+import EducationRecords from "./EduRecords";
 
 // Show the "scroll to bottom" button only when more than this many px remain
 const SCROLL_BUTTON_THRESHOLD = 40;
@@ -669,12 +670,24 @@ export default function ProfileView({
                   </div>
                 )}
 
-                {candidate.edu && (
+                {candidate?.eduRecords ? (
                   <div className="mt-0.5">
                     <MicroLabel>Education</MicroLabel>
-                    <div className="text-[13px] font-semibold leading-[1.4] text-ink">
-                      {candidate.edu}
-                    </div>
+
+                    {/* key resets the expanded state when switching candidates */}
+                    <EducationRecords
+                      key={candidate.id}
+                      records={candidate.eduRecords ?? []}
+                      terms={terms}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-[13px] font-semibold leading-[1.4] text-ink">
+                    <Highlight
+                      key={"Education"}
+                      text={candidate.edu}
+                      terms={terms}
+                    />
                   </div>
                 )}
 

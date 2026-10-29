@@ -243,7 +243,7 @@ export default function Registry({
   );
 
   const sorted = useMemo(() => {
-    if (query.trim()) return searched; // relevance order wins
+    // if (query.trim()) return searched; // relevance order wins
     const list = [...searched];
     switch (sort) {
       case "new":
@@ -253,7 +253,7 @@ export default function Registry({
       default:
         return list;
     }
-  }, [searched, sort, query]);
+  }, [searched, sort, ]);
 
   const [page, setPage] = useState(1);
 
