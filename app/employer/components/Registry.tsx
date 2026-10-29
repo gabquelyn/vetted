@@ -11,7 +11,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import CandidateCard from "./CanCard";
 import Select from "@/app/components/CustomSelect";
 import Filtering from "./Filtering";
-import { applyFilters } from "@/app/utils/registry";
+import { applyFilters, matchesLocation } from "@/app/utils/registry";
 import NavRail from "./NavRail";
 import { toast } from "sonner";
 import Overlay from "./Overlay";
@@ -103,6 +103,7 @@ export default function Registry({
   const [activePanel, setActivePanel] = useState(false);
   const [toggle, setToggle] = useState(() => selectedProfessionsGate.size > 0);
   const [viewAll, setViewAll] = useState(false);
+  const [location, setLocation] = useState("");
 
   const gateProfessions = selectedProfessionsGate
     ? [...selectedProfessionsGate]
@@ -206,7 +207,12 @@ export default function Registry({
     setRecentSearch((prev) => prev.filter((search) => search.id !== id));
   };
 
-  const searched = useMemo(() => searchCandidates(data, terms), [data, terms]);
+  // const searched = useMemo(() => searchCandidates(data, terms), [data, terms]);
+
+  const searched = useMemo(() => {
+  const searched = searchCandidates(data, terms);
+  return searched.filter((c) => matchesLocation(c, location));
+}, [data, terms, location]);
 
   const onSave = (id: string) => {
     const isExisting = saved.find((i) => i == id);
@@ -297,6 +303,8 @@ export default function Registry({
       {!["compare", "urgent"].includes(activeView) && (
         <QueryBar
           query={query}
+          location={location}
+          setLocation={setLocation}
           setQuery={(e) => {
             setQuery(e);
           }}

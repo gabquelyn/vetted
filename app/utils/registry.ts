@@ -87,3 +87,6 @@ export function applyFilters(
     return true;
   });
 }
+
+export const matchesLocation = (c: Candidate, location: string) =>
+  !location || norm(c.loc) === norm(location);

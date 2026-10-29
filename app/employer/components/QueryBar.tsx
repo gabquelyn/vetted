@@ -1,5 +1,6 @@
 import React from "react";
 import AddressAutocomplete from "@/app/components/AutoComplete";
+import LocationSelect from "./LocationSelect";
 import HelpButton from "./HelpButton";
 import { restartTour } from "./TourController";
 
@@ -13,6 +14,8 @@ export default function QueryBar({
   radiusDisabled = false,
   onRadiusClick,
   onBuild,
+  location,
+  setLocation,
 }: {
   /** The live draft: text typed but not yet committed. It still filters as you type. */
   query: string;
@@ -28,6 +31,8 @@ export default function QueryBar({
   radiusDisabled?: boolean;
   onRadiusClick?: () => void;
   onBuild?: () => void;
+  location: string;
+  setLocation: React.Dispatch<React.SetStateAction<string>>;
 }) {
   // Segment: stacked with a bottom rule on small screens, inline from 900px
   const seg =
@@ -107,7 +112,7 @@ export default function QueryBar({
             className={`${seg} w-full min-[900px]:w-auto min-[900px]:flex-[0_1_170px]`}
           >
             <div className="min-w-0 text-xs flex-1">
-              <AddressAutocomplete />
+              <LocationSelect value={location} onChange={setLocation} />
             </div>
           </div>
 
@@ -171,8 +176,6 @@ export default function QueryBar({
           Build from job description
         </button>
       </div>
-
-
     </div>
   );
 }
