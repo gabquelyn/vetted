@@ -267,7 +267,7 @@ export default function Registry({
 
   const PAGE_SIZE = +result;
 
-  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages); // safety clamp
   const pageResults = sorted.slice(
     (currentPage - 1) * PAGE_SIZE,
