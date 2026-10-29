@@ -133,7 +133,9 @@ export default function ProfileView({
     FULL_CANDIDATES.find((c) => c.id == viewing);
 
   const candidateId = candidate?.id;
-  const revealedNow = candidate ? reveals.includes(candidate?.personId || candidate.id) : false;
+  const revealedNow = candidate
+    ? reveals.includes(candidate?.personId || candidate.id)
+    : false;
 
   // rail ref
   const railRef = useRef<HTMLDivElement>(null);
@@ -258,18 +260,46 @@ export default function ProfileView({
 
   const fitRows: [string, React.ReactNode][] = (
     [
-      ["Availability", candidate.avail],
-      ["Shift preference", candidate.shift.join(", ")],
-      ["Employment preference", candidate.empType],
+      [
+        "Availability",
+        <Highlight key={"availability"} text={candidate.avail} terms={terms} />,
+      ],
+      [
+        "Shift preference",
+        <Highlight
+          key={"shift preference"}
+          text={candidate.shift.join(", ")}
+          terms={terms}
+        />,
+      ],
+      [
+        "Employment preference",
+        <Highlight
+          key={"Employment preference"}
+          text={candidate.empType}
+          terms={terms}
+        />,
+      ],
       candidate.acceptedEmpTypes && candidate.acceptedEmpTypes.length > 1
         ? [
             "Also open to",
-            candidate.acceptedEmpTypes
-              .filter((t) => t !== candidate.empType)
-              .join(" · "),
+            <Highlight
+              key={"Also open to"}
+              text={candidate.acceptedEmpTypes
+                .filter((t) => t !== candidate.empType)
+                .join(" · ")}
+              terms={terms}
+            />,
           ]
         : null,
-      ["Open to working in", candidate.openToWorkingIn?.join(", ")],
+      [
+        "Open to working in",
+        <Highlight
+          key={"Open to working in"}
+          text={candidate.openToWorkingIn?.join(", ")}
+          terms={terms}
+        />,
+      ],
       [
         "Own vehicle",
         candidate.vehicle ? (
@@ -539,7 +569,9 @@ export default function ProfileView({
                     </span>
                     <span className="flex-1 text-[11px] text-[#8a8a84]">
                       {op.empType} · {op.avail}
-                      {reveals.includes(op.personId || op.id) ? " · Already revealed" : ""}
+                      {reveals.includes(op.personId || op.id)
+                        ? " · Already revealed"
+                        : ""}
                     </span>
                     <button
                       type="button"
@@ -561,7 +593,11 @@ export default function ProfileView({
               <div className="min-w-0">
                 <BlockLabel>Experience</BlockLabel>
                 {/* key resets the expanded state when switching candidates */}
-                <ExperienceList key={candidate.id} roles={candidate.exp} terms={terms}/>
+                <ExperienceList
+                  key={candidate.id}
+                  roles={candidate.exp}
+                  terms={terms}
+                />
 
                 <BlockLabel className="mt-[22px]">Key skills</BlockLabel>
                 <div className="mb-2 mt-2 flex flex-wrap gap-1.5">
@@ -645,7 +681,11 @@ export default function ProfileView({
                 {candidate.lang?.length > 0 && (
                   <div className="mt-2.5">
                     <SideRow label="Languages" variant="quiet">
-                      {candidate.lang.join(", ")}
+                      <Highlight
+                        key={"Language"}
+                        text={candidate.lang.join(", ")}
+                        terms={terms}
+                      />
                     </SideRow>
                   </div>
                 )}

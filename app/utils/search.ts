@@ -19,6 +19,8 @@ const toText = (v: unknown): string => {
 const FIELDS: { weight: number; get: (c: Candidate) => unknown }[] = [
   { weight: 5, get: (c) => [c.title, c.code] },
   { weight: 4, get: (c) => c.skills },
+  { weight: 4, get: (c) => c.acceptedEmpTypes },
+  { weight: 4, get: (c) => c.empType },
   { weight: 4, get: (c) => c.specialties },
   { weight: 3, get: (c) => [c.env, c.openToWorkingIn] },
   { weight: 3, get: (c) => c.exp }, // clinical experience

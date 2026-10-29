@@ -135,6 +135,7 @@ export default function CanCard({
   const extraSkills = c.skills.length - 2;
   const stop = (e: MouseEvent) => e.stopPropagation();
   const matches = findCandidateMatches(c, terms);
+  console.log(matches);
   return (
     <div
       onClick={() => setHighlightActive(c.id)}
@@ -255,19 +256,23 @@ export default function CanCard({
 
         {(() => {
           const match =
+            matches.find((m) => m.key === "empType") ??
+            matches.find((m) => m.key === "acceptedEmpTypes") ??
             matches.find((m) => m.key === "context") ??
             matches.find((m) => m.key === "summary") ??
             matches.find((m) => m.key === "env") ??
-            matches.find((m) => m.key === "openToWorkingIn")
+            matches.find((m) => m.key === "openToWorkingIn");
 
           return match ? (
             <div className="mb-1.75 text-[11px] flex items-center gap-1 text-ink-soft/80">
               <p className="font-semibold">
-                {match.key == "summary"
-                  ? "Profile summary"
-                  : match.key == "context"
-                    ? "Past experience"
-                    : match.key}
+                {match.key== "empType" ? "Employment type" :match.key == "acceptedEmpTypes"
+                  ? "Employment preference"
+                  : match.key == "summary"
+                    ? "Profile summary"
+                    : match.key == "context"
+                      ? "Past experience"
+                      : match.key}
               </p>
               ·
               <p
