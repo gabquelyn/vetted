@@ -670,26 +670,24 @@ export default function ProfileView({
                   </div>
                 )}
 
-                {candidate?.eduRecords ? (
-                  <div className="mt-0.5">
-                    <MicroLabel>Education</MicroLabel>
-
-                    {/* key resets the expanded state when switching candidates */}
+                <div className="mt-0.5">
+                  <MicroLabel>Education</MicroLabel>
+                  {candidate?.eduRecords ? (
                     <EducationRecords
                       key={candidate.id}
                       records={candidate.eduRecords ?? []}
                       terms={terms}
                     />
-                  </div>
-                ) : (
-                  <div className="text-[13px] font-semibold leading-[1.4] text-ink">
-                    <Highlight
-                      key={"Education"}
-                      text={candidate.edu}
-                      terms={terms}
-                    />
-                  </div>
-                )}
+                  ) : (
+                    <div className="text-[13px] font-semibold leading-[1.4] text-ink">
+                      <Highlight
+                        key={"Education"}
+                        text={candidate.edu}
+                        terms={terms}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {candidate.lang?.length > 0 && (
                   <div className="mt-2.5">
