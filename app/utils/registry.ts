@@ -2,7 +2,6 @@ import { Candidate } from "../data/registry";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-// For free-text fields like `float` and `relocation`: treat empty / "no" style values as false
 const isAffirmative = (v?: string) => {
   if (!v) return false;
   const s = norm(v);

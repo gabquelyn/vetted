@@ -7,7 +7,6 @@ import {
   PROFESSIONS,
 } from "@/app/professional/components/data";
 import SearchableSelect from "./SearchableSelect";
-import { label } from "motion/react-client";
 
 export interface PlacementRequestValues {
   profession: string;
