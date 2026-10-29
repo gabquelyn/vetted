@@ -803,6 +803,8 @@ export default function Registry({
                   setViewing(id);
                 }}
                 onRemove={(id) => onCompare(id)}
+                reveals={reveals}
+                onReveal={(c) => setRevealing(c)}
               />
             </div>
           )}
