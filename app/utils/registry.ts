@@ -58,11 +58,8 @@ export function applyFilters(
       return false;
 
     // Environment: matches current env or environments they're open to
-    if (
-      environment.length &&
-      !hasAny(c.env, environment) &&
-      !hasAny(c.openToWorkingIn, environment)
-    ) {
+    // !hasAny(c.openToWorkingIn, environment)
+    if (environment.length && !hasAny(c.env, environment)) {
       return false;
     }
 
