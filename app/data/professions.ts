@@ -72,3 +72,7 @@ export const PROFILE = [
 ];
 export const DATE = [7, 14];
 export const FD_REVEAL_ALLOWANCE = 15;
+export const CONFIRMATION = [
+  ["7", "Confirmed within 7 days"],
+  ["14", "Confirmed within 14 days"],
+] as const;

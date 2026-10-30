@@ -14,6 +14,10 @@ type MultiSelectProps = {
   searchPlaceholder?: string;
   className?: string;
   allowSearch?: boolean;
+  /** Radio behaviour: one value, closes on pick, no select all / clear bar. */
+  single?: boolean;
+  /** Single mode only: label of a first row that clears the selection (e.g. "Any confirmation date"). */
+  clearLabel?: string;
 };
 
 export default function MultiSelect({
@@ -21,6 +25,8 @@ export default function MultiSelect({
   value,
   onChange,
   allowSearch,
+  single,
+  clearLabel,
   placeholder = "Select...",
   searchPlaceholder = "Search...",
   className = "",
@@ -57,8 +63,21 @@ export default function MultiSelect({
     };
   }, []);
 
-  const toggle = (v: string) =>
+  const toggle = (v: string) => {
+    if (single) {
+      onChange([v]);
+      setOpen(false);
+      setQuery("");
+      return;
+    }
     onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
+  };
+
+  const clearSingle = () => {
+    onChange([]);
+    setOpen(false);
+    setQuery("");
+  };
 
   const toggleAllFiltered = () => {
     const ids = filtered.map((o) => o.value);
@@ -83,7 +102,7 @@ export default function MultiSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 rounded-md border border-ash bg-transparent px-3 py-2 text-left text-xs text-ink-soft transition-colors focus:border-forest cursor-pointer"
+        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md border border-ash bg-transparent px-3 py-2 text-left text-xs text-ink-soft transition-colors focus:border-forest"
       >
         <span
           className={`truncate ${value.length === 0 ? "text-gray-400" : ""}`}
@@ -102,6 +121,7 @@ export default function MultiSelect({
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
+            data-filter-popover
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="mt-1 overflow-hidden rounded-xl bg-white"
@@ -120,8 +140,8 @@ export default function MultiSelect({
               </div>
             )}
 
-            {/* Select all / clear */}
-            {filtered.length > 0 && (
+            {/* Select all / clear (multi mode only) */}
+            {!single && filtered.length > 0 && (
               <div className="flex items-center justify-between border-b border-ash px-3 py-1.5 text-[.7rem]">
                 <button
                   type="button"
@@ -145,9 +165,22 @@ export default function MultiSelect({
             {/* Options */}
             <ul
               role="listbox"
-              aria-multiselectable
+              aria-multiselectable={!single}
               className="max-h-50 overflow-y-auto py-1"
             >
+              {/* Single mode: first row clears the selection ("Any ...") */}
+              {single && clearLabel && !query && (
+                <li
+                  role="option"
+                  aria-selected={value.length === 0}
+                  onClick={clearSingle}
+                  className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-xs text-ink-soft hover:bg-gray-50"
+                >
+                  <Indicator checked={value.length === 0} single />
+                  <span className="truncate">{clearLabel}</span>
+                </li>
+              )}
+
               {filtered.length === 0 ? (
                 <li className="px-3 py-4 text-center text-xs text-gray-400">
                   No results found
@@ -163,15 +196,7 @@ export default function MultiSelect({
                       onClick={() => toggle(o.value)}
                       className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-xs text-ink-soft hover:bg-gray-50"
                     >
-                      <span
-                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                          checked
-                            ? "border-forest bg-forest text-white"
-                            : "border-gray-300 bg-white"
-                        }`}
-                      >
-                        {checked && <LuCheck className="h-3 w-3" />}
-                      </span>
+                      <Indicator checked={checked} single={single} />
                       <span className="truncate">{o.label}</span>
                     </li>
                   );
@@ -182,5 +207,34 @@ export default function MultiSelect({
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** Checkbox (multi) or radio (single) marker. */
+function Indicator({
+  checked,
+  single,
+}: {
+  checked: boolean;
+  single?: boolean;
+}) {
+  return single ? (
+    <span
+      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+        checked ? "border-forest" : "border-gray-300 bg-white"
+      }`}
+    >
+      {checked && <span className="h-2 w-2 rounded-full bg-forest" />}
+    </span>
+  ) : (
+    <span
+      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+        checked
+          ? "border-forest bg-forest text-white"
+          : "border-gray-300 bg-white"
+      }`}
+    >
+      {checked && <LuCheck className="h-3 w-3" />}
+    </span>
   );
 }

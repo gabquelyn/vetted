@@ -94,6 +94,7 @@ export default function Registry({
     profile: [],
     availability: [],
     openTo: [],
+    confirmed: []
   });
 
   const [reveals, setReveals] = useState<string[]>([]);
@@ -196,6 +197,7 @@ export default function Registry({
       profile: [],
       availability: [],
       openTo: [],
+      confirmed: []
     });
     setTerms([]);
     setLocation("");

@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { LuX } from "react-icons/lu";
 import MultiSelect from "./MultiSelect";
 import {
+  CONFIRMATION,
   EMPLOYMENT,
   ENVIRONMENT,
   MOBILITY,
@@ -117,8 +118,6 @@ export default function Filtering({
   activatePanel: boolean;
   setActivatePanel: () => void;
 }) {
-
-  console.log(filters)
   // Below Tailwind's md breakpoint: small button + bottom sheet, no hover logic.
   const isMobile = useMediaQuery("(max-width: 767px)");
   // The inline pinned block is a desktop-only idea; mobile never uses it.
@@ -166,10 +165,12 @@ export default function Filtering({
     setOpen(true);
   }, [cancelClose, updatePosition]);
 
-  const scheduleClose = useCallback(() => {
-    cancelClose();
-    closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
-  }, [cancelClose]);
+const scheduleClose = useCallback(() => {
+  cancelClose();
+  // a dropdown list inside the card is still mounted (open or animating out)
+  if (document.querySelector("[data-filter-popover]")) return;
+  closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
+}, [cancelClose]);
 
   useEffect(() => cancelClose, [cancelClose]);
 
@@ -459,6 +460,24 @@ export default function Filtering({
             className={msClass}
             options={PROFILE.map((e) => ({ label: e[1], value: e[0] }))}
           />
+        </div>
+        <div>
+          <div>
+            <MultiSelect
+              single
+              clearLabel="Any confirmation date"
+              placeholder="Any confirmation date"
+              value={filters.confirmed ? filters.confirmed : []}
+              onChange={(val) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  confirmed: val.length ? [val[0]] : [],
+                }))
+              }
+              className={msClass}
+              options={CONFIRMATION.map((c) => ({ label: c[1], value: c[0] }))}
+            />
+          </div>
         </div>
       </FilterGroup>
 

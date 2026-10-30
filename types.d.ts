@@ -123,6 +123,7 @@ interface Filters {
   profile: string[];
   availability: string[];
   openTo: string[];
+  confirmed: string[];
   [index: string]: string[];
 }
 

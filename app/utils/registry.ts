@@ -45,6 +45,7 @@ export function applyFilters(
     profile = [],
     openTo = [],
     availability = [],
+    confirmed = [],
   } = filters;
 
   return candidates.filter((c) => {
@@ -106,6 +107,12 @@ export function applyFilters(
     // Profile: AND
     if (!profile.every((key) => PROFILE_CHECKS[key]?.(c) ?? true)) {
       return false;
+    }
+
+    // confirmed
+    if (confirmed.length > 0) {
+      const maxDays = Number(confirmed[0]);
+      if (!(c.confirmedDays <= maxDays)) return false;
     }
 
     return true;
