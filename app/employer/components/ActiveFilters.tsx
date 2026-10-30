@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  CONFIRMATION,
   EMPLOYMENT,
   ENVIRONMENT,
   MOBILITY,
@@ -17,7 +18,7 @@ type FilterKey =
   | "mobility"
   | "profile"
   | "availability"
-  | "openTo";
+  | "openTo" | "confirmed"
 
 const ORDER: FilterKey[] = [
   "profession",
@@ -27,7 +28,7 @@ const ORDER: FilterKey[] = [
   "mobility",
   "profile",
   "availability",
-  "openTo",
+  "openTo", "confirmed"
 ];
 
 const VALUE_LABELS: Partial<Record<FilterKey, Record<string, string>>> = {
@@ -38,6 +39,7 @@ const VALUE_LABELS: Partial<Record<FilterKey, Record<string, string>>> = {
   availability: Object.fromEntries(AVAILABILITY.map((e) => [e, e])),
   shift: Object.fromEntries(SHIFTS.map((e) => [e, e])),
   employment: Object.fromEntries(EMPLOYMENT.map((e) => [e, e])),
+  confirmed: Object.fromEntries(CONFIRMATION.map((e) => [e, e])),
   openTo: Object.fromEntries(ENVIRONMENT.map((e) => [`Open to:${e}`, e])),
 };
 
@@ -101,7 +103,7 @@ export default function ActiveFilters({
             key={`${chip.key}:${chip.value}`}
             className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]"
           >
-            {chip.key == "openTo" ? `${chip.key}: ${chip.value}` : chip.label}
+            {chip.key == "confirmed" ? `Confirmed ≤ ${chip.value}d` : chip.key == "openTo" ? `${chip.key}: ${chip.value}` : chip.label}
             <button
               type="button"
               aria-label={`Remove ${chip.label}`}
