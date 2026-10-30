@@ -18,7 +18,8 @@ type FilterKey =
   | "mobility"
   | "profile"
   | "availability"
-  | "openTo" | "confirmed"
+  | "openTo"
+  | "confirmed";
 
 const ORDER: FilterKey[] = [
   "profession",
@@ -28,7 +29,8 @@ const ORDER: FilterKey[] = [
   "mobility",
   "profile",
   "availability",
-  "openTo", "confirmed"
+  "openTo",
+  "confirmed",
 ];
 
 const VALUE_LABELS: Partial<Record<FilterKey, Record<string, string>>> = {
@@ -83,27 +85,31 @@ export default function ActiveFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-5">
-      {location.location && (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]">
-          {location.location} · within {location.radius}km
-          <button
-            type="button"
-            aria-label={`Remove location search`}
-            onClick={() => removeLoc()}
-            className="flex h-3.75 w-3.75 cursor-pointer items-center justify-center rounded-full border-none bg-forest/15 p-0 text-[11px] leading-none text-[#16260c] transition-colors hover:bg-forest/25 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest"
-          >
-            ×
-          </button>
-        </span>
-      )}
       {/* .fd-query-chips */}
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        {location.location && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]">
+            {location.location} · within {location.radius}km
+            <button
+              type="button"
+              aria-label={`Remove location search`}
+              onClick={() => removeLoc()}
+              className="flex h-3.75 w-3.75 cursor-pointer items-center justify-center rounded-full border-none bg-forest/15 p-0 text-[11px] leading-none text-[#16260c] transition-colors hover:bg-forest/25 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest"
+            >
+              ×
+            </button>
+          </span>
+        )}
         {chips.map((chip) => (
           <span
             key={`${chip.key}:${chip.value}`}
             className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]"
           >
-            {chip.key == "confirmed" ? `Confirmed ≤ ${chip.value}d` : chip.key == "openTo" ? `${chip.key}: ${chip.value}` : chip.label}
+            {chip.key == "confirmed"
+              ? `Confirmed ≤ ${chip.value}d`
+              : chip.key == "openTo"
+                ? `${chip.key}: ${chip.value}`
+                : chip.label}
             <button
               type="button"
               aria-label={`Remove ${chip.label}`}

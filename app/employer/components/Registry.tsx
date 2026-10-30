@@ -724,6 +724,7 @@ export default function Registry({
                     </div>
 
                     <div className="mx-auto w-full min-w-0 max-w-340">
+                      {location && <p className="text-forest text-xs font-semibold mb-2">Within {radius} km of {location}</p>}
                       <div
                         ref={ref}
                         className="grid items-start gap-4"
