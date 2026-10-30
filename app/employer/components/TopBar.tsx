@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React, { RefObject } from "react";
 
 function BoltIcon() {
@@ -69,22 +70,25 @@ const TopBar = function TopBar({
 
       <div className="flex items-center gap-3">
         <RevealBalance remaining={revealsRemaining} />
-        <button
-          type="button"
-          onClick={onUrgentHire}
-          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-forest px-4 py-2.25 text-[12.5px] font-bold text-white transition-colors hover:bg-forest-mid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-deep"
-        >
-          <BoltIcon />
-          Urgent Hire
-        </button>
-        <button
-          ref={closeRef}
-          type="button"
-          onClick={onClose}
-          className="shrink-0 cursor-pointer rounded-full border border-ash bg-white px-4 py-2.25 text-[12.5px] font-semibold text-ink-faint transition-all hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
-        >
-          Close ✕
-        </button>
+        <Link href="/employer#urgent">
+          <button
+            type="button"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-forest px-4 py-2.25 text-[12.5px] font-bold text-white transition-colors hover:bg-forest-mid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-deep"
+          >
+            <BoltIcon />
+            Urgent Hire
+          </button>
+        </Link>
+
+        <Link href="/employer">
+          <button
+            ref={closeRef}
+            type="button"
+            className="shrink-0 cursor-pointer rounded-full border border-ash bg-white px-4 py-2.25 text-[12.5px] font-semibold text-ink-faint transition-all hover:border-ink hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+          >
+            Close ✕
+          </button>
+        </Link>
       </div>
     </div>
   );

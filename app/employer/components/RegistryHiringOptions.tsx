@@ -35,7 +35,7 @@ const BriefcaseIcon = () => (
 
 export default function RegistryHiringOptions() {
   return (
-    <section className="bg-gradient-to-b from-[#2d5016]/5 to-[#2d5016]/[0.08] pb-[96px] pt-24 font-['DM_Sans',sans-serif] text-[#1a1a18] antialiased">
+    <section id="urgent" className="bg-gradient-to-b from-[#2d5016]/5 to-[#2d5016]/[0.08] pb-[96px] pt-24 font-['DM_Sans',sans-serif] text-[#1a1a18] antialiased">
       {/* head */}
       <Reveal className="mx-auto max-w-[680px] px-8 pb-14 text-center">
         <div className="mb-4 text-[11.5px] font-medium uppercase tracking-[0.08em] text-[#2d5016]">The Registry</div>

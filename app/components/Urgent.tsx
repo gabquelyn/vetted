@@ -4,7 +4,7 @@ import { IoCarSportOutline } from "react-icons/io5";
 import { MdOutlineLocationOn } from "react-icons/md";
 export default function Urgent() {
   return (
-    <div className="bg-ink">
+    <div className="bg-ink" id="#urgent">
       <section className="max-w-270 mx-auto px-8 pt-30 pb-32.5 text-center">
         {/* <div className="inline-flex items-center gap-1.75 text-[11.5px] font-bold tracking-[0.06em] uppercase text-[#e8a876] bg-[rgba(181,98,42,0.25)] px-3.5 py-1.5 rounded-full mb-5 before:content-['⚡']">
           Urgent hiring
