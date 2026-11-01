@@ -4,7 +4,7 @@ import { Candidate } from "@/app/data/registry";
 
 export type ResponseMeta = {
   respondedAt: string; // ISO timestamp
-  earliestStart: string; // e.g. "Tomorrow"
+  // earliestStart: string;
   distanceKm: number;
 };
 
@@ -52,6 +52,8 @@ export default function ResponseCard({
   now,
   isNew = false,
   onViewProfile,
+  onIntroduction,
+  introduced,
 }: {
   candidate: Candidate;
   response: ResponseMeta;
@@ -59,9 +61,11 @@ export default function ResponseCard({
   now: number;
   isNew?: boolean;
   onViewProfile?: (c: Candidate) => void;
+  onIntroduction?: (c: Candidate) => void;
+  introduced: string[];
 }) {
   const environment = candidate.env?.[0];
-
+  const intro = introduced.includes(candidate.id);
   return (
     <article className="group flex h-full flex-col gap-3 rounded-2xl border border-ash bg-white p-4 text-xs shadow-sm">
       {/* status */}
@@ -107,7 +111,7 @@ export default function ResponseCard({
             {timeAgo(response.respondedAt, now)}
           </span>
         </Stat>
-        <Stat label="Earliest start">{response.earliestStart}</Stat>
+        {/* <Stat label="Earliest start">{response.earliestStart}</Stat> */}
         <Stat label="Shift">{candidate.shift?.join(", ") || "Flexible"}</Stat>
         <Stat label="Distance">
           <span className="flex items-center gap-1.5">
@@ -117,16 +121,34 @@ export default function ResponseCard({
         </Stat>
       </div>
 
-      {onViewProfile && (
-        <button
-          type="button"
-          onClick={() => onViewProfile(candidate)}
-          className="mt-auto flex cursor-pointer opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 items-center justify-end gap-1 pt-1 text-xs font-semibold text-forest hover:underline"
-        >
-          View profile
-          <LuArrowRight className="h-3 w-3" />
-        </button>
-      )}
+      <div className="flex flex-col md:flex-row items-center justify-between">
+        {onViewProfile && (
+          <button
+            type="button"
+            onClick={() => onViewProfile(candidate)}
+            className="mt-auto flex cursor-pointer opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 items-center justify-end gap-1 pt-1 text-xs font-semibold text-forest hover:underline"
+          >
+            View profile
+            <LuArrowRight className="h-3 w-3" />
+          </button>
+        )}
+        {candidate.specialist && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onIntroduction?.(candidate);
+            }}
+            className={`w-full md:w-[50%] rounded-[7px] p-1.5 text-center text-[11px] font-bold transition-colors ${
+              intro
+                ? "cursor-default border-[1.5px] border-[#d9a878] bg-white text-[#b8621a]"
+                : "cursor-pointer border-none bg-[#b8621a] text-white hover:bg-[#96500f]"
+            }`}
+          >
+            {intro ? "Introduction requested ✓" : "Request introduction"}
+          </button>
+        )}
+      </div>
     </article>
   );
 }

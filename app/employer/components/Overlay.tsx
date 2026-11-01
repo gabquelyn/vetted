@@ -81,7 +81,7 @@ export default function Overlay({
             className={`absolute right-0 top-0 flex h-full w-full flex-col bg-cream shadow-2xl sm:w-[85%] md:w-[37%] lg:w-[27%] xl:w-[22%] ${className}`}
           >
             <header className="flex items-center justify-between border-b border-ash px-5 py-4">
-              <p className="text-sm font-semibold text-ink">{title}</p>
+              <p className="text-lg text-ink font-serif">{title}</p>
               <button
                 type="button"
                 aria-label="Close"

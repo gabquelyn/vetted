@@ -13,6 +13,7 @@ import Select from "@/app/components/CustomSelect";
 import Filtering from "./Filtering";
 import {
   applyFilters,
+  dedupeByPerson,
   matchesLocation,
   withMobilityFlags,
 } from "@/app/utils/registry";
@@ -94,7 +95,7 @@ export default function Registry({
     profile: [],
     availability: [],
     openTo: [],
-    confirmed: []
+    confirmed: [],
   });
 
   const [reveals, setReveals] = useState<string[]>([]);
@@ -112,6 +113,7 @@ export default function Registry({
   const [toggle, setToggle] = useState(() => selectedProfessionsGate.size > 0);
   const [viewAll, setViewAll] = useState(false);
   const [location, setLocation] = useState("");
+  const [resolved, setResolved] = useState<string | null>(null);
 
   const gateProfessions = selectedProfessionsGate
     ? [...selectedProfessionsGate]
@@ -141,6 +143,11 @@ export default function Registry({
   }, [filtersOpen]);
   const [recentSearch, setRecentSearch] = useState<Search[]>([]);
 
+  const MAX_HISTORY = 5;
+
+  const [searchHistory, setSearchHistory] = useState<Search[]>([]);
+  const lastSignature = useRef<string | null>(null);
+
   const data = useMemo(() => {
     const candidates = applyFilters(
       FULL_CANDIDATES.map(withMobilityFlags).filter(
@@ -151,9 +158,64 @@ export default function Registry({
     );
 
     const searched = searchCandidates(candidates, terms);
+    const located = searched.filter(
+      (c) => locationMatch(c, location, radius) !== null,
+    );
 
-    return searched.filter((c) => locationMatch(c, location, radius) !== null);
+    // Collapse sibling profiles only when browsing with no filters or search terms
+    const hasCriteria =
+      terms.length > 0 || Object.values(filters).some((g) => g.length > 0);
+
+    return hasCriteria ? located : dedupeByPerson(located);
   }, [filters, hidden, terms, location, radius]);
+
+  useEffect(() => {
+    // Nothing to remember when browsing with no criteria
+    const hasCriteria =
+      terms.length > 0 ||
+      location.trim() !== "" ||
+      Object.values(filters).some((g) => g.length > 0);
+    if (!hasCriteria) {
+      lastSignature.current = null;
+      return;
+    }
+
+    // Same set of candidates as the last saved search -> not a different result
+    const signature = data
+      .map((c) => c.id)
+      .sort()
+      .join("|");
+    if (signature === lastSignature.current) return;
+
+    // Debounce so typing or ticking several filters saves one search, not each step
+    const timer = setTimeout(() => {
+      lastSignature.current = signature;
+      setSearchHistory((prev) =>
+        [
+          {
+            terms,
+            filters,
+            location,
+            radius,
+            count: data.length,
+            timestamp: new Date().toISOString(),
+            id: uuid(),
+          },
+          ...prev,
+        ].slice(0, MAX_HISTORY),
+      );
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [data, terms, filters, location, radius]);
+
+  const sortedHistory = useMemo(
+  () =>
+    [...searchHistory].sort(
+      (a, b) => +new Date(b.timestamp) - +new Date(a.timestamp),
+    ),
+  [searchHistory],
+);
 
   const count = useMemo(
     () => Object.values(filters).reduce((n, v) => n + v.length, 0),
@@ -197,10 +259,12 @@ export default function Registry({
       profile: [],
       availability: [],
       openTo: [],
-      confirmed: []
+      confirmed: [],
     });
     setTerms([]);
     setLocation("");
+    setResolved(null);
+    setRadius(25);
   }, []);
 
   const onApply = useCallback(
@@ -232,6 +296,10 @@ export default function Registry({
     setRecentSearch((prev) => prev.filter((search) => search.id !== id));
   };
 
+  const deleteHistorySearch = (id: string) => {
+    setSearchHistory((prev) => prev.filter((search) => search.id !== id));
+  };
+
   const onSave = (id: string) => {
     const isExisting = saved.find((i) => i == id);
     if (isExisting) {
@@ -261,7 +329,9 @@ export default function Registry({
   const revealedProffesionals = useMemo(
     () =>
       reveals
-        .map((id) => FULL_CANDIDATES.find((c) => c.id === id))
+        .map((id) =>
+          FULL_CANDIDATES.find((c) => c?.personId == id || c.id === id),
+        )
         .filter((c): c is Candidate => c !== undefined),
     [reveals],
   );
@@ -328,8 +398,12 @@ export default function Registry({
           setQuery={(e) => {
             setQuery(e);
           }}
+          onResolveLoc={(e) => setResolved(e)}
+          resolved={resolved}
           terms={terms}
           onTermsChange={(t) => setTerms(t)}
+          filters={filters}
+          setFilters={setFilters}
           onBuild={() =>
             toast.info(
               "AI-assisted search construction is available in the full Employer Workspace.",
@@ -370,8 +444,14 @@ export default function Registry({
           onClose={() => setActiveView("registry")}
           title="Saved Searches"
         >
+          <p className="text-[.6rem] uppercase text-ink-soft leading-1 mb-2">
+            Saved searches
+          </p>
+
           {recentSearch.length == 0 && (
-            <div className="text-xs text-ink-soft">Empty</div>
+            <div className="text-xs text-ink-soft h-60 flex items-center justify-center">
+              <p>Save a search from the Filter Dock to keep it here.</p>
+            </div>
           )}
 
           <div className="flex flex-col gap-1">
@@ -386,6 +466,25 @@ export default function Registry({
                   setActiveView("registry");
                 }}
                 onDelete={() => deleteSearch(search.id)}
+              />
+            ))}
+          </div>
+
+          <p className="text-[.6rem] uppercase text-ink-soft leading-1 mb-2">
+            Recent history
+          </p>
+          <div className="flex flex-col gap-1">
+            {sortedHistory.map((search) => (
+              <SearchItem
+                key={search.id}
+                timestamp={search.timestamp}
+                id={search.id}
+                search={search}
+                onApply={() => {
+                  onApply(search);
+                  setActiveView("registry");
+                }}
+                onDelete={() => deleteHistorySearch(search.id)}
               />
             ))}
           </div>
@@ -429,7 +528,7 @@ export default function Registry({
         <Overlay
           open={activeView == "requests"}
           onClose={() => setActiveView("registry")}
-          title="Specialist Requests"
+          title="Specialist Introductions"
         >
           <div className="flex flex-col gap-1">
             {introduced.map((c) => (
@@ -518,9 +617,10 @@ export default function Registry({
               <button
                 type="button"
                 onClick={() => {
+                  console.log(revealedProffesionals);
                   setViewAll(true);
                   setActiveView("registry");
-                  setViewing(reveals[0]);
+                  // setViewing(reveals[0]);
                 }}
                 className="flex w-full cursor-pointer items-center gap-1.5 rounded-[9px] border border-[#ece7da] bg-[#f6f3ea] px-3.25 py-2.5 text-left text-[12.5px] font-bold text-forest transition-colors hover:bg-[#eee9db] focus-visible:bg-[#eee9db] focus-visible:outline-none"
               >
@@ -534,12 +634,17 @@ export default function Registry({
               <RevealedPreview
                 key={c}
                 c={c}
-                onViewProfile={() => {
+                onViewProfile={(c) => {
+                  setViewAll(true);
                   setActiveView("registry");
-                  setViewing(c);
+                  setViewing(c.id);
                 }}
                 reveals={reveals}
-                onViewSibling={(c) => setViewing(c.id)}
+                onViewSibling={(c) => {
+                  setViewAll(true);
+                  setActiveView("registry");
+                  setViewing(c.id);
+                }}
               />
             ))}
           </div>
@@ -616,7 +721,7 @@ export default function Registry({
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
           {!viewing && activeView == "registry" && (
             <p className="text-xs py-3 text-ink-soft px-8 lg:px-12 font-semibold">
-              {data.length} results
+              {data.length} professionals
             </p>
           )}
 
@@ -638,6 +743,7 @@ export default function Registry({
                   onSave={(id) => onSave(id)}
                   compare={compare}
                   saved={saved}
+                  allRevealed={viewAll}
                   onClose={
                     viewAll
                       ? () => {
@@ -669,7 +775,7 @@ export default function Registry({
                         filters={filters}
                         setFilters={setFilters}
                         onClear={clearFilters}
-                        location={{ radius, location }}
+                        location={{ radius, location, resolved: !!resolved }}
                         onSave={() => {
                           toast.info("Search saved");
                           setRecentSearch((prev) => [
@@ -724,7 +830,11 @@ export default function Registry({
                     </div>
 
                     <div className="mx-auto w-full min-w-0 max-w-340">
-                      {location && <p className="text-forest text-xs font-semibold mb-2">Within {radius} km of {location}</p>}
+                      {resolved && (
+                        <p className="text-forest text-xs font-semibold mb-2">
+                          Within {radius} km of {resolved}
+                        </p>
+                      )}
                       <div
                         ref={ref}
                         className="grid items-start gap-4"
@@ -850,6 +960,8 @@ export default function Registry({
               onViewProfile={(c) => setViewing(c.id)}
               requests={requests}
               setRequests={setRequests}
+              introduced={introduced}
+              setIntroduction={(c) => setIntroducing(c)}
             />
           )}
         </main>

@@ -1,10 +1,11 @@
 import React from "react";
-import AddressAutocomplete from "@/app/components/AutoComplete";
+// import AddressAutocomplete from "@/app/components/AutoComplete";
 import LocationSelect from "./LocationSelect";
 import RadiusSelect from "./RadiusSelector";
 import HelpButton from "./HelpButton";
 import { restartTour } from "./TourController";
-
+import { termLabel } from "@/app/utils/search";
+import { parseQuery } from "@/app/utils/search";
 export default function QueryBar({
   query,
   setQuery,
@@ -16,6 +17,10 @@ export default function QueryBar({
   onBuild,
   location,
   setLocation,
+  filters,
+  setFilters,
+  onResolveLoc,
+  resolved
 }: {
   /** The live draft: text typed but not yet committed. It still filters as you type. */
   query: string;
@@ -33,6 +38,10 @@ export default function QueryBar({
   onBuild?: () => void;
   location: string;
   setLocation: React.Dispatch<React.SetStateAction<string>>;
+  filters: Filters;
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  onResolveLoc:(lo: string | null) => void;
+  resolved: string | null
 }) {
   // Segment: stacked with a bottom rule on small screens, inline from 900px
   const seg =
@@ -40,16 +49,36 @@ export default function QueryBar({
   const divider =
     "hidden h-5 w-px shrink-0 self-center bg-ash min-[900px]:block";
 
-  /** Add phrases as chips, skipping empties and case-insensitive duplicates. */
+  /**
+   * "mental health np":
+   *   - "np" is a profession -> added to filters.profession, no search chip
+   *   - "mental health" is not a filter -> added to the search terms
+   */
   const commit = (phrases: string[]) => {
-    const next = [...terms];
-    phrases.forEach((raw) => {
-      const phrase = raw.trim();
-      if (!phrase) return;
-      if (next.some((t) => t.toLowerCase() === phrase.toLowerCase())) return;
-      next.push(phrase);
+    const nextTerms = [...terms];
+    const nextFilters: Filters = { ...filters };
+    let filtersChanged = false;
+
+    phrases.flatMap(parseQuery).forEach(({ label, filter, value }) => {
+      if (filter && value) {
+        // Filter term: update the filter only
+        const current = nextFilters[filter] ?? [];
+        if (!current.some((v) => v.toLowerCase() === value.toLowerCase())) {
+          nextFilters[filter] = [...current, value] as never;
+          filtersChanged = true;
+        }
+        return;
+      }
+
+      // Everything else: search only
+      if (!label) return;
+      if (!nextTerms.some((t) => t.toLowerCase() === label.toLowerCase())) {
+        nextTerms.push(label);
+      }
     });
-    if (next.length !== terms.length) onTermsChange(next);
+
+    if (nextTerms.length !== terms.length) onTermsChange(nextTerms);
+    if (filtersChanged) setFilters(nextFilters);
   };
 
   // A comma ends a phrase. Everything before the last comma is committed
@@ -69,6 +98,7 @@ export default function QueryBar({
     commit([query]);
     setQuery("");
   };
+
 
   return (
     <div className="mb-2.5 max-w-[1360px] shrink-0">
@@ -112,7 +142,12 @@ export default function QueryBar({
             className={`${seg} w-full min-[900px]:w-auto min-[900px]:flex-[0_1_170px]`}
           >
             <div className="min-w-0 text-xs flex-1">
-              <LocationSelect value={location} onChange={setLocation} />
+              <LocationSelect
+                value={location}
+                onChange={setLocation}
+                onResolvedChange={onResolveLoc}
+                resolved = {!!resolved}
+              />
             </div>
           </div>
           <div
@@ -122,7 +157,7 @@ export default function QueryBar({
               value={radiusKm}
               onChange={setRadius}
               className="w-full min-w-0"
-              disabled={!location}
+              disabled={!resolved}
             />
           </div>
         </div>

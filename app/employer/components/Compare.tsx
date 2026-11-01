@@ -102,7 +102,7 @@ export interface CandidateCompareProps {
   onIntroduction?: (c: Candidate) => void;
   reveals?: string[];
   introduced?: string[];
-  clearComparison: () => void
+  clearComparison: () => void;
 }
 
 export function CandidateCompare({
@@ -115,7 +115,7 @@ export function CandidateCompare({
   onIntroduction,
   reveals = [],
   introduced = [],
-  clearComparison
+  clearComparison,
 }: CandidateCompareProps) {
   const reduce = useReducedMotion();
 
@@ -133,9 +133,8 @@ export function CandidateCompare({
       ? "Compare Professionals"
       : shown.length === 1
         ? `You have selected ${shown[0].id} for comparison. Select Compare on another candidate to compare them side by side.`
-        : `${
-            anyRevealed ? "Structured" : "Pre-Reveal"
-          } comparison. Meaningful differences are emphasized; identical information stays quiet. Vetted does not rank, score or recommend a candidate — you decide.`;
+        : `Structured
+          comparison. Meaningful differences are emphasized; identical information stays quiet. Vetted does not rank, score or recommend a candidate — you decide.`;
 
   return (
     <>
@@ -177,7 +176,10 @@ export function CandidateCompare({
         <p>{note}</p>
 
         {candidates.length > 1 && (
-          <button className="font-semibold text-forest-deep underline" onClick={clearComparison}>
+          <button
+            className="font-semibold text-forest-deep underline"
+            onClick={clearComparison}
+          >
             Clear comparison
           </button>
         )}

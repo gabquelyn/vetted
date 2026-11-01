@@ -1,5 +1,6 @@
 // app/utils/search.ts
-import type { Candidate } from "@/app/data/registry";
+import type { Candidate } from "@/app/data/registry"; // adjust Filters to wherever it lives
+import { PROFESSIONS } from "../data/professions";
 
 /* ------------------------------------------------------------------ *
  * 1. Fields (display order = SEARCH_FIELDS order)
@@ -17,11 +18,15 @@ export const SEARCH_FIELDS: SearchField[] = [
   { key: "title", label: "Title", get: (c) => [c.title, c.code] },
   { key: "skills", label: "Skills", get: (c) => c.skills },
   { key: "empType", label: "Employment type", get: (c) => c.empType },
-  { key: "acceptedEmpTypes", label: "Employment preference", get: (c) => c.acceptedEmpTypes },
+  {
+    key: "acceptedEmpTypes",
+    label: "Employment preference",
+    get: (c) => c.acceptedEmpTypes,
+  },
   { key: "specialties", label: "Specialties", get: (c) => c.specialties },
   { key: "env", label: "Environment", get: (c) => c.env },
-  { key: "openToWorkingIn", label: "Open to working in", get: (c) => c.openToWorkingIn },
-  { key: "context", label: "Past experience", showTerm: true, get: (c) => c.exp?.map((e) => e.context) },
+  // { key: "openToWorkingIn", label: "Open to working in", get: (c) => c.openToWorkingIn },
+  // { key: "context", label: "Past experience", showTerm: true, get: (c) => c.exp?.map((e) => e.context) },
   {
     key: "experience",
     label: "Experience",
@@ -34,12 +39,25 @@ export const SEARCH_FIELDS: SearchField[] = [
       ]),
   },
   { key: "credential", label: "Credential", get: (c) => c.credential },
-  { key: "certs", label: "Certified", get: (c) => c.certs },
+  { key: "certs", label: "Certification", get: (c) => c.certs },
   { key: "emr", label: "EMR & clinical systems", get: (c) => c.emr },
-  { key: "registration", label: "Professional registration", get: (c) => c.professionalRegistration },
-  // { key: "summary", label: "Profile summary", showTerm: true, get: (c) => c.summary },
-  { key: "snapshot", label: "Snapshot", showTerm: true, get: (c) => c.snapshot },
-  { key: "education", label: "Education", get: (c) => [c.edu, c.eduChips, c.eduRecords] },
+  {
+    key: "registration",
+    label: "Professional registration",
+    get: (c) => c.professionalRegistration,
+  },
+  {
+    key: "summary",
+    label: "Profile summary",
+    showTerm: true,
+    get: (c) => c.summary,
+  },
+  // { key: "snapshot", label: "Snapshot", showTerm: true, get: (c) => c.snapshot },
+  {
+    key: "education",
+    label: "Education",
+    get: (c) => [c.edu, c.eduChips, c.eduRecords],
+  },
   { key: "languages", label: "Languages", get: (c) => c.lang },
   { key: "location", label: "Location", get: (c) => c.loc },
 ];
@@ -50,7 +68,9 @@ export const fieldLabel = (key: string) =>
   SEARCH_FIELDS[FIELD_INDEX.get(key) ?? -1]?.label ?? key;
 
 /** The match whose field appears earliest in SEARCH_FIELDS. */
-export const pickDisplayMatch = <T extends { key: string }>(matches: T[]): T | undefined =>
+export const pickDisplayMatch = <T extends { key: string }>(
+  matches: T[],
+): T | undefined =>
   matches
     .filter((m) => FIELD_INDEX.has(m.key))
     .sort((a, b) => FIELD_INDEX.get(a.key)! - FIELD_INDEX.get(b.key)!)[0];
@@ -96,14 +116,30 @@ const phraseRegex = (variant: string) => {
  * 3. Negation guard ("no ICU experience" must not count as ICU)
  * ------------------------------------------------------------------ */
 const NEGATIONS = new Set([
-  "no", "not", "without", "never", "none", "lacking", "lacks",
-  "haven't", "hasn't", "doesn't", "don't", "isn't", "wasn't", "didn't",
+  "no",
+  "not",
+  "without",
+  "never",
+  "none",
+  "lacking",
+  "lacks",
+  "haven't",
+  "hasn't",
+  "doesn't",
+  "don't",
+  "isn't",
+  "wasn't",
+  "didn't",
 ]);
 
 // A negation marker among the 4 words before the match, in the same sentence
 const isNegated = (text: string, at: number) => {
   const start =
-    Math.max(text.lastIndexOf(".", at - 1), text.lastIndexOf("!", at - 1), text.lastIndexOf("?", at - 1)) + 1;
+    Math.max(
+      text.lastIndexOf(".", at - 1),
+      text.lastIndexOf("!", at - 1),
+      text.lastIndexOf("?", at - 1),
+    ) + 1;
   return text
     .slice(start, at)
     .split(/\s+/)
@@ -124,43 +160,191 @@ interface Concept {
   descendants?: string[];
 }
 
+interface Concept {
+  id: string;
+  label: string;
+  aliases: string[];
+  descendants?: string[];
+  /** Filter group this concept feeds; omit for search-only concepts */
+  filter?: keyof Filters;
+  /** Value stored in that filter group when it differs from the label */
+  value?: string;
+}
+
 const TERMINOLOGY: Concept[] = [
-  { id: "ltc", label: "Long-Term Care (LTC)", aliases: ["ltc", "long term care"] },
-  { id: "retirement_home", label: "Retirement Home", aliases: ["retirement settings", "retirement residence"] },
-  { id: "home_care", label: "Home Care", aliases: ["in home care"] },
-  { id: "chc", label: "Community Health Centre", aliases: ["community health center"] },
+  {
+    id: "ltc",
+    label: "Long-Term Care (LTC)",
+    aliases: ["ltc", "long term care"],
+    filter: "environment",
+  },
+  {
+    id: "retirement_home",
+    label: "Retirement Home",
+    aliases: ["retirement settings", "retirement residence"],
+    filter: "environment",
+  },
+  {
+    id: "home_care",
+    label: "Home Care",
+    aliases: ["in home care"],
+    filter: "environment",
+  },
+  {
+    id: "chc",
+    label: "Community Health Centre",
+    aliases: ["community health center"],
+    filter: "environment",
+  },
 
-  { id: "emergency", label: "Emergency", aliases: ["ed", "er", "emergency department", "emergency room", "emergency trauma"], descendants: ["emergency_trauma"] },
-  { id: "emergency_trauma", label: "Emergency & Trauma", aliases: [] },
+  {
+    id: "emergency",
+    label: "Emergency",
+    aliases: [
+      "ed",
+      "er",
+      "emergency department",
+      "emergency room",
+      "emergency trauma",
+    ],
+    descendants: ["emergency_trauma"],
+    filter: "environment",
+  },
+  {
+    id: "emergency_trauma",
+    label: "Emergency & Trauma",
+    aliases: [],
+    filter: "environment",
+  },
 
-  { id: "critical_care_icu", label: "Critical Care / ICU", aliases: ["icu", "intensive care", "critical care"], descendants: ["icu_adult", "picu", "nicu"] },
-  { id: "icu_adult", label: "ICU Critical Care Adult", aliases: ["adult icu"] },
-  { id: "picu", label: "ICU Critical Care Paediatric / PICU", aliases: ["picu", "paediatric icu", "pediatric icu"] },
-  { id: "nicu", label: "Neonatal NICU", aliases: ["nicu", "neonatal"] },
+  {
+    id: "critical_care_icu",
+    label: "Critical Care / ICU",
+    aliases: ["icu", "intensive care", "critical care"],
+    descendants: ["icu_adult", "picu", "nicu"],
+    filter: "environment",
+  },
+  {
+    id: "icu_adult",
+    label: "ICU Critical Care Adult",
+    aliases: ["adult icu"],
+    filter: "environment",
+  },
+  {
+    id: "picu",
+    label: "ICU Critical Care Paediatric / PICU",
+    aliases: ["picu", "paediatric icu", "pediatric icu"],
+    filter: "environment",
+  },
+  {
+    id: "nicu",
+    label: "Neonatal NICU",
+    aliases: ["nicu", "neonatal"],
+    filter: "environment",
+  },
 
-  { id: "medsurg", label: "Medical-Surgical", aliases: ["med surg"] },
-  { id: "pacu", label: "PeriAnesthesia & PACU", aliases: ["pacu", "perianesthesia", "peri anesthesia", "recovery room"] },
-  { id: "cardiac", label: "Cardiac", aliases: ["cardiovascular"], descendants: ["cardiovascular_cardiac"] },
-  { id: "cardiovascular_cardiac", label: "Cardiovascular & Cardiac", aliases: [] },
-  { id: "obstetrics", label: "Obstetrics & Labour", aliases: ["obstetrics", "labour and delivery", "labor and delivery"] },
-  { id: "palliative", label: "Palliative Care", aliases: ["palliative", "hospice", "hospice palliative"] },
-  { id: "mental_health", label: "Mental Health", aliases: ["psychiatric"], descendants: ["mental_health_psychiatric"] },
-  { id: "mental_health_psychiatric", label: "Mental Health & Psychiatric", aliases: [] },
-  { id: "addictions", label: "Addictions & Concurrent Disorders", aliases: ["addictions", "substance use", "concurrent disorders"] },
-  { id: "paediatric", label: "Paediatric", aliases: ["paediatrics", "pediatrics", "pediatric"], descendants: ["paediatrics"] },
-  { id: "paediatrics", label: "Paediatrics", aliases: [] },
+  {
+    id: "medsurg",
+    label: "Medical-Surgical",
+    aliases: ["med surg", "medical-surgical", "merd-surg"],
+    filter: "environment",
+  },
+  {
+    id: "pacu",
+    label: "PeriAnesthesia & PACU",
+    aliases: ["pacu", "perianesthesia", "peri anesthesia", "recovery room"],
+    filter: "environment",
+  },
+  {
+    id: "cardiac",
+    label: "Cardiac",
+    aliases: ["cardiovascular"],
+    descendants: ["cardiovascular_cardiac"],
+    filter: "environment",
+  },
+  {
+    id: "cardiovascular_cardiac",
+    label: "Cardiovascular & Cardiac",
+    aliases: [],
+    filter: "environment",
+  },
+  {
+    id: "obstetrics",
+    label: "Obstetrics & Labour",
+    aliases: ["obstetrics", "labour and delivery", "labor and delivery"],
+    filter: "environment",
+  },
+  {
+    id: "palliative",
+    label: "Palliative Care",
+    aliases: ["palliative", "hospice", "hospice palliative"],
+    filter: "environment",
+  },
+  {
+    id: "mental_health",
+    label: "Mental Health",
+    aliases: ["psychiatric"],
+    descendants: ["mental_health_psychiatric"],
+    filter: "environment",
+  },
+  {
+    id: "mental_health_psychiatric",
+    label: "Mental Health & Psychiatric",
+    aliases: [],
+    filter: "environment",
+  },
+  {
+    id: "addictions",
+    label: "Addictions & Concurrent Disorders",
+    aliases: ["addictions", "substance use", "concurrent disorders"],
+    filter: "environment",
+  },
+  {
+    id: "paediatric",
+    label: "Paediatric",
+    aliases: ["paediatrics", "pediatrics", "pediatric"],
+    descendants: ["paediatrics"],
+    filter: "environment",
+  },
+  {
+    id: "paediatrics",
+    label: "Paediatrics",
+    aliases: [],
+    filter: "environment",
+  },
 
   // Wound care and ostomy are related, not equivalent: no cross-expansion
   { id: "wound_care", label: "Wound Care", aliases: [] },
-  { id: "ostomy", label: "Ostomy / Stoma Care", aliases: ["ostomy", "stoma care", "ostomy care"] },
-  { id: "wound_care_ostomy", label: "Wound Care & Ostomy", aliases: ["wound care and ostomy"] },
-  { id: "nswoc", label: "NSWOC", aliases: ["wound ostomy continence nurse"] },
+  {
+    id: "ostomy",
+    label: "Ostomy / Stoma Care",
+    aliases: ["ostomy", "stoma care", "ostomy care"],
+  },
+  {
+    id: "wound_care_ostomy",
+    label: "Wound Care & Ostomy",
+    aliases: ["wound care and ostomy"],
+  },
+  {
+    id: "nswoc",
+    label: "NSWOC",
+    aliases: ["wound ostomy continence nurse"],
+  },
 
-  { id: "msw", label: "Master of Social Work", aliases: ["msw", "masters of social work"] },
+  {
+    id: "msw",
+    label: "Master of Social Work",
+    aliases: ["msw", "masters of social work"],
+  },
   { id: "ic", label: "Independent Contractor", aliases: ["ic"] },
-  { id: "immediate", label: "Immediate availability", aliases: ["immediate", "immediately"] },
+  {
+    id: "immediate",
+    label: "Immediate availability",
+    aliases: ["immediate", "immediately"],
+    filter: "availability",
+    value: "Immediate",
+  }, // must equal your c.avail option text
 ];
-
 const BY_ID = new Map(TERMINOLOGY.map((c) => [c.id, c]));
 const BY_PHRASE = new Map<string, Concept[]>();
 TERMINOLOGY.forEach((c) =>
@@ -171,7 +355,9 @@ TERMINOLOGY.forEach((c) =>
 );
 
 // Alias phrases that contain the word "and" must survive AND-splitting
-const PROTECTED_PHRASES = [...BY_PHRASE.keys()].filter((k) => k.split(" ").includes("and"));
+const PROTECTED_PHRASES = [...BY_PHRASE.keys()].filter((k) =>
+  k.split(" ").includes("and"),
+);
 
 // Regular inflections only (fall/falls/falling, nurse/nursing, therapy/therapies)
 const morph = (t: string): string[] => {
@@ -185,7 +371,9 @@ const morph = (t: string): string[] => {
     else if (t.endsWith("s") && !t.endsWith("ss")) root = t.slice(0, -1);
   }
   if (root.length < 3) return [...out];
-  [root, root + "s", root + "es", root + "ed", root + "ing"].forEach((v) => out.add(v));
+  [root, root + "s", root + "es", root + "ed", root + "ing"].forEach((v) =>
+    out.add(v),
+  );
   if (root.endsWith("e")) {
     const n = root.slice(0, -1);
     if (n.length >= 3) {
@@ -219,11 +407,13 @@ const variantsFor = (phrase: string): Variant[] => {
     [c.label, ...c.aliases].forEach((a) => map.set(normQuery(a), c.id));
     for (const id of c.descendants ?? []) {
       const d = BY_ID.get(id);
-      if (d) [d.label, ...d.aliases].forEach((a) => map.set(normQuery(a), d.id)); // child wins
+      if (d)
+        [d.label, ...d.aliases].forEach((a) => map.set(normQuery(a), d.id)); // child wins
     }
   }
   if (!map.has(phrase)) map.set(phrase, undefined);
-  if (!phrase.includes(" ")) morph(phrase).forEach((v) => !map.has(v) && map.set(v, undefined));
+  if (!phrase.includes(" "))
+    morph(phrase).forEach((v) => !map.has(v) && map.set(v, undefined));
   return [...map].map(([text, conceptId]) => ({ text, conceptId }));
 };
 
@@ -289,20 +479,29 @@ function* hits(sources: Source[], term: Compiled) {
     for (const src of sources) {
       for (const m of src.text.matchAll(re)) {
         if (!isNegated(src.text, m.index!)) {
-          yield { src, start: m.index!, len: m[0].length, conceptId: v.conceptId };
+          yield {
+            src,
+            start: m.index!,
+            len: m[0].length,
+            conceptId: v.conceptId,
+          };
         }
       }
     }
   }
 }
 
-const matchesTerm = (sources: Source[], term: Compiled) => !hits(sources, term).next().done;
+const matchesTerm = (sources: Source[], term: Compiled) =>
+  !hits(sources, term).next().done;
 
 /**
  * Boolean eligibility, no scoring. Every committed term must be found as its own
  * phrase (or an approved alias/descendant); original order is preserved.
  */
-export function searchCandidates(candidates: Candidate[], query: string[]): Candidate[] {
+export function searchCandidates(
+  candidates: Candidate[],
+  query: string[],
+): Candidate[] {
   const terms = compileAll(query);
   if (!terms.length) return candidates;
   return candidates.filter((c) => {
@@ -314,7 +513,10 @@ export function searchCandidates(candidates: Candidate[], query: string[]): Cand
 export type SortMode = "confirmed" | "experience";
 
 /** The HTML's two sorts (ranking was never part of search). */
-export const sortCandidates = (list: Candidate[], mode: SortMode): Candidate[] =>
+export const sortCandidates = (
+  list: Candidate[],
+  mode: SortMode,
+): Candidate[] =>
   [...list].sort(
     mode === "experience"
       ? (a, b) => b.years - a.years
@@ -326,7 +528,10 @@ export const sortCandidates = (list: Candidate[], mode: SortMode): Candidate[] =
  * ------------------------------------------------------------------ */
 export type CandidateMatch = { key: string; value: unknown; term: string };
 
-export function findCandidateMatches(candidate: Candidate, terms: string[]): CandidateMatch[] {
+export function findCandidateMatches(
+  candidate: Candidate,
+  terms: string[],
+): CandidateMatch[] {
   const sources = getSources(candidate);
   const seen = new Set<string>();
   const out: CandidateMatch[] = [];
@@ -343,7 +548,10 @@ export function findCandidateMatches(candidate: Candidate, terms: string[]): Can
 }
 
 /** Merged [start, end) ranges in `text`, so Highlight agrees with the matcher. */
-export function findHighlightRanges(text: string, terms: string[]): [number, number][] {
+export function findHighlightRanges(
+  text: string,
+  terms: string[],
+): [number, number][] {
   const folded = fold(text);
   const ranges: [number, number][] = [];
   for (const t of compileAll(terms)) {
@@ -376,7 +584,10 @@ export function splitAndExpression(raw: string): string[] {
   const held = new Map<string, string>();
   let work = raw;
   PROTECTED_PHRASES.forEach((phrase, i) => {
-    const re = new RegExp(`(^|\\s)(${esc(phrase).replace(/ /g, "\\s+")})(?=\\s|$)`, "gi");
+    const re = new RegExp(
+      `(^|\\s)(${esc(phrase).replace(/ /g, "\\s+")})(?=\\s|$)`,
+      "gi",
+    );
     work = work.replace(re, (_m, lead: string, hit: string) => {
       const key = `\u0001${i}_${held.size}\u0001`;
       held.set(key, hit);
@@ -390,7 +601,11 @@ export function splitAndExpression(raw: string): string[] {
   for (let i = 0; i < work.length; i++) {
     const ch = work[i];
     if (ch === '"') inQuotes = !inQuotes;
-    if (!inQuotes && /^AND\s/i.test(work.slice(i)) && (cur === "" || /\s$/.test(cur))) {
+    if (
+      !inQuotes &&
+      /^AND\s/i.test(work.slice(i)) &&
+      (cur === "" || /\s$/.test(cur))
+    ) {
       parts.push(cur.trim());
       cur = "";
       i += 2;
@@ -401,18 +616,131 @@ export function splitAndExpression(raw: string): string[] {
   parts.push(cur.trim());
 
   if (inQuotes || parts.length === 1 || parts.some((p) => !p)) return [raw];
-  return parts.map((p) => [...held].reduce((acc, [k, v]) => acc.split(k).join(v), p));
+  return parts.map((p) =>
+    [...held].reduce((acc, [k, v]) => acc.split(k).join(v), p),
+  );
 }
 
 /**
  * Zero-result recovery: the first reduced query (one term dropped) that finds
  * candidates, or null. Offer it as a click, never apply it automatically.
  */
-export function suggestBroadening(candidates: Candidate[], query: string[]): string[] | null {
-  if (query.length < 2 || searchCandidates(candidates, query).length) return null;
+export function suggestBroadening(
+  candidates: Candidate[],
+  query: string[],
+): string[] | null {
+  if (query.length < 2 || searchCandidates(candidates, query).length)
+    return null;
   for (let i = 0; i < query.length; i++) {
     const reduced = query.filter((_, j) => j !== i);
     if (searchCandidates(candidates, reduced).length) return reduced;
   }
   return null;
+}
+
+/* ------------------------------------------------------------------ *
+ * 10. Chip resolution: professions are promoted into the panel filter,
+ *     terminology and free text stay search-only
+ * ------------------------------------------------------------------ */
+export interface ResolvedTerm {
+  /** Chip text */
+  label: string;
+  /** Filter group this chip is promoted into (only professions for now) */
+  filter?: keyof Filters;
+  /** Value stored in that filter group (the profession code) */
+  value?: string;
+}
+
+// "np" / "nurse practitioner" -> { code: "NP", name: "Nurse Practitioner" }
+const PROFESSION_BY_PHRASE = new Map<string, { code: string; name: string }>();
+PROFESSIONS.forEach(([code, name]) => {
+  const entry = { code, name };
+  PROFESSION_BY_PHRASE.set(normQuery(code), entry);
+  PROFESSION_BY_PHRASE.set(normQuery(name), entry);
+});
+
+// tolerates plurals: "nurse practitioners", "rns"
+const professionFor = (phrase: string) =>
+  PROFESSION_BY_PHRASE.get(phrase) ??
+  PROFESSION_BY_PHRASE.get(phrase.replace(/s$/, "")) ??
+  PROFESSION_BY_PHRASE.get(phrase.replace(/es$/, ""));
+
+/** A folded phrase -> profession (promoted) or terminology label (search-only). */
+const resolvePhrase = (phrase: string): ResolvedTerm | undefined => {
+  const p = professionFor(phrase);
+  if (p) return { label: p.name, filter: "profession", value: p.code };
+
+  const c = BY_PHRASE.get(phrase)?.[0];
+  if (c)
+    return {
+      label: c.label,
+      filter: c.filter,
+      value: c.filter ? c.label : undefined,
+    };
+
+  return undefined;
+};
+
+/** One committed chip -> its label and, for professions, the filter it feeds. */
+export function resolveTerm(raw: string): ResolvedTerm {
+  const t = raw.trim();
+  const quoted = t.length > 2 && t.startsWith('"') && t.endsWith('"');
+  if (quoted) return { label: raw };
+  return resolvePhrase(normQuery(t)) ?? { label: raw };
+}
+
+export const termLabel = (raw: string) => resolveTerm(raw).label;
+
+/**
+ * Splits a typed query into chips, longest phrase first:
+ *   "mental health np" -> [Mental Health, Nurse Practitioner (profession)]
+ *   "palliative RN dementia" -> [Palliative Care, Registered Nurse (profession), dementia]
+ * Unrecognised words stay together as one keyword chip. Quoted input is never split.
+ */
+export function parseQuery(raw: string): ResolvedTerm[] {
+  const text = raw.trim();
+  if (!text) return [];
+  if (text.includes('"')) return [resolveTerm(text)];
+
+  const tokens = text.split(/\s+/);
+  const folded = tokens.map(normQuery);
+  const MAX_WORDS = 5;
+
+  const out: ResolvedTerm[] = [];
+  let rest: string[] = [];
+
+  const flush = () => {
+    // drop dangling connectors: "mental health and np" must not leave an "and" chip
+    while (rest.length && CONNECTORS.has(rest[0].toLowerCase())) rest.shift();
+    while (rest.length && CONNECTORS.has(rest[rest.length - 1].toLowerCase()))
+      rest.pop();
+    if (rest.length) out.push({ label: rest.join(" ") });
+    rest = [];
+  };
+
+  for (let i = 0; i < tokens.length; ) {
+    let hit: ResolvedTerm | undefined;
+    let len = 0;
+    for (let n = Math.min(MAX_WORDS, tokens.length - i); n >= 1 && !hit; n--) {
+      const phrase = folded
+        .slice(i, i + n)
+        .filter(Boolean)
+        .join(" ");
+      const found = phrase ? resolvePhrase(phrase) : undefined;
+      if (found) {
+        hit = found;
+        len = n;
+      }
+    }
+    if (hit) {
+      flush();
+      out.push(hit);
+      i += len;
+    } else {
+      rest.push(tokens[i]);
+      i++;
+    }
+  }
+  flush();
+  return out;
 }

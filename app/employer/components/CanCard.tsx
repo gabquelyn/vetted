@@ -265,7 +265,7 @@ export default function CanCard({
 
           return (
             <div className="mb-1.75 flex items-center gap-1 text-[11px] text-ink-soft/80">
-              <p className="font-semibold">{fieldLabel(match.key)}</p>·
+              <p className="font-semibold">{fieldLabel(match.key)}</p>:
               <p className="truncate whitespace-nowrap rounded-sm border border-[#C0BAA4] bg-[#ddd6bc] px-0.5 p-px text-ink-mid">
                 {matchText(match)}
               </p>

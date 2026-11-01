@@ -11,20 +11,23 @@ export default function RevealedPreview({
   c: string;
   reveals: string[];
   /** "View profile" / "View RN profile" — opens the primary profile */
-  onViewProfile: () => void;
+  onViewProfile: (c: Candidate) => void;
   /** Optional. Called when an "Also revealed as" link is clicked. Defaults to nothing. */
   onViewSibling?: (sibling: Candidate) => void;
 }) {
-  const primary = FULL_CANDIDATES.find((can) => can.id == c);
+  const primary = FULL_CANDIDATES.find(
+    (can) => can?.personId == c || can.id == c,
+  );
   if (!primary) return null;
 
   // All revealed, discoverable profiles of this person (personId is optional,
   // so fall back to the candidate's own id)
   const personKey = primary.personId ?? primary.id;
+  
   const profiles = FULL_CANDIDATES.filter(
     (x) =>
       (x.personId ?? x.id) === personKey &&
-      reveals.includes(x.id) &&
+      !reveals.includes(x.id) &&
       x.discoverable !== false,
   );
   const others = profiles.filter((x) => x.id !== primary.id);
@@ -39,8 +42,7 @@ export default function RevealedPreview({
       {/* top: id + revealed tag, then name — title · location */}
       <div>
         <div className="font-mono text-[10px] text-[#8a8a84]">
-          {primary.id}{" "}
-          <span className="font-bold text-forest">✓ Revealed</span>
+          {primary.id} <span className="font-bold text-forest">✓ Revealed</span>
         </div>
         <div className="text-[13.5px] font-bold text-ink">
           {name ? `${name} — ` : ""}
@@ -51,8 +53,8 @@ export default function RevealedPreview({
       {/* meta */}
       <div className="text-xs text-ink-soft">{snapshot}</div>
       <div className="text-xs text-ink-soft">
-        {primary.years} yr{primary.years === 1 ? "" : "s"} exp ·{" "}
-        {primary.avail} · Confirmed {primary.confirmedDays}d ago
+        {primary.years} yr{primary.years === 1 ? "" : "s"} exp · {primary.avail}{" "}
+        · Confirmed {primary.confirmedDays}d ago
       </div>
 
       {/* contact */}
@@ -88,7 +90,7 @@ export default function RevealedPreview({
       <div className="mt-1 flex gap-[7px]">
         <button
           type="button"
-          onClick={onViewProfile}
+          onClick={() => onViewProfile(primary)}
           className="flex-1 cursor-pointer rounded-[7px] border-none bg-forest p-[7px] text-[11px] font-bold text-white transition-colors hover:bg-[#3d6b1f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
         >
           {profiles.length > 1

@@ -7,12 +7,12 @@ import {
 } from "@/app/professional/components/data";
 import SearchableSelect from "./SearchableSelect";
 import { PROFESSIONS } from "@/app/data/professions";
+import { LOCATIONS } from "./LocationSelect";
 
 export interface PlacementRequestValues {
   profession: string;
   shifts: string[];
   startTiming: string;
-  responseWindow: string;
   aboutSetting: string;
   work: string;
   location: string;
@@ -28,7 +28,7 @@ interface PlacementRequestFormProps {
   submitLabel?: string;
 }
 
-const SHIFTS = ["Days", "Evenings", "Nights", "Rotating"];
+const SHIFTS = ["Days", "Evenings", "Nights", "Weekends", "Flexible"];
 const START_TIMINGS = [
   "ASAP",
   "Within 2 weeks",
@@ -36,12 +36,7 @@ const START_TIMINGS = [
   "1–3 months",
   "Flexible",
 ];
-const RESPONSE_WINDOWS = [
-  "Within 24 hours",
-  "Within 48 hours",
-  "Within 3 days",
-  "Within 1 week",
-];
+
 
 const ABOUT_MAX = 300;
 const WORK_MAX = 300;
@@ -165,7 +160,6 @@ export default function PlacementRequestForm({
     profession: "",
     shifts: [],
     startTiming: "",
-    responseWindow: "",
     aboutSetting: "",
     work: "",
     location: "",
@@ -190,7 +184,6 @@ export default function PlacementRequestForm({
     profession: !values.profession ? "Choose a profession." : "",
     shifts: values.shifts.length === 0 ? "Select at least one shift." : "",
     startTiming: !values.startTiming ? "Choose a start timing." : "",
-    responseWindow: !values.responseWindow ? "Choose a response window." : "",
     aboutSetting: !values.aboutSetting.trim()
       ? "Tell us about the setting."
       : "",
@@ -230,7 +223,7 @@ export default function PlacementRequestForm({
       >
         <SearchableSelect
           id={id("loc")}
-          options={DEMO_ONLY_ONTARIO_MUNICIPALITIES.map((demo) => demo.city)}
+          options={LOCATIONS.map((demo) => demo)}
           value={values.location}
           onChange={(v) => set("location", v)}
           placeholder="Select…"
@@ -261,26 +254,6 @@ export default function PlacementRequestForm({
         >
           <option value="">Select…</option>
           {START_TIMINGS.map((w) => (
-            <option key={w} value={w}>
-              {w}
-            </option>
-          ))}
-        </select>
-      </Field>
-
-      <Field
-        label="Response window"
-        htmlFor={id("resp")}
-        error={show("responseWindow")}
-      >
-        <select
-          id={id("resp")}
-          value={values.responseWindow}
-          onChange={(e) => set("responseWindow", e.target.value)}
-          className={inputClass}
-        >
-          <option value="">Select…</option>
-          {RESPONSE_WINDOWS.map((w) => (
             <option key={w} value={w}>
               {w}
             </option>

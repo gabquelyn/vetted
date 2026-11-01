@@ -63,7 +63,7 @@ export default function ActiveFilters({
   onSave?: () => void;
   terms: string[];
   removeTerm: (term: string) => void;
-  location: { radius: number; location: string };
+  location: { radius: number; location: string; resolved: boolean };
   removeLoc: () => void;
 }) {
   const chips = ORDER.flatMap((key) =>
@@ -89,7 +89,8 @@ export default function ActiveFilters({
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
         {location.location && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]">
-            {location.location} · within {location.radius}km
+            {location.location}{" "}
+            {location.resolved && `· within ${location.radius}km`}
             <button
               type="button"
               aria-label={`Remove location search`}
@@ -145,7 +146,7 @@ export default function ActiveFilters({
       </div>
 
       {/* Clear all */}
-      {chips.length + terms.length > 1 && (
+      {chips.length + terms.length + (location.resolved ? 1 : 0) > 1 && (
         <button
           type="button"
           onClick={onClear}

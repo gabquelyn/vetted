@@ -7,17 +7,16 @@ import { LuPlus, LuClock, LuZap } from "react-icons/lu";
 import { Candidate, FULL_CANDIDATES } from "@/app/data/registry";
 // Adjust to wherever CITY_COORDS / haversineKm / resolveCity live
 
-import PlacementRequestForm from "./PlacementForm";
+import PlacementRequestForm, { PlacementRequestValues } from "./PlacementForm";
 import Modal from "./Modal";
 import ResponseCard, { ResponseMeta } from "./ResponseCard";
-import { distanceBetweenCitiesKm } from "@/app/utils/geo";
+import { distanceBetweenCitiesKm, locationMatch } from "@/app/utils/geo";
 
 const MAX_REQUESTS = 2;
 const RESPONSES_PER_REQUEST = 6;
 const FIRST_RESPONSE_MS = 1500;
 const NEXT_RESPONSE_MS: [number, number] = [10_000, 6000];
 const NEW_BADGE_MS = 30_000;
-const EARLIEST_START = ["Today", "Tomorrow", "In 2 days", "Next week"];
 
 const CANDIDATES_BY_ID = new Map(FULL_CANDIDATES.map((c) => [c.id, c]));
 
@@ -52,8 +51,8 @@ const humanize = (key: string) =>
     .trim()
     .replace(/^./, (c) => c.toUpperCase());
 
-function summarize(values: unknown) {
-  return Object.entries((values ?? {}) as Record<string, unknown>)
+function summarize(values: PlacementRequestValues) {
+  return Object.entries(values)
     .filter(
       ([, v]) =>
         ["string", "number", "boolean"].includes(typeof v) &&
@@ -78,37 +77,34 @@ const formatTime = (iso: string) =>
 const getPostLocation = (values: unknown): string =>
   String((values as { location?: unknown } | null)?.location ?? "").trim();
 
-/**
- * DEMO ONLY: decides which candidates will respond to a request.
- * Picks randomly among candidates whose title matches the requested
- * profession (regex, case-insensitive, any significant word). If there
- * aren't enough matches, the rest is topped up with non-matching candidates.
- * Replace with the real responders.
- */
-function planDemoResponders(values: unknown, exclude: string[]): string[] {
-  const profession = String(
-    (values as { profession?: unknown } | null)?.profession ?? "",
-  ).trim();
+const norm = (s: string) => s.trim().toLowerCase();
+function planDemoResponders(
+  values: PlacementRequestValues,
+  exclude: string[],
+): string[] {
+  const location = values.location;
+  const requestedShifts = values.shifts;
 
-  // "Registered Nurse" -> /\b(registered|nurse)/i
-  const words = profession.split(/[\s/,&-]+/).filter((w) => w.length > 2);
-  const professionRe = words.length
-    ? new RegExp(`\\b(${words.map(escapeRegExp).join("|")})`, "i")
-    : null;
+  const matchesRequest = (c: Candidate) => {
+    // Exact location within 25km
 
-  const pool = FULL_CANDIDATES.filter((c) => !exclude.includes(c.id));
+    if (locationMatch(c, location, 25) == null) return false;
+    // Shifts: candidate must cover every requested shift
+    const candidateShifts = (c.shift ?? []).map(norm);
+    return requestedShifts.every((s) => candidateShifts.includes(norm(s)));
+  };
 
-  const matching = professionRe
-    ? pool.filter((c) => c.title && professionRe.test(c.title))
-    : [];
-  // const others = pool.filter((c) => !matching.includes(c));
+  const available = FULL_CANDIDATES.filter((c) => c.discoverable !== false);
 
-  return (
-    [...shuffle(matching)]
-      // return [...shuffle(matching), ...shuffle(others)]
-      .slice(0, RESPONSES_PER_REQUEST)
-      .map((c) => c.id)
+  const pool = available.filter((c) => !exclude.includes(c.id));
+
+  const matching = pool.filter(
+    (c) => c.title == values.profession && matchesRequest(c),
   );
+
+  return shuffle(matching)
+    .slice(0, RESPONSES_PER_REQUEST)
+    .map((c) => c.id);
 }
 
 /** DEMO ONLY: the details a real response would carry. */
@@ -119,8 +115,8 @@ function makeDemoResponse(
   return {
     candidateId: candidate.id,
     respondedAt: new Date().toISOString(),
-    earliestStart:
-      EARLIEST_START[Math.floor(Math.random() * EARLIEST_START.length)],
+    // earliestStart:
+    //   EARLIEST_START[Math.floor(Math.random() * EARLIEST_START.length)],
     // Real straight-line distance; random fallback only if a city isn't in CITY_COORDS
     distanceKm:
       distanceBetweenCitiesKm(postLocation, candidate.loc) ||
@@ -142,9 +138,13 @@ export default function Urgent({
   onViewProfile,
   requests,
   setRequests,
+  introduced,
+  setIntroduction
 }: {
   onViewProfile?: (c: Candidate) => void;
   requests: UrgentRequest[];
+  introduced: string[];
+  setIntroduction: (c: Candidate) => void
   setRequests: React.Dispatch<React.SetStateAction<UrgentRequest[]>>;
 }) {
   const [open, setOpen] = useState(false);
@@ -386,7 +386,7 @@ export default function Urgent({
                     Responses
                   </h2>
                   <p className="mt-0.5 text-xs text-ink-soft">
-                    {selected.responses.length} professionals have responded
+                    {selected.responses.length} professional{selected.responses.length > 1 && "s"} have responded
                   </p>
                 </div>
 
@@ -437,11 +437,14 @@ export default function Urgent({
                             now - new Date(resp.respondedAt).getTime() <
                             NEW_BADGE_MS
                           }
+
                           onViewProfile={
                             onViewProfile
                               ? () => onViewProfile(candidate)
                               : undefined
                           }
+                          introduced={introduced}
+                          onIntroduction = {setIntroduction}
                         />
                       </motion.div>
                     );

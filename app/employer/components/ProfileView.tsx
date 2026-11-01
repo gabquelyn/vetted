@@ -7,6 +7,7 @@ import RevealedContact from "./RevealedContact";
 import Chip from "./Chip";
 import Highlight from "./Highlight";
 import EducationRecords from "./EduRecords";
+import Divider from "./Divider";
 
 // Show the "scroll to bottom" button only when more than this many px remain
 const SCROLL_BUTTON_THRESHOLD = 40;
@@ -102,6 +103,7 @@ export default function ProfileView({
   page,
   totalPages,
   terms,
+  allRevealed,
 }: {
   results: Candidate[];
   viewing?: string;
@@ -128,9 +130,10 @@ export default function ProfileView({
   total: number;
   page: number;
   terms: string[];
+  allRevealed?: boolean;
 }) {
   const candidate =
-    results.find((c) => c.id == viewing) ||
+    results.find((c) => c?.personId == viewing || c.id == viewing) ||
     FULL_CANDIDATES.find((c) => c.id == viewing);
 
   const candidateId = candidate?.id;
@@ -156,6 +159,8 @@ export default function ProfileView({
     const meaningfullyLong = el.scrollHeight > el.clientHeight * 1.25;
     setShowDown(meaningfullyLong && remaining > SCROLL_BUTTON_THRESHOLD);
   }, []);
+
+  console.log(results)
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -340,7 +345,7 @@ export default function ProfileView({
     "w-full max-w-[220px] flex-1 cursor-pointer rounded-[7px] px-4 py-1.5 text-center text-[11px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-default";
   return (
     <div
-      className={`grid h-full min-h-0 min-w-0 grid-cols-1 gap-5.5 ${
+      className={`grid bg-white p-4 h-full min-h-0 min-w-0 grid-cols-1 gap-5.5 ${
         activeView == "urgent" ? "" : "md:grid-cols-[220px_minmax(0,1fr)]"
       }`}
     >
@@ -350,36 +355,47 @@ export default function ProfileView({
           className="hidden min-h-0 min-w-0 flex-col overflow-y-auto rounded-[14px] border border-ash bg-cream p-1.5 md:flex"
           ref={railRef}
         >
-          <div className="px-2 py-1 text-[10px] font-semibold tracking-[.01em] text-ink-soft">
-            Showing {results.length} of {total ?? results.length} matching ·
-            Page {page}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="mb-2 flex items-center justify-between text-[10px] text-ink-soft">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => goToPage(page - 1)}
-                aria-label="Previous page"
-                className="cursor-pointer rounded-[7px] border border-ash bg-white px-[9px] py-[3px] text-[10px] font-semibold text-forest enabled:hover:border-forest disabled:cursor-default disabled:border-ash disabled:text-[#8a8a84] disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
-              >
-                ‹ Prev
-              </button>
-              <span className="whitespace-nowrap">
-                Page {page} of {totalPages}
-              </span>
-              <button
-                type="button"
-                disabled={page >= totalPages}
-                onClick={() => goToPage(page + 1)}
-                aria-label="Next page"
-                className="cursor-pointer rounded-[7px] border border-ash bg-white px-[9px] py-[3px] text-[10px] font-semibold text-forest enabled:hover:border-forest disabled:cursor-default disabled:border-ash disabled:text-[#8a8a84] disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
-              >
-                Next ›
-              </button>
+          {allRevealed ? (
+            <div className="px-2 py-1 text-[10px] font-semibold tracking-[.01em] text-ink-soft">
+              <p className="font-semibold text-ink text-xs">Revealed Professionals</p>
+              <p>{results.length} candidate</p>
             </div>
+          ) : (
+            <>
+              <div className="px-2 py-1 text-[10px] font-semibold tracking-[.01em] text-ink-soft">
+                Showing {results.length} of {total ?? results.length} matching ·
+                Page {page}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mb-2 flex items-center justify-between text-[10px] text-ink-soft">
+                  <button
+                    type="button"
+                    disabled={page <= 1}
+                    onClick={() => goToPage(page - 1)}
+                    aria-label="Previous page"
+                    className="cursor-pointer rounded-[7px] border border-ash bg-white px-[9px] py-[3px] text-[10px] font-semibold text-forest enabled:hover:border-forest disabled:cursor-default disabled:border-ash disabled:text-[#8a8a84] disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                  >
+                    ‹ Prev
+                  </button>
+                  <span className="whitespace-nowrap">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={page >= totalPages}
+                    onClick={() => goToPage(page + 1)}
+                    aria-label="Next page"
+                    className="cursor-pointer rounded-[7px] border border-ash bg-white px-[9px] py-[3px] text-[10px] font-semibold text-forest enabled:hover:border-forest disabled:cursor-default disabled:border-ash disabled:text-[#8a8a84] disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                  >
+                    Next ›
+                  </button>
+                </div>
+              )}
+            </>
           )}
+
+          <Divider/>
 
           {results.map((c) => {
             const isActive = viewing === c.id;
@@ -766,7 +782,7 @@ export default function ProfileView({
               </div>
 
               {candidate.specialist ? (
-                <div className="flex max-w-[220px] flex-1 flex-col">
+                <div className="flex max-w-55 flex-1 flex-col">
                   <button
                     type="button"
                     disabled={intro}

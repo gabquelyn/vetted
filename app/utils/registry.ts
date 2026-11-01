@@ -48,7 +48,7 @@ export function applyFilters(
     confirmed = [],
   } = filters;
 
-  return candidates.filter((c) => {
+  const filtered = candidates.filter((c) => {
     // Profession: OR within the group
     if (
       profession.length &&
@@ -70,8 +70,7 @@ export function applyFilters(
     // Environment: current experience or willingness to work there
     if (
       environment.length &&
-      !acceptsAnyEnvironment &&
-      !hasAny([...c.env, ...c.openToWorkingIn], environment)
+      !hasAny([...c.env], environment)
     ) {
       return false;
     }
@@ -99,7 +98,7 @@ export function applyFilters(
       return false;
     }
 
-    // Mobility: AND — candidate must satisfy every checked option
+    // Mobility: AND
     if (!mobility.every((key) => MOBILITY_CHECKS[key]?.(c) ?? true)) {
       return false;
     }
@@ -109,7 +108,7 @@ export function applyFilters(
       return false;
     }
 
-    // confirmed
+    // Confirmed
     if (confirmed.length > 0) {
       const maxDays = Number(confirmed[0]);
       if (!(c.confirmedDays <= maxDays)) return false;
@@ -117,6 +116,8 @@ export function applyFilters(
 
     return true;
   });
+
+  return filtered;
 }
 
 export const withMobilityFlags = (c: Candidate): Candidate => {
@@ -131,3 +132,14 @@ export const withMobilityFlags = (c: Candidate): Candidate => {
 
 export const matchesLocation = (c: Candidate, location: string) =>
   !location || norm(c.loc) === norm(location);
+
+
+export function dedupeByPerson(list: Candidate[]): Candidate[] {
+  const seen = new Set<string>();
+  return list.filter((c) => {
+    if (c.personId == null) return true;
+    if (seen.has(c.personId)) return false;
+    seen.add(c.personId);
+    return true;
+  });
+}
