@@ -241,7 +241,7 @@ export function computeEmptyCtx(args: {
   } else if (specList.length) {
     onward = { href: `/roles/${profession.cluster}/${profession.slug}`, label: `Explore other ${professionLabel(profession)} areas of practice` };
   } else {
-    onward = { href: `/findwork/opportunities`, label: `See all current opportunities` };
+    onward = { href: `/findwork`, label: `See all current opportunities` };
   }
   return { headline, body, joinHref, onward };
 }
