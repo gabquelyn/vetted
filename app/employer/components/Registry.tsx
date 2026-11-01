@@ -96,7 +96,7 @@ export default function Registry({
     availability: [],
     openTo: [],
     confirmed: [],
-    skills: []
+    skills: [],
   });
 
   const [reveals, setReveals] = useState<string[]>([]);
@@ -150,7 +150,6 @@ export default function Registry({
   const lastSignature = useRef<string | null>(null);
 
   const data = useMemo(() => {
-    console.log(filters)
     const candidates = applyFilters(
       FULL_CANDIDATES.map(withMobilityFlags).filter(
         (candidate) =>
@@ -212,12 +211,12 @@ export default function Registry({
   }, [data, terms, filters, location, radius]);
 
   const sortedHistory = useMemo(
-  () =>
-    [...searchHistory].sort(
-      (a, b) => +new Date(b.timestamp) - +new Date(a.timestamp),
-    ),
-  [searchHistory],
-);
+    () =>
+      [...searchHistory].sort(
+        (a, b) => +new Date(b.timestamp) - +new Date(a.timestamp),
+      ),
+    [searchHistory],
+  );
 
   const count = useMemo(
     () => Object.values(filters).reduce((n, v) => n + v.length, 0),
@@ -262,7 +261,7 @@ export default function Registry({
       availability: [],
       openTo: [],
       confirmed: [],
-      skills: []
+      skills: [],
     });
     setTerms([]);
     setLocation("");
@@ -724,7 +723,7 @@ export default function Registry({
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
           {!viewing && activeView == "registry" && (
             <p className="text-xs py-3 text-ink-soft px-8 lg:px-12 font-semibold">
-              {data.length} professionals
+              {data.length} {data.length == 0 ? "results" : "professionals"}
             </p>
           )}
 
