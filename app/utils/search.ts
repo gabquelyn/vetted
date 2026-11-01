@@ -247,7 +247,7 @@ const TERMINOLOGY: Concept[] = [
     id: "medsurg",
     label: "Medical-Surgical",
     aliases: ["med surg", "medical-surgical", "merd-surg"],
-    // filter: "environment",
+    filter: "skills",
   },
   {
     id: "pacu",
