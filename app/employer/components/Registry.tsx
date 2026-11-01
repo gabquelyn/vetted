@@ -96,6 +96,7 @@ export default function Registry({
     availability: [],
     openTo: [],
     confirmed: [],
+    skills: []
   });
 
   const [reveals, setReveals] = useState<string[]>([]);
@@ -149,6 +150,7 @@ export default function Registry({
   const lastSignature = useRef<string | null>(null);
 
   const data = useMemo(() => {
+    console.log(filters)
     const candidates = applyFilters(
       FULL_CANDIDATES.map(withMobilityFlags).filter(
         (candidate) =>
@@ -260,6 +262,7 @@ export default function Registry({
       availability: [],
       openTo: [],
       confirmed: [],
+      skills: []
     });
     setTerms([]);
     setLocation("");

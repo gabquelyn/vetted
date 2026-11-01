@@ -46,6 +46,7 @@ export function applyFilters(
     openTo = [],
     availability = [],
     confirmed = [],
+    skills = []
   } = filters;
 
   const filtered = candidates.filter((c) => {
@@ -71,6 +72,14 @@ export function applyFilters(
     if (
       environment.length &&
       !hasAny([...c.env], environment)
+    ) {
+      return false;
+    }
+
+    // Skills
+    if (
+      skills.length &&
+      !hasAny([...c.skills], skills)
     ) {
       return false;
     }

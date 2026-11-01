@@ -26,7 +26,7 @@ export const SEARCH_FIELDS: SearchField[] = [
   { key: "specialties", label: "Specialties", get: (c) => c.specialties },
   { key: "env", label: "Environment", get: (c) => c.env },
   // { key: "openToWorkingIn", label: "Open to working in", get: (c) => c.openToWorkingIn },
-  // { key: "context", label: "Past experience", showTerm: true, get: (c) => c.exp?.map((e) => e.context) },
+  { key: "context", label: "Past experience", showTerm: true, get: (c) => c.exp?.map((e) => e.context) },
   {
     key: "experience",
     label: "Experience",
@@ -52,7 +52,7 @@ export const SEARCH_FIELDS: SearchField[] = [
     showTerm: true,
     get: (c) => c.summary,
   },
-  // { key: "snapshot", label: "Snapshot", showTerm: true, get: (c) => c.snapshot },
+  { key: "snapshot", label: "Snapshot", showTerm: true, get: (c) => c.snapshot },
   {
     key: "education",
     label: "Education",
@@ -208,7 +208,7 @@ const TERMINOLOGY: Concept[] = [
       "emergency trauma",
     ],
     descendants: ["emergency_trauma"],
-    filter: "environment",
+    // filter: "environment",
   },
   {
     id: "emergency_trauma",
@@ -222,45 +222,45 @@ const TERMINOLOGY: Concept[] = [
     label: "Critical Care / ICU",
     aliases: ["icu", "intensive care", "critical care"],
     descendants: ["icu_adult", "picu", "nicu"],
-    filter: "environment",
+    // filter: "environment",
   },
   {
     id: "icu_adult",
     label: "ICU Critical Care Adult",
     aliases: ["adult icu"],
-    filter: "environment",
+    filter: "skills",
   },
   {
     id: "picu",
     label: "ICU Critical Care Paediatric / PICU",
     aliases: ["picu", "paediatric icu", "pediatric icu"],
-    filter: "environment",
+    filter: "skills",
   },
   {
     id: "nicu",
     label: "Neonatal NICU",
     aliases: ["nicu", "neonatal"],
-    filter: "environment",
+    filter: "skills",
   },
 
   {
     id: "medsurg",
     label: "Medical-Surgical",
     aliases: ["med surg", "medical-surgical", "merd-surg"],
-    filter: "environment",
+    // filter: "environment",
   },
   {
     id: "pacu",
     label: "PeriAnesthesia & PACU",
     aliases: ["pacu", "perianesthesia", "peri anesthesia", "recovery room"],
-    filter: "environment",
+    filter: "skills",
   },
   {
     id: "cardiac",
     label: "Cardiac",
     aliases: ["cardiovascular"],
     descendants: ["cardiovascular_cardiac"],
-    filter: "environment",
+    // filter: "environment",
   },
   {
     id: "cardiovascular_cardiac",
@@ -272,39 +272,39 @@ const TERMINOLOGY: Concept[] = [
     id: "obstetrics",
     label: "Obstetrics & Labour",
     aliases: ["obstetrics", "labour and delivery", "labor and delivery"],
-    filter: "environment",
+    filter: "skills",
   },
   {
     id: "palliative",
     label: "Palliative Care",
     aliases: ["palliative", "hospice", "hospice palliative"],
-    filter: "environment",
+    filter: "skills",
   },
   {
     id: "mental_health",
     label: "Mental Health",
     aliases: ["psychiatric"],
     descendants: ["mental_health_psychiatric"],
-    filter: "environment",
+    // filter: "environment",
   },
   {
     id: "mental_health_psychiatric",
     label: "Mental Health & Psychiatric",
-    aliases: [],
-    filter: "environment",
+    aliases: ["psychiatric"],
+    // filter: "skills",
   },
   {
     id: "addictions",
     label: "Addictions & Concurrent Disorders",
     aliases: ["addictions", "substance use", "concurrent disorders"],
-    filter: "environment",
+    // filter: "environment",
   },
   {
     id: "paediatric",
     label: "Paediatric",
     aliases: ["paediatrics", "pediatrics", "pediatric"],
     descendants: ["paediatrics"],
-    filter: "environment",
+    // filter: "environment",
   },
   {
     id: "paediatrics",
@@ -339,10 +339,9 @@ const TERMINOLOGY: Concept[] = [
   { id: "ic", label: "Independent Contractor", aliases: ["ic"] },
   {
     id: "immediate",
-    label: "Immediate availability",
+    label: "Immediate",
     aliases: ["immediate", "immediately"],
     filter: "availability",
-    value: "Immediate",
   }, // must equal your c.avail option text
 ];
 const BY_ID = new Map(TERMINOLOGY.map((c) => [c.id, c]));

@@ -124,6 +124,7 @@ interface Filters {
   availability: string[];
   openTo: string[];
   confirmed: string[];
+  skills : string[]
   [index: string]: string[];
 }
 

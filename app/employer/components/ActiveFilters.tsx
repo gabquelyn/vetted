@@ -19,7 +19,7 @@ type FilterKey =
   | "profile"
   | "availability"
   | "openTo"
-  | "confirmed";
+  | "confirmed" | "skills"
 
 const ORDER: FilterKey[] = [
   "profession",
@@ -30,7 +30,7 @@ const ORDER: FilterKey[] = [
   "profile",
   "availability",
   "openTo",
-  "confirmed",
+  "confirmed", "skills"
 ];
 
 const VALUE_LABELS: Partial<Record<FilterKey, Record<string, string>>> = {
