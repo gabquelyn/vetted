@@ -19,7 +19,7 @@ import { faqsForRoute } from "@/app/data/findworkFaqs";
  * Query-state on the base page (?specialty=…&location=…) is read on the client
  * inside <RolePage/>, so it does not make these pages dynamic.
  */
-export const dynamicParams = false;
+// export const dynamicParams = false;
 
 export function generateStaticParams() {
   return roleStaticParams();
