@@ -157,7 +157,7 @@ export default function QueryBar({
               value={radiusKm}
               onChange={setRadius}
               className="w-full min-w-0"
-              disabled={!resolved}
+              disabled={!resolved || !location}
             />
           </div>
         </div>
