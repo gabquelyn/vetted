@@ -957,9 +957,12 @@ export default function Registry({
           )}
 
           {/* Urgent Hiring */}
-          {activeView === "urgent" && !viewing && (
+          {activeView === "urgent" && (
             <Urgent
-              onViewProfile={(c) => setViewing(c.id)}
+              onViewProfile={(c) => {
+                setActiveView("registry");
+                setViewing(c.id);
+              }}
               requests={requests}
               setRequests={setRequests}
               introduced={introduced}
