@@ -8,8 +8,9 @@ import IntroductionRequestForm, {
   type IntroductionRequestValues,
 } from "./IntroductionRequestForm";
 import { IoIosStarOutline } from "react-icons/io";
+import { IntroductionPayment, IntroductionSent } from "./IntroductionPayment";
 
-type Step = "info" | "form";
+type Step = "info" | "form" | "payment" | "sent";
 
 interface IntroductionFlowProps {
   open: boolean;
@@ -20,7 +21,7 @@ interface IntroductionFlowProps {
   location: string;
   /** Engagement fee amount without the "$", e.g. "250" */
   fee?: string;
-  /** Called with the completed form when the user continues to payment */
+  /** Called with the completed form when the simulated payment is made (the request is recorded here) */
   onSubmit: (values: IntroductionRequestValues) => void;
   /** True while payment is being initiated */
   submitting?: boolean;
@@ -37,8 +38,15 @@ export default function IntroductionFlow({
   submitting,
   environments,
 }: IntroductionFlowProps) {
-  const [proceed, setProceed] = useState(false);
-  const [draft, setDraft] = useState<Partial<IntroductionRequestValues>>()
+  const [step, setStep] = useState<Step>("info");
+  const [draft, setDraft] = useState<Partial<IntroductionRequestValues>>();
+  const [values, setValues] = useState<IntroductionRequestValues | null>(null);
+  const titles: Record<Step, string> = {
+    info: "Request an introduction?",
+    form: "Tell us about the role",
+    payment: "Engagement fee",
+    sent: "Request sent",
+  };
   return (
     <Modal
       open={open}
@@ -48,10 +56,10 @@ export default function IntroductionFlow({
         <div className=" p-3">
           <p className="text-[#f0dcb8] w-fit text-xs bg-white/14 rounded-md p-1 px-3 flex items-center gap-1">
             <IoIosStarOutline size={10} />
-            Sepcialist profile
+            Specialist profile
           </p>
           <p className="text-white font-serif text-3xl">
-            {proceed ? "Tell us about the role" : "Request an introduction?"}
+            {titles[step]}
           </p>
           <p className="text-[#f0dcb8] text-xs">
             {role} · {location}
@@ -59,18 +67,38 @@ export default function IntroductionFlow({
         </div>
       }
     >
-      {proceed ? (
+      {step === "form" ? (
         <IntroductionRequestForm
           initialValues={draft}
           environments={environments}
           submitting={submitting}
           submitLabel="Continue to payment →"
-          onBack={(values) => {
-            setDraft(values);
-            setProceed(false);
+          onBack={(v) => {
+            setDraft(v);
+            setStep("info");
           }}
-          onSubmit={onSubmit}
+          // Not recorded yet: the simulated payment comes first
+          onSubmit={(v) => {
+            setDraft(v);
+            setValues(v);
+            setStep("payment");
+          }}
         />
+      ) : step === "payment" ? (
+        <IntroductionPayment
+          role={role}
+          location={location}
+          fee={fee}
+          submitting={submitting}
+          onBack={() => setStep("form")}
+          onPay={() => {
+            if (!values) return;
+            onSubmit(values); // the request is recorded here
+            setStep("sent");
+          }}
+        />
+      ) : step === "sent" ? (
+        <IntroductionSent role={role} location={location} onDone={onClose} />
       ) : (
         <div className="p-6  text-xs">
           <ol className="list-disc list-inside space-y-5 marker-highlight-dark text-ink-mid">
@@ -101,7 +129,7 @@ export default function IntroductionFlow({
             </button>
             <button
               className="bg-highlight rounded-xl p-2 w-[40%] text-white font-semibold"
-              onClick={() => setProceed(true)}
+              onClick={() => setStep("form")}
             >
               Continue to payment
             </button>

@@ -13,7 +13,6 @@ import Select from "@/app/components/CustomSelect";
 import Filtering from "./Filtering";
 import {
   applyFilters,
-  dedupeByPerson,
   matchesLocation,
   withMobilityFlags,
 } from "@/app/utils/registry";
@@ -22,15 +21,16 @@ import { toast } from "sonner";
 import Overlay from "./Overlay";
 import SearchItem from "./SearchItem";
 import { v4 as uuid } from "uuid";
-import { searchCandidates } from "@/app/utils/search";
+import { searchCandidates, suggestBroadening } from "@/app/utils/search";
 import QueryBar from "./QueryBar";
+import HideChoice from "./HideChoice";
 import ProfileView from "./ProfileView";
 import CandidateCompare from "./Compare";
 import Modal from "./Modal";
 import CandidatePreview from "./CandidatePreview";
 import IntroductionFlow from "./IntroductionFlow";
 import Preview from "./Preview";
-import Urgent, { UrgentRequest } from "./Urgent";
+import Urgent, { UrgentRequest, INCLUDED_REQUESTS } from "./Urgent";
 import RevealedPreview from "./RevealedPreview";
 import ActiveFilters from "./ActiveFilters";
 import Pagination from "./Pagination";
@@ -53,7 +53,13 @@ export default function Registry({
   gateDone: boolean;
 }) {
   const [requests, setRequests] = useState<UrgentRequest[]>([]);
+  // Urgent requests available: 2 included, +2 per completed simulated top-up (resets on reload)
+  const [urgentAllowance, setUrgentAllowance] = useState(INCLUDED_REQUESTS);
+  const [urgentSelected, setUrgentSelected] = useState<string | null>(null);
+  // View to return to when the open profile is closed (set when a profile is opened from Urgent)
+  const [returnTo, setReturnTo] = useState<ActiveView | null>(null);
   const [result, setResults] = useState("20");
+    const [viewAll, setViewAll] = useState(false);
   const [sort, setSort] = useState<"new" | "most">("new");
   const [query, setQuery] = useState("");
   const [activeView, setActiveView] = useState<ActiveView>("registry");
@@ -69,6 +75,8 @@ export default function Registry({
       id == "urgent" ||
       id == "hidden"
     ) {
+      setViewAll(false);
+      setReturnTo(null);
       setActiveView(id);
 
       return;
@@ -112,9 +120,25 @@ export default function Registry({
   const [activePanel, setActivePanel] = useState(false);
   const [radius, setRadius] = useState(25);
   const [toggle, setToggle] = useState(() => selectedProfessionsGate.size > 0);
-  const [viewAll, setViewAll] = useState(false);
   const [location, setLocation] = useState("");
   const [resolved, setResolved] = useState<string | null>(null);
+
+  // Where the open profile came from. Only profiles opened from the Registry results are
+  // reconciled with the search; ones opened from Saved / Hidden / Recents / Introductions /
+  // Compare / Urgent are inspected on their own.
+  const [profileCtx, setProfileCtx] = useState<"registry" | "other">("registry");
+  const openOther = (id: string) => {
+    setProfileCtx("other");
+    setViewing(id);
+  };
+
+  // Search inside the revealed workspace (profile view over revealed professionals).
+  // Separate from the Registry's own search, which is left untouched.
+  const [wsTerms, setWsTerms] = useState<string[]>([]);
+  const [wsQuery, setWsQuery] = useState("");
+  const [wsLocation, setWsLocation] = useState("");
+  const [wsResolved, setWsResolved] = useState<string | null>(null);
+  const [wsRadius, setWsRadius] = useState(25);
 
   const gateProfessions = selectedProfessionsGate
     ? [...selectedProfessionsGate]
@@ -149,26 +173,53 @@ export default function Registry({
   const [searchHistory, setSearchHistory] = useState<Search[]>([]);
   const lastSignature = useRef<string | null>(null);
 
-  const data = useMemo(() => {
-    const candidates = applyFilters(
-      FULL_CANDIDATES.map(withMobilityFlags).filter(
-        (candidate) =>
-          candidate.discoverable !== false && !hidden.includes(candidate.id),
-      ),
-      filters,
-    );
+  // Everyone who passes the filters and the location, before any keyword is applied
+  const pool = useMemo(
+    () =>
+      applyFilters(
+        FULL_CANDIDATES.map(withMobilityFlags).filter(
+          (candidate) =>
+            candidate.discoverable !== false && !hidden.includes(candidate.id),
+        ),
+        filters,
+      ).filter((c) => locationMatch(c, location, radius) !== null),
+    [filters, hidden, location, radius],
+  );
 
-    const searched = searchCandidates(candidates, terms);
-    const located = searched.filter(
-      (c) => locationMatch(c, location, radius) !== null,
-    );
+  // One card per person whenever no profession is selected, for every kind of criterion
+  // (keywords, availability, shift...). A profession filter shows each profile on its own.
+  // Siblings that also match are kept for the card's "Also matches as ..." note.
+  const folded = useMemo(() => {
+    const matched = searchCandidates(pool, terms);
+    if (filters.profession.length > 0) {
+      return { list: matched, siblings: new Map<string, Candidate[]>() };
+    }
+    const primary = new Map<string, Candidate>(); // person -> the card kept
+    const siblings = new Map<string, Candidate[]>(); // kept card id -> other matching profiles
+    const list: Candidate[] = [];
+    for (const c of matched) {
+      const key = c.personId ?? c.id;
+      const kept = primary.get(key);
+      if (!kept) {
+        primary.set(key, c);
+        list.push(c);
+      } else {
+        siblings.set(kept.id, [...(siblings.get(kept.id) ?? []), c]);
+      }
+    }
+    return { list, siblings };
+  }, [pool, terms, filters.profession]);
+  const data = folded.list;
 
-    // Collapse sibling profiles only when browsing with no filters or search terms
-    const hasCriteria =
-      terms.length > 0 || Object.values(filters).some((g) => g.length > 0);
-
-    return hasCriteria ? located : dedupeByPerson(located);
-  }, [filters, hidden, terms, location, radius]);
+  // Empty result with several terms: offer (never apply) a search with one term dropped
+  const broader = useMemo(
+    () => (data.length === 0 ? suggestBroadening(pool, terms) : null),
+    [data, pool, terms],
+  );
+  const broaderCount = useMemo(
+    () => (broader ? searchCandidates(pool, broader).length : 0),
+    [broader, pool],
+  );
 
   useEffect(() => {
     // Nothing to remember when browsing with no criteria
@@ -216,6 +267,15 @@ export default function Registry({
         (a, b) => +new Date(b.timestamp) - +new Date(a.timestamp),
       ),
     [searchHistory],
+  );
+
+  const sortedSearches = useMemo(
+    () =>
+      [...recentSearch].sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      ),
+    [recentSearch],
   );
 
   const count = useMemo(
@@ -267,6 +327,7 @@ export default function Registry({
     setLocation("");
     setResolved(null);
     setRadius(25);
+    setQuery("");
   }, []);
 
   const onApply = useCallback(
@@ -328,15 +389,45 @@ export default function Registry({
     setReveals((prev) => [...prev, c]);
   };
 
+  // Revealed designations only: every profile of a revealed person, in reveal order,
+  // including ones hidden after the reveal; never non-discoverable profiles.
   const revealedProffesionals = useMemo(
     () =>
-      reveals
-        .map((id) =>
-          FULL_CANDIDATES.find((c) => c?.personId == id || c.id === id),
-        )
-        .filter((c): c is Candidate => c !== undefined),
+      FULL_CANDIDATES.filter(
+        (c) => c.discoverable !== false && reveals.includes(c.personId || c.id),
+      ).sort(
+        (a, b) =>
+          reveals.indexOf(a.personId || a.id) -
+          reveals.indexOf(b.personId || b.id),
+      ),
     [reveals],
   );
+  const revealedCount = useMemo(
+    () => new Set(revealedProffesionals.map((c) => c.personId || c.id)).size,
+    [revealedProffesionals],
+  );
+
+  // The workspace rail: the revealed population narrowed by keyword and Location / Radius only
+  const wsResults = useMemo(
+    () =>
+      searchCandidates(revealedProffesionals, wsTerms).filter(
+        (c) => locationMatch(c, wsLocation, wsRadius) !== null,
+      ),
+    [revealedProffesionals, wsTerms, wsLocation, wsRadius],
+  );
+
+  const openRevealedWorkspace = () => {
+    const first = revealedProffesionals[0];
+    if (!first) return;
+    setWsTerms([]);
+    setWsQuery("");
+    setWsLocation("");
+    setWsResolved(null);
+    setWsRadius(25);
+    setViewAll(true);
+    setViewing(first.id);
+    setActiveView("registry");
+  };
 
   const sorted = useMemo(() => {
     // if (query.trim()) return searched; // relevance order wins
@@ -370,10 +461,120 @@ export default function Registry({
     currentPage * PAGE_SIZE,
   );
 
+  // ---- Hide acts on designations ----
+  const [hideChoice, setHideChoice] = useState<{
+    from: string;
+    options: Candidate[];
+  } | null>(null);
+
+  /** Hides designations: they leave discovery and Compare. Reveal history is untouched. */
+  const hideIds = (ids: string[]) => {
+    setHidden((prev) => [...new Set([...prev, ...ids])]);
+    setCompare((prev) => prev.filter((id) => !ids.includes(id)));
+    // Leaving the hidden profile: go to another visible result, or back to the list
+    if (!viewAll && ids.includes(viewing)) {
+      setViewing(pageResults.find((c) => !ids.includes(c.id))?.id ?? "");
+    }
+  };
+
+  /** Hide from a card or profile. Two or more discoverable designations -> ask which. */
+  const requestHide = (id: string) => {
+    if (hidden.includes(id)) return onHide(id); // restore: just that designation
+    const c = FULL_CANDIDATES.find((x) => x.id === id);
+    if (!c) return;
+    const options = FULL_CANDIDATES.filter(
+      (x) =>
+        (x.personId ?? x.id) === (c.personId ?? c.id) &&
+        x.discoverable !== false &&
+        !hidden.includes(x.id),
+    );
+    if (options.length >= 2) setHideChoice({ from: id, options });
+    else hideIds([id]);
+  };
+
+  const clearWsSearch = () => {
+    setWsTerms([]);
+    setWsQuery("");
+    setWsLocation("");
+    setWsResolved(null);
+    setWsRadius(25);
+  };
+
+  // A search or filter change alters the result set, never the workspace mode. If the open
+  // profile (opened from the Registry results) stops matching:
+  //  - other results exist -> show the first one on this page, with a toast
+  //  - nothing matches -> stay on the profile, marked as a stale reference
+  const siblingIds = useMemo(
+    () => new Set([...folded.siblings.values()].flat().map((c) => c.id)),
+    [folded],
+  );
+  // Adjusted while rendering (no effect): the notice is tied to the profile it was raised for,
+  // so it disappears as soon as the employer opens a different one.
+  const [profileNotice, setProfileNotice] = useState<{ id: string; text: string } | null>(null);
+  if (
+    viewing &&
+    !viewAll &&
+    profileCtx === "registry" &&
+    activeView === "registry" &&
+    pageResults.length > 0 &&
+    !pageResults.some((c) => c.id === viewing) &&
+    !siblingIds.has(viewing)
+  ) {
+    const next = pageResults[0].id;
+    setProfileNotice({
+      id: next,
+      text: sorted.some((c) => c.id === viewing)
+        ? "That professional is on a different results page — showing the first match on this page."
+        : "That professional no longer matches your filters — showing the next match.",
+    });
+    setViewing(next);
+  }
+
+  const profileStale =
+    !!viewing &&
+    (viewAll
+      ? wsResults.length === 0 &&
+        (wsTerms.length > 0 || wsLocation.trim() !== "")
+      : profileCtx === "registry" && sorted.length === 0);
+
   const goToPage = (p: number) => {
     setPage(p);
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  // The chip row: shown above the results, and also while a profile is open
+  const activeChips = (
+    <ActiveFilters
+      filters={filters}
+      setFilters={setFilters}
+      onClear={clearFilters}
+      location={{ radius, location, resolved: !!resolved }}
+      onSave={() => {
+        toast.info("Search saved");
+        setRecentSearch((prev) => [
+          ...prev,
+          {
+            filters,
+            timestamp: new Date().toISOString(),
+            id: uuid(),
+            location,
+            radius,
+            terms,
+          },
+        ]);
+        setToggle(false);
+      }}
+      terms={terms}
+      removeTerm={(term: string) =>
+        setTerms(terms.filter((t) => t !== term))
+      }
+      removeLoc={() => {
+        setLocation("");
+        setResolved(null);
+        setRadius(25);
+      }}
+    />
+  );
 
   return (
     <>
@@ -392,20 +593,24 @@ export default function Registry({
       />
       {!["compare", "urgent"].includes(activeView) && (
         <QueryBar
-          query={query}
-          location={location}
-          setLocation={setLocation}
-          radiusKm={radius}
-          setRadius={setRadius}
+          // In the revealed workspace the bar searches only the revealed professionals,
+          // by keyword and Location / Radius, and leaves the Registry search alone
+          keywordOnly={viewAll}
+          query={viewAll ? wsQuery : query}
+          location={viewAll ? wsLocation : location}
+          setLocation={viewAll ? setWsLocation : setLocation}
+          radiusKm={viewAll ? wsRadius : radius}
+          setRadius={viewAll ? setWsRadius : setRadius}
           setQuery={(e) => {
-            setQuery(e);
+            if (viewAll) setWsQuery(e);
+            else setQuery(e);
           }}
-          onResolveLoc={(e) => setResolved(e)}
-          resolved={resolved}
-          terms={terms}
-          onTermsChange={(t) => setTerms(t)}
+          onResolveLoc={(e) => (viewAll ? setWsResolved(e) : setResolved(e))}
+          resolved={viewAll ? wsResolved : resolved}
+          terms={viewAll ? wsTerms : terms}
+          onTermsChange={(t) => (viewAll ? setWsTerms(t) : setTerms(t))}
           filters={filters}
-          setFilters={setFilters}
+          setFilters={viewAll ? () => {} : setFilters}
           onBuild={() =>
             toast.info(
               "AI-assisted search construction is available in the full Employer Workspace.",
@@ -427,7 +632,7 @@ export default function Registry({
           }}
         />
 
-        {!["compare", "urgent"].includes(activeView) && (
+        {!["compare", "urgent"].includes(activeView) && !viewAll && (
           <div className="min-w-0 max-w-full">
             <Filtering
               onClear={clearFilters}
@@ -457,7 +662,7 @@ export default function Registry({
           )}
 
           <div className="flex flex-col gap-1">
-            {recentSearch.map((search) => (
+            {sortedSearches.map((search) => (
               <SearchItem
                 key={search.id}
                 timestamp={search.timestamp}
@@ -468,11 +673,12 @@ export default function Registry({
                   setActiveView("registry");
                 }}
                 onDelete={() => deleteSearch(search.id)}
+                setResolved={setResolved}
               />
             ))}
           </div>
 
-          <p className="text-[.6rem] uppercase text-ink-soft leading-1 mb-2">
+          <p className="text-[.6rem] uppercase text-ink-soft leading-1 my-2 mt-4">
             Recent history
           </p>
           <div className="flex flex-col gap-1">
@@ -482,6 +688,7 @@ export default function Registry({
                 timestamp={search.timestamp}
                 id={search.id}
                 search={search}
+                setResolved={setResolved}
                 onApply={() => {
                   onApply(search);
                   setActiveView("registry");
@@ -509,7 +716,7 @@ export default function Registry({
                 c={s}
                 onViewProfile={() => {
                   setActiveView("registry");
-                  setViewing(s);
+                  openOther(s);
                 }}
                 onReveal={(c) => {
                   if (revealsRemaining > 0) setRevealing(c);
@@ -530,7 +737,7 @@ export default function Registry({
         <Overlay
           open={activeView == "requests"}
           onClose={() => setActiveView("registry")}
-          title="Specialist Introductions"
+          title="Introductions"
         >
           <div className="flex flex-col gap-1">
             {introduced.map((c) => (
@@ -539,7 +746,7 @@ export default function Registry({
                 c={c}
                 onViewProfile={() => {
                   setActiveView("registry");
-                  setViewing(c);
+                  openOther(c);
                 }}
                 onReveal={(c) => {
                   if (revealsRemaining > 0) setRevealing(c);
@@ -567,7 +774,7 @@ export default function Registry({
                 c={s}
                 onViewProfile={() => {
                   setActiveView("registry");
-                  setViewing(s);
+                  openOther(s);
                 }}
                 onReveal={(c) => {
                   if (revealsRemaining > 0) setRevealing(c);
@@ -595,7 +802,7 @@ export default function Registry({
                 c={c}
                 onViewProfile={() => {
                   setActiveView("registry");
-                  setViewing(c);
+                  openOther(c);
                 }}
                 onReveal={(c) => {
                   if (revealsRemaining > 0) setRevealing(c);
@@ -618,12 +825,7 @@ export default function Registry({
             {reveals.length > 0 && (
               <button
                 type="button"
-                onClick={() => {
-                  console.log(revealedProffesionals);
-                  setViewAll(true);
-                  setActiveView("registry");
-                  // setViewing(reveals[0]);
-                }}
+                onClick={openRevealedWorkspace}
                 className="flex w-full cursor-pointer items-center gap-1.5 rounded-[9px] border border-[#ece7da] bg-[#f6f3ea] px-3.25 py-2.5 text-left text-[12.5px] font-bold text-forest transition-colors hover:bg-[#eee9db] focus-visible:bg-[#eee9db] focus-visible:outline-none"
               >
                 View all revealed professionals{" "}
@@ -693,7 +895,7 @@ export default function Registry({
               onReveal={(id) => onReveal(id)}
               onOpenSibling={(sibling) => {
                 setRevealing(null);
-                setViewing(sibling.id);
+                openOther(sibling.id);
               }}
               revealing={true}
               reveals={reveals}
@@ -703,6 +905,20 @@ export default function Registry({
           )}
         </Modal>
 
+        {/* Which designation to hide */}
+        {hideChoice && (
+          <HideChoice
+            options={hideChoice.options}
+            initialId={hideChoice.from}
+            reveals={reveals}
+            onClose={() => setHideChoice(null)}
+            onConfirm={(ids) => {
+              hideIds(ids);
+              setHideChoice(null);
+            }}
+          />
+        )}
+
         {/* Introduction flow */}
         {introducing && (
           <IntroductionFlow
@@ -710,11 +926,10 @@ export default function Registry({
             onClose={() => setIntroducing(null)}
             role={introducing.title}
             location={introducing.loc}
-            fee="250"
             submitting={false}
             onSubmit={(values) => {
+              // recorded when the simulated payment is made; the flow closes itself on Done
               setIntroduced((prev) => [...prev, introducing.id]);
-              setIntroducing(null);
             }}
           />
         )}
@@ -727,20 +942,51 @@ export default function Registry({
             </p>
           )}
 
+          {viewing && viewAll && (
+            <p className="px-8 py-3 text-xs font-semibold text-ink-soft lg:px-12">
+              {revealedCount} revealed {revealedCount === 1 ? "person" : "people"}
+              {wsResults.length !== revealedProffesionals.length &&
+                ` · ${wsResults.length} shown`}
+            </p>
+          )}
+
           {!["compare", "urgent"].includes(activeView) && (
             <>
               {/* Profile or candidate results */}
               {viewing ? (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  {!viewAll && (
+                    <div className="px-4 pt-1 text-xs text-[#8a8a84] sm:px-6 lg:px-12">
+                      {activeChips}
+                    </div>
+                  )}
+                  <div className="min-h-0 flex-1">
                 <ProfileView
                   viewing={viewing}
                   closed={!revealing}
                   results={
-                    viewAll
-                      ? revealedProffesionals
-                      : pageResults.slice(0, +result)
+                    viewAll ? wsResults : pageResults.slice(0, +result)
                   }
                   activeView={activeView}
-                  setView={(id) => setViewing(id)}
+                  setView={(id) => {
+                    setProfileCtx("registry");
+                    setViewing(id);
+                  }}
+                  onOpenSibling={(c) => openOther(c.id)}
+                  stale={profileStale}
+                  notice={profileNotice?.id === viewing ? profileNotice.text : undefined}
+                  onClearChanges={viewAll ? clearWsSearch : clearFilters}
+                  emptyMessage={
+                    viewAll
+                      ? "No revealed professionals match this search."
+                      : "No professionals match your current search."
+                  }
+                  staleMessage={
+                    viewAll
+                      ? "This professional no longer matches this search."
+                      : "This professional no longer matches your current search."
+                  }
+                  clearLabel={viewAll ? "Clear search →" : "Clear recent changes →"}
                   onCompare={(id) => onCompare(id)}
                   onSave={(id) => onSave(id)}
                   compare={compare}
@@ -753,52 +999,35 @@ export default function Registry({
                           setViewAll(false);
                           setActiveView("reveals");
                         }
-                      : () => setViewing("")
+                      : () => {
+                          setViewing("");
+                          if (returnTo) {
+                            setActiveView(returnTo);
+                            setReturnTo(null);
+                          }
+                        }
                   }
                   setReveal={(c) => setRevealing(c)}
                   reveals={reveals}
                   onIntroduction={(c) => setIntroducing(c)}
                   introduced={introduced}
-                  onHide={onHide}
+                  onHide={requestHide}
                   hidden={hidden}
                   totalPages={totalPages}
                   total={total}
                   page={page}
                   onPageChange={goToPage}
-                  terms={terms}
+                  terms={viewAll ? wsTerms : terms}
                 />
+                  </div>
+                </div>
               ) : (
                 activeView != "urgent" && (
                   <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-2 sm:px-6 lg:px-12">
                     {/* FIltering and filter tag pills */}
 
                     <div className="mb-2 mx-0.5 text-xs text-[#8a8a84]">
-                      <ActiveFilters
-                        filters={filters}
-                        setFilters={setFilters}
-                        onClear={clearFilters}
-                        location={{ radius, location, resolved: !!resolved }}
-                        onSave={() => {
-                          toast.info("Search saved");
-                          setRecentSearch((prev) => [
-                            ...prev,
-                            {
-                              filters,
-                              timestamp: new Date().toISOString(),
-                              id: uuid(),
-                              location,
-                              radius,
-                              terms,
-                            },
-                          ]);
-                          setToggle(false);
-                        }}
-                        terms={terms}
-                        removeTerm={(term: string) =>
-                          setTerms(terms.filter((t) => t !== term))
-                        }
-                        removeLoc={() => setLocation("")}
-                      />
+                      {activeChips}
                       <div className="hidden md:flex justify-end gap-3 py-2">
                         <div className="flex items-center justify-between gap-1.5 md:justify-start">
                           <p className="whitespace-nowrap text-xs text-ink-soft">
@@ -886,6 +1115,7 @@ export default function Registry({
                                     ]);
                                     return [...val];
                                   });
+                                  setProfileCtx("registry");
                                   setViewing(candidate.id);
                                 }}
                                 onReveal={(c) => {
@@ -902,9 +1132,10 @@ export default function Registry({
                                   );
                                 }}
                                 introduced={introduced}
-                                onHide={onHide}
+                                onHide={requestHide}
                                 terms={terms}
                                 compared={compare.includes(candidate.id)}
+                                siblings={folded.siblings.get(candidate.id)}
                               />
                             </motion.div>
                           ))}
@@ -924,6 +1155,25 @@ export default function Registry({
                         No professionals in this demo&apos;s sample set match
                         this combination of filters.
                         <br />
+                        {broader && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setTerms(broader)}
+                              className="my-1 cursor-pointer rounded-full border-none bg-forest-light px-4 py-2 text-[13px] font-bold text-[#16260c] transition-colors hover:bg-[#dcead0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                            >
+                              Search {broader.map((t) => `“${t}”`).join(", ")} only
+                              ({broaderCount})
+                            </button>
+                            <br />
+                            <span className="text-xs">
+                              Nothing matches{" "}
+                              {terms.map((t) => `“${t}”`).join(" + ")} together.
+                              Your filters stay as they are.
+                            </span>
+                            <br />
+                          </>
+                        )}
                         <button
                           type="button"
                           onClick={clearFilters}
@@ -947,7 +1197,7 @@ export default function Registry({
                 clearComparison={() => setCompare([])}
                 onViewProfile={(id) => {
                   setActiveView("registry");
-                  setViewing(id);
+                  openOther(id);
                 }}
                 onRemove={(id) => onCompare(id)}
                 reveals={reveals}
@@ -960,13 +1210,20 @@ export default function Registry({
           {activeView === "urgent" && (
             <Urgent
               onViewProfile={(c) => {
+                setReturnTo("urgent");
                 setActiveView("registry");
-                setViewing(c.id);
+                openOther(c.id);
               }}
+              selectedId={urgentSelected}
+              setSelectedId={setUrgentSelected}
               requests={requests}
               setRequests={setRequests}
+              allowance={urgentAllowance}
+              onTopUp={() => setUrgentAllowance((n) => n + 2)}
               introduced={introduced}
               setIntroduction={(c) => setIntroducing(c)}
+              revealed={reveals}
+              onRevealing={(c) => setRevealing(c)}
             />
           )}
         </main>

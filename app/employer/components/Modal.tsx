@@ -1,10 +1,21 @@
 'use client'
 
-import React, { ReactNode, useEffect, useId, useSyncExternalStore } from 'react'
+import React, { ReactNode, useEffect, useId, useRef, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 const subscribeNoop = () => () => {}
+
+// Open modals, newest last. Only the topmost one traps focus and answers Escape.
+const modalStack: symbol[] = []
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]'
+
+const focusablesIn = (root: HTMLElement) =>
+  Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (el) => !el.hasAttribute('inert') && el.getClientRects().length > 0
+  )
 
 interface ModalProps {
   /** Defaults to true so `<Modal onClose={...}>` works when you render it conditionally */
@@ -40,15 +51,83 @@ export default function Modal({
     () => false
   )
 
-  // Escape to close
+  const panelRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
+
+  // Focus management: move focus into the dialog, keep Tab inside it, restore it on close.
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+    const id = Symbol('modal')
+    modalStack.push(id)
+    const opener = document.activeElement as HTMLElement | null
+    const isTop = () => modalStack[modalStack.length - 1] === id
+
+    // Initial focus: first control in the content, else the close button, else the panel
+    const focusInitial = () => {
+      const panel = panelRef.current
+      if (!panel) return
+      const first =
+        panel.querySelector<HTMLElement>('[data-autofocus]') ??
+        focusablesIn(panel.querySelector<HTMLElement>('[data-modal-body]') ?? panel)[0] ??
+        focusablesIn(panel)[0]
+      ;(first ?? panel).focus({ preventScroll: true })
     }
+    const raf = requestAnimationFrame(focusInitial)
+
+    const onKey = (e: KeyboardEvent) => {
+      if (!isTop()) return
+      if (e.key === 'Escape') {
+        onCloseRef.current()
+        return
+      }
+      if (e.key !== 'Tab') return
+      const panel = panelRef.current
+      if (!panel) return
+      const items = focusablesIn(panel)
+      if (items.length === 0) {
+        e.preventDefault()
+        panel.focus()
+        return
+      }
+      const first = items[0]
+      const last = items[items.length - 1]
+      const active = document.activeElement as HTMLElement | null
+      const inside = !!active && panel.contains(active)
+      if (e.shiftKey && (!inside || active === first || active === panel)) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && (!inside || active === last)) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+
+    // If focus lands anywhere outside the dialog, bring it back
+    const onFocusIn = (e: FocusEvent) => {
+      if (!isTop()) return
+      const panel = panelRef.current
+      if (panel && e.target instanceof Node && !panel.contains(e.target)) {
+        focusInitial()
+      }
+    }
+
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+    document.addEventListener('focusin', onFocusIn)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('keydown', onKey)
+      document.removeEventListener('focusin', onFocusIn)
+      const at = modalStack.indexOf(id)
+      if (at !== -1) modalStack.splice(at, 1)
+      // Return focus to whatever opened the dialog (if it is still on the page)
+      if (opener && opener.isConnected && typeof opener.focus === 'function') {
+        opener.focus({ preventScroll: true })
+      }
+    }
+  }, [open])
 
   // lock page scroll while open
   useEffect(() => {
@@ -77,6 +156,8 @@ export default function Modal({
 
           {/* panel */}
           <motion.div
+            ref={panelRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? titleId : undefined}
@@ -84,7 +165,7 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 8 }}
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-            className={`relative z-10 flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white text-ink shadow-2xl ${className}`}
+            className={`relative z-10 flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white text-ink shadow-2xl outline-none ${className}`}
           >
             {(title || !hideCloseButton) && (
               <div className={`flex items-center justify-between gap-4 border-b border-ash px-5 py-3.5 ${banner || "bg-forest-dark"}`}>
@@ -119,7 +200,7 @@ export default function Modal({
               </div>
             )}
 
-            <div className="overflow-y-auto">{children}</div>
+            <div data-modal-body className="overflow-y-auto">{children}</div>
           </motion.div>
         </div>
       )}

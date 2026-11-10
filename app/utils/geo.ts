@@ -1,6 +1,8 @@
 export type LatLng = [lat: number, lng: number];
 
-// Same coordinates as the HTML's FD_CITY_COORDS. Keys match candidate.loc exactly.
+// Based on the HTML's FD_CITY_COORDS, plus Napanee and Belleville (candidates live there).
+// Scarborough, Etobicoke, North York, York and East York are NOT separate cities: see TORONTO_AREAS.
+// Keys match candidate.loc exactly, except Toronto areas, which resolve to "Toronto, ON".
 export const CITY_COORDS: Record<string, LatLng> = {
   "Mississauga, ON": [43.589, -79.6441],
   "Oakville, ON": [43.4675, -79.6877],
@@ -26,6 +28,9 @@ export const CITY_COORDS: Record<string, LatLng> = {
   "Goderich, ON": [43.7501, -81.7076],
   "Seaforth, ON": [43.5501, -81.3937],
   "Oshawa, ON": [43.8971, -78.8658],
+  "Napanee, ON": [44.2484, -76.9511],
+  "Belleville, ON": [44.1628, -77.3832],
+  "Scarborough, ON": [43.7731, -79.2577],
 };
 
 export const haversineKm = (a: LatLng, b: LatLng) => {
@@ -38,11 +43,40 @@ export const haversineKm = (a: LatLng, b: LatLng) => {
   return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 };
 
-/** Exact, case-insensitive match against a supported city, else null. */
+/**
+ * Areas inside the City of Toronto. Typed as a location, or stored as a candidate's loc,
+ * they resolve to "Toronto, ON". They are never selectable cities of their own.
+ */
+export const TORONTO_AREAS = [
+  "Scarborough",
+  "Etobicoke",
+  "North York",
+  "York",
+  "East York",
+];
+
+const TORONTO_AREA_KEYS = new Set(TORONTO_AREAS.map((a) => a.toLowerCase()));
+
+/** Lower-cased, single-spaced, with an optional ", ON" / "Ontario" dropped. */
+const placeKey = (s: string) =>
+  s
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/(,\s*|\s+)(on|ontario)$/, "");
+
+/**
+ * Exact, case-insensitive match against a supported city, else null.
+ * Toronto areas (Scarborough, Etobicoke, North York, York, East York) resolve to "Toronto, ON".
+ */
 export const resolveCity = (input: string): string | null => {
   const q = input.trim().toLowerCase();
   if (!q) return null;
-  return Object.keys(CITY_COORDS).find((c) => c.toLowerCase() === q) ?? null;
+
+  const exact = Object.keys(CITY_COORDS).find((c) => c.toLowerCase() === q);
+  if (exact) return exact;
+
+  return TORONTO_AREA_KEYS.has(placeKey(input)) ? "Toronto, ON" : null;
 };
 
 export type LocationMatch = "local" | "relocation" | null;
@@ -51,6 +85,7 @@ export type LocationMatch = "local" | "relocation" | null;
  * Same rules as the HTML's 'location' criterion:
  *  - resolved city  -> within radius (or relocationReach includes the city)
  *  - unresolved text -> substring match on candidate.loc
+ * Urgent requests resolve the city first, so they never reach the substring fallback.
  */
 export const locationMatch = (
   c: { loc: string; relocationReach?: string[] },
@@ -67,7 +102,8 @@ export const locationMatch = (
   }
 
   const from = CITY_COORDS[origin];
-  const to = CITY_COORDS[c.loc];
+  // A candidate in a Toronto area (e.g. Scarborough) is placed at Toronto
+  const to = CITY_COORDS[c.loc] ?? CITY_COORDS[resolveCity(c.loc) ?? ""];
   if (from && to && haversineKm(from, to) <= radiusKm) return "local";
 
   // Candidate-confirmed willingness to relocate there. Not the same as being local.
@@ -88,5 +124,8 @@ export const distanceBetweenCitiesKm = (
   if (!from || !to) return undefined;
 
   // Same-city candidates come out as 0 (both use the city centroid), so show at least 1 km
-  return Math.max(1, Math.round(haversineKm(CITY_COORDS[from], CITY_COORDS[to])));
+  return Math.max(
+    1,
+    Math.round(haversineKm(CITY_COORDS[from], CITY_COORDS[to])),
+  );
 };

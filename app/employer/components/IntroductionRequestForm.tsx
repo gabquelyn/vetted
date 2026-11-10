@@ -1,51 +1,58 @@
-'use client'
+"use client";
 
-import React, { useId, useRef, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import React, { useId, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import LocationSelect from "./LocationSelect";
 
-export type CompensationType = 'Negotiable' | 'Fixed'
+export type CompensationType = "Negotiable" | "Fixed";
 
 export interface IntroductionRequestValues {
-  environment: string
-  location: string
-  days: string[]
-  shifts: string[]
-  compensationType: CompensationType
+  environment: string;
+  location: string;
+  days: string[];
+  shifts: string[];
+  compensationType: CompensationType;
   /** Only used when compensationType is "Fixed" */
-  compensationAmount: string
-  startWindow: string
-  duties: string
-  nonNegotiables: string
-  jobDescription: string
-  attachment: File | null
+  compensationAmount: string;
+  startWindow: string;
+  duties: string;
+  nonNegotiables: string;
+  jobDescription: string;
+  attachment: File | null;
 }
 
 interface IntroductionRequestFormProps {
-  onSubmit: (values: IntroductionRequestValues) => void
+  onSubmit: (values: IntroductionRequestValues) => void;
   /** Receives the current values so the parent can keep them when going back */
-  onBack: (values: IntroductionRequestValues) => void
-  initialValues?: Partial<IntroductionRequestValues>
-  environments?: string[]
-  submitting?: boolean
-  submitLabel?: string
+  onBack: (values: IntroductionRequestValues) => void;
+  initialValues?: Partial<IntroductionRequestValues>;
+  environments?: string[];
+  submitting?: boolean;
+  submitLabel?: string;
 }
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const SHIFTS = ['Days', 'Evenings', 'Nights', 'Rotating']
-const START_WINDOWS = ['ASAP', 'Within 2 weeks', 'Within 1 month', '1–3 months', 'Flexible']
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const SHIFTS = ["Days", "Evenings", "Nights", "Rotating"];
+const START_WINDOWS = [
+  "ASAP",
+  "Within 2 weeks",
+  "Within 1 month",
+  "1–3 months",
+  "Flexible",
+];
 const DEFAULT_ENVIRONMENTS = [
-  'Long-Term Care (LTC)',
-  'Retirement Home',
-  'Hospital',
-  'Home Care',
-  'Clinic / Community',
-]
+  "Long-Term Care (LTC)",
+  "Retirement Home",
+  "Hospital",
+  "Home Care",
+  "Clinic / Community",
+];
 
-const DUTIES_MAX = 300
-const NON_NEG_MAX = 150
+const DUTIES_MAX = 300;
+const NON_NEG_MAX = 150;
 
 const inputClass =
-  'w-full rounded-md border border-ash bg-white px-3 py-2  text-ink placeholder:text-ink-soft transition-colors focus:border-highlight text-highlight-dark focus:outline-none text-highlight-dark-pale'
+  "w-full rounded-md border border-ash bg-white px-3 py-2  text-ink placeholder:text-ink-soft transition-colors focus:border-highlight text-highlight-dark focus:outline-none text-highlight-dark-pale";
 
 /* ---------- small building blocks ---------- */
 
@@ -58,20 +65,24 @@ function Field({
   counter,
   children,
 }: {
-  label: string
-  htmlFor?: string
-  optional?: boolean
-  error?: string
-  hint?: string
-  counter?: React.ReactNode
-  children: React.ReactNode
+  label: string;
+  htmlFor?: string;
+  optional?: boolean;
+  error?: string;
+  hint?: string;
+  counter?: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <div>
       <div className="mb-1.5 flex items-baseline justify-between gap-2">
         <label htmlFor={htmlFor} className=" font-medium text-ink">
           {label}
-          {optional && <span className="ml-1 text-xs font-normal text-ink-soft">(optional)</span>}
+          {optional && (
+            <span className="ml-1 text-xs font-normal text-ink-soft">
+              (optional)
+            </span>
+          )}
         </label>
         {counter}
       </div>
@@ -86,20 +97,23 @@ function Field({
             role="alert"
             className="mt-1.5 text-xs text-ink-mid"
           >
-            <span className="font-semibold text-highlight-dark">Required:</span> {error}
+            <span className="font-semibold text-highlight-dark">Required:</span>{" "}
+            {error}
           </motion.p>
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
 function Counter({ value, max }: { value: number; max: number }) {
   return (
-    <span className={`text-xs tabular-nums ${value >= max ? 'font-semibold text-ink' : 'text-ink-soft'}`}>
+    <span
+      className={`text-xs tabular-nums ${value >= max ? "font-semibold text-ink" : "text-ink-soft"}`}
+    >
       {value}/{max}
     </span>
-  )
+  );
 }
 
 function ChipToggle({
@@ -108,15 +122,15 @@ function ChipToggle({
   onToggle,
   label,
 }: {
-  options: string[]
-  selected: string[]
-  onToggle: (v: string) => void
-  label: string
+  options: string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+  label: string;
 }) {
   return (
     <div role="group" aria-label={label} className="flex flex-wrap gap-1.5">
       {options.map((o) => {
-        const on = selected.includes(o)
+        const on = selected.includes(o);
         return (
           <motion.button
             key={o}
@@ -126,16 +140,16 @@ function ChipToggle({
             onClick={() => onToggle(o)}
             className={`rounded-full border px-3 py-1  transition-colors ${
               on
-                ? 'border-highlight text-highlight-dark bg-highlight-dartext-highlight-dark '
-                : 'border-ash bg-white text-ink-mid hover:border-highlight-dartext-highlight-dark-mid hover:text-highlight-dark'
+                ? "border-highlight text-highlight-dark bg-highlight-dartext-highlight-dark "
+                : "border-ash bg-white text-ink-mid hover:border-highlight-dartext-highlight-dark-mid hover:text-highlight-dark"
             }`}
           >
             {o}
           </motion.button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 /* ---------- form ---------- */
@@ -146,66 +160,77 @@ export default function IntroductionRequestForm({
   initialValues,
   environments = DEFAULT_ENVIRONMENTS,
   submitting = false,
-  submitLabel = 'Continue',
+  submitLabel = "Continue",
 }: IntroductionRequestFormProps) {
-  const reduce = useReducedMotion()
-  const uid = useId()
-  const fileRef = useRef<HTMLInputElement>(null)
-  const id = (n: string) => `${uid}-${n}`
+  const reduce = useReducedMotion();
+  const uid = useId();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const id = (n: string) => `${uid}-${n}`;
 
   const [values, setValues] = useState<IntroductionRequestValues>({
-    environment: '',
-    location: '',
+    environment: "",
+    location: "",
     days: [],
     shifts: [],
-    compensationType: 'Negotiable',
-    compensationAmount: '',
-    startWindow: '',
-    duties: '',
-    nonNegotiables: '',
-    jobDescription: '',
+    compensationType: "Negotiable",
+    compensationAmount: "",
+    startWindow: "",
+    duties: "",
+    nonNegotiables: "",
+    jobDescription: "",
     attachment: null,
     ...initialValues,
-  })
-  const [attempted, setAttempted] = useState(false)
+  });
+  const [attempted, setAttempted] = useState(false);
 
-  const set = <K extends keyof IntroductionRequestValues>(k: K, v: IntroductionRequestValues[K]) =>
-    setValues((s) => ({ ...s, [k]: v }))
+  const set = <K extends keyof IntroductionRequestValues>(
+    k: K,
+    v: IntroductionRequestValues[K],
+  ) => setValues((s) => ({ ...s, [k]: v }));
 
-  const toggle = (k: 'days' | 'shifts', v: string) =>
+  const toggle = (k: "days" | "shifts", v: string) =>
     setValues((s) => ({
       ...s,
       [k]: s[k].includes(v) ? s[k].filter((x) => x !== v) : [...s[k], v],
-    }))
+    }));
 
   const errors = {
-    environment: !values.environment ? 'Choose a work environment.' : '',
-    location: !values.location.trim() ? 'Enter a location.' : '',
-    days: values.days.length === 0 ? 'Select at least one day.' : '',
-    shifts: values.shifts.length === 0 ? 'Select at least one shift pattern.' : '',
+    environment: !values.environment ? "Choose a work environment." : "",
+    location: !values.location.trim() ? "Enter a location." : "",
+    days: values.days.length === 0 ? "Select at least one day." : "",
+    shifts:
+      values.shifts.length === 0 ? "Select at least one shift pattern." : "",
     compensation:
-      values.compensationType === 'Fixed' && !values.compensationAmount.trim()
-        ? 'Enter the fixed compensation.'
-        : '',
-    startWindow: !values.startWindow ? 'Choose a start window.' : '',
-    duties: !values.duties.trim() ? 'Describe the main duties.' : '',
-  }
-  const hasErrors = Object.values(errors).some(Boolean)
-  const show = (k: keyof typeof errors) => (attempted ? errors[k] : '')
+      values.compensationType === "Fixed" && !values.compensationAmount.trim()
+        ? "Enter the fixed compensation."
+        : "",
+    startWindow: !values.startWindow ? "Choose a start window." : "",
+    duties: !values.duties.trim() ? "Describe the main duties." : "",
+  };
+  const hasErrors = Object.values(errors).some(Boolean);
+  const show = (k: keyof typeof errors) => (attempted ? errors[k] : "");
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setAttempted(true)
-    if (!hasErrors) onSubmit(values)
-  }
+    e.preventDefault();
+    setAttempted(true);
+    if (!hasErrors) onSubmit(values);
+  };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5 text-ink-mid p-6 text-xs">
-      <Field label="Work environment / setting" htmlFor={id('env')} error={show('environment')}>
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="space-y-5 text-ink-mid p-6 text-xs"
+    >
+      <Field
+        label="Work environment / setting"
+        htmlFor={id("env")}
+        error={show("environment")}
+      >
         <select
-          id={id('env')}
+          id={id("env")}
           value={values.environment}
-          onChange={(e) => set('environment', e.target.value)}
+          onChange={(e) => set("environment", e.target.value)}
           className={inputClass}
         >
           <option value="">Select…</option>
@@ -217,77 +242,84 @@ export default function IntroductionRequestForm({
         </select>
       </Field>
 
-      <Field label="Location" htmlFor={id('loc')} error={show('location')}>
-        <input
-          id={id('loc')}
-          type="text"
+      <Field label="Location" htmlFor={id("loc")} error={show("location")}>
+        <LocationSelect
           value={values.location}
-          onChange={(e) => set('location', e.target.value)}
-          placeholder="City, Province"
-          className={inputClass}
+          onChange={() => {}}
+          onResolvedChange={(v) => set("location", v || "")}
+          resolved={false}
+          className={"py-2 bg-cream/80"}
         />
       </Field>
 
-      <Field label="Schedule — days" error={show('days')}>
+      <Field label="Schedule — days" error={show("days")}>
         <ChipToggle
           label="Schedule days"
           options={DAYS}
           selected={values.days}
-          onToggle={(v) => toggle('days', v)}
+          onToggle={(v) => toggle("days", v)}
         />
       </Field>
 
-      <Field label="Shift pattern" error={show('shifts')}>
+      <Field label="Shift pattern" error={show("shifts")}>
         <ChipToggle
           label="Shift pattern"
           options={SHIFTS}
           selected={values.shifts}
-          onToggle={(v) => toggle('shifts', v)}
+          onToggle={(v) => toggle("shifts", v)}
         />
       </Field>
 
       <Field
         label="Compensation"
-        error={show('compensation')}
+        error={show("compensation")}
         hint="Not shown to the Specialist — held for recruiter brokering only."
       >
         <div className="flex items-center gap-3">
-          <div role="radiogroup" aria-label="Compensation type" className="inline-flex rounded-lg border border-ash bg-ash/30 p-0.5">
-            {(['Negotiable', 'Fixed'] as CompensationType[]).map((t) => {
-              const on = values.compensationType === t
+          <div
+            role="radiogroup"
+            aria-label="Compensation type"
+            className="inline-flex rounded-lg border border-ash bg-ash/30 p-0.5"
+          >
+            {(["Negotiable", "Fixed"] as CompensationType[]).map((t) => {
+              const on = values.compensationType === t;
               return (
                 <button
                   key={t}
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  onClick={() => set('compensationType', t)}
+                  onClick={() => set("compensationType", t)}
                   className={`relative rounded-md px-3.5 py-1.5  transition-colors ${
-                    on ? 'text-white' : 'text-ink-mid hover:text-highlight-dark'
+                    on ? "text-white" : "text-ink-mid hover:text-highlight-dark"
                   }`}
                 >
                   {on && (
                     <motion.span
-                      layoutId={id('comp-pill')}
-                      transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 36 }}
+                      layoutId={id("comp-pill")}
+                      transition={
+                        reduce
+                          ? { duration: 0 }
+                          : { type: "spring", stiffness: 500, damping: 36 }
+                      }
                       className="absolute inset-0 rounded-md bg-highlight-dark text-highlight-dark"
                     />
                   )}
                   <span className="relative">{t}</span>
                 </button>
-              )
+              );
             })}
           </div>
 
           <AnimatePresence initial={false}>
-            {values.compensationType === 'Fixed' && (
+            {values.compensationType === "Fixed" && (
               <motion.input
                 key="amount"
                 type="text"
                 inputMode="decimal"
                 aria-label="Fixed compensation amount"
                 value={values.compensationAmount}
-                onChange={(e) => set('compensationAmount', e.target.value)}
+                onChange={(e) => set("compensationAmount", e.target.value)}
                 placeholder="e.g. $35/hr"
                 initial={reduce ? false : { opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -299,11 +331,15 @@ export default function IntroductionRequestForm({
         </div>
       </Field>
 
-      <Field label="Start window" htmlFor={id('start')} error={show('startWindow')}>
+      <Field
+        label="Start window"
+        htmlFor={id("start")}
+        error={show("startWindow")}
+      >
         <select
-          id={id('start')}
+          id={id("start")}
           value={values.startWindow}
-          onChange={(e) => set('startWindow', e.target.value)}
+          onChange={(e) => set("startWindow", e.target.value)}
           className={inputClass}
         >
           <option value="">Select…</option>
@@ -317,41 +353,43 @@ export default function IntroductionRequestForm({
 
       <Field
         label="Duties"
-        htmlFor={id('duties')}
-        error={show('duties')}
+        htmlFor={id("duties")}
+        error={show("duties")}
         counter={<Counter value={values.duties.length} max={DUTIES_MAX} />}
       >
         <textarea
-          id={id('duties')}
+          id={id("duties")}
           rows={4}
           maxLength={DUTIES_MAX}
           value={values.duties}
-          onChange={(e) => set('duties', e.target.value)}
+          onChange={(e) => set("duties", e.target.value)}
           className={`${inputClass} resize-none`}
         />
       </Field>
 
       <Field
         label="Non-negotiables"
-        htmlFor={id('nonneg')}
-        counter={<Counter value={values.nonNegotiables.length} max={NON_NEG_MAX} />}
+        htmlFor={id("nonneg")}
+        counter={
+          <Counter value={values.nonNegotiables.length} max={NON_NEG_MAX} />
+        }
       >
         <textarea
-          id={id('nonneg')}
+          id={id("nonneg")}
           rows={2}
           maxLength={NON_NEG_MAX}
           value={values.nonNegotiables}
-          onChange={(e) => set('nonNegotiables', e.target.value)}
+          onChange={(e) => set("nonNegotiables", e.target.value)}
           className={`${inputClass} resize-none`}
         />
       </Field>
 
-      <Field label="Job description" htmlFor={id('jd')} optional>
+      <Field label="Job description" htmlFor={id("jd")} optional>
         <textarea
-          id={id('jd')}
+          id={id("jd")}
           rows={4}
           value={values.jobDescription}
-          onChange={(e) => set('jobDescription', e.target.value)}
+          onChange={(e) => set("jobDescription", e.target.value)}
           className={`${inputClass} resize-none`}
         />
 
@@ -360,7 +398,7 @@ export default function IntroductionRequestForm({
             ref={fileRef}
             type="file"
             className="hidden"
-            onChange={(e) => set('attachment', e.target.files?.[0] ?? null)}
+            onChange={(e) => set("attachment", e.target.files?.[0] ?? null)}
           />
           <motion.button
             type="button"
@@ -378,8 +416,8 @@ export default function IntroductionRequestForm({
                 type="button"
                 aria-label="Remove attachment"
                 onClick={() => {
-                  set('attachment', null)
-                  if (fileRef.current) fileRef.current.value = ''
+                  set("attachment", null);
+                  if (fileRef.current) fileRef.current.value = "";
                 }}
                 className="text-ink-soft hover:text-ink"
               >
@@ -408,9 +446,9 @@ export default function IntroductionRequestForm({
           whileTap={reduce || submitting ? undefined : { scale: 0.97 }}
           className="rounded-md bg-highlight-dartext-highlight-dark px-4 py-2  font-semibold hover:text-white transition-colors hover:bg-highlight-dark text-highlight-dark  disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? 'Saving…' : submitLabel}
+          {submitting ? "Saving…" : submitLabel}
         </motion.button>
       </div>
     </form>
-  )
+  );
 }

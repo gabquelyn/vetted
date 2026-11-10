@@ -87,7 +87,7 @@ export default function ActiveFilters({
     <div className="flex flex-wrap items-center gap-5">
       {/* .fd-query-chips */}
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-        {location.location && (
+        {location.resolved && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]">
             {location.location}{" "}
             {location.resolved && `· within ${location.radius}km`}

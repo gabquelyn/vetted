@@ -104,6 +104,12 @@ export default function ProfileView({
   totalPages,
   terms,
   allRevealed,
+  stale = false,
+  notice,
+  onClearChanges,
+  emptyMessage = "No professionals match your current search.",
+  staleMessage = "This professional no longer matches your current search.",
+  clearLabel = "Clear recent changes →",
 }: {
   results: Candidate[];
   viewing?: string;
@@ -131,6 +137,15 @@ export default function ProfileView({
   page: number;
   terms: string[];
   allRevealed?: boolean;
+  /** The open profile no longer matches (zero results): keep it open, marked as a stale reference */
+  stale?: boolean;
+  /** Shown at the top of the profile, e.g. when the profile shown was switched after a search change */
+  notice?: string;
+  /** Recovery action offered with the empty rail and the stale banner */
+  onClearChanges?: () => void;
+  emptyMessage?: string;
+  staleMessage?: string;
+  clearLabel?: string;
 }) {
   const candidate =
     results.find((c) => c?.personId == viewing || c.id == viewing) ||
@@ -159,8 +174,6 @@ export default function ProfileView({
     const meaningfullyLong = el.scrollHeight > el.clientHeight * 1.25;
     setShowDown(meaningfullyLong && remaining > SCROLL_BUTTON_THRESHOLD);
   }, []);
-
-  console.log(results)
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -259,7 +272,8 @@ export default function ProfileView({
     (x) =>
       (x.personId ?? x.id) === personKey &&
       x.id !== candidate.id &&
-      x.discoverable !== false,
+      x.discoverable !== false &&
+      !hidden.includes(x.id), // a hidden designation leaves the sibling links
   );
   const reloc = candidate.relocation as unknown;
   const relocOpen = !!reloc && reloc !== "Not open";
@@ -397,6 +411,22 @@ export default function ProfileView({
 
           <Divider/>
 
+          {results.length === 0 && (
+            <div role="status" className="m-3.5 text-xs leading-relaxed text-ink-soft">
+              {emptyMessage}
+              <br />
+              {onClearChanges && (
+                <button
+                  type="button"
+                  onClick={onClearChanges}
+                  className="cursor-pointer border-none bg-transparent p-0 text-xs font-bold text-forest underline hover:text-[#1e3a0f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                >
+                  {clearLabel}
+                </button>
+              )}
+            </div>
+          )}
+
           {results.map((c) => {
             const isActive = viewing === c.id;
             const isRevealed = reveals.includes(c.personId || c.id);
@@ -463,6 +493,23 @@ export default function ProfileView({
           onScroll={updateScrollState}
           className="h-full min-h-0 min-w-0 overflow-y-auto rounded-2xl border border-ash bg-white text-ink shadow-[0_18px_44px_rgba(28,52,16,.09)]"
         >
+          {(stale || notice) && (
+            <div
+              role="status"
+              className="flex flex-wrap items-center gap-2 border-b border-[#e8c9a3] bg-[#fff4e6] px-5 py-2.5 text-xs font-semibold text-[#7a4a12]"
+            >
+              {stale ? staleMessage : notice}
+              {stale && onClearChanges && (
+                <button
+                  type="button"
+                  onClick={onClearChanges}
+                  className="cursor-pointer border-none bg-transparent p-0 text-xs font-bold text-[#7a4a12] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                >
+                  {clearLabel}
+                </button>
+              )}
+            </div>
+          )}
           <div
             className={`px-5 py-6 md:px-10 md:py-[34px] ${
               candidate.specialist
@@ -498,6 +545,12 @@ export default function ProfileView({
                       values={[name, email, phone]}
                       active={closed}
                     />
+                    {/* Display only: no download, preview, link or storage */}
+                    {!candidate.specialist && (
+                      <p className="mt-0.5 text-[13px] font-semibold text-[#8a8a84]">
+                        Resume available
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -760,10 +813,9 @@ export default function ProfileView({
                 {onHide && (
                   <button
                     type="button"
-                    onClick={() => {
-                      onHide(candidate.id);
-                      setView(results[0].id);
-                    }}
+                    // The parent decides: it may ask which designation to hide, and it
+                    // moves to another profile once the hide is confirmed
+                    onClick={() => onHide(candidate.id)}
                     className={`${utilBtn} ${inHidden ? utilActive : utilIdle}`}
                   >
                     <svg

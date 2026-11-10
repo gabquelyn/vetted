@@ -115,6 +115,7 @@ export default function CanCard({
   setHighlightActive,
   introduced,
   terms,
+  siblings,
 }: {
   c: Candidate;
   onSave: (id: string) => void;
@@ -133,6 +134,8 @@ export default function CanCard({
   setHighlightActive: (id: string) => void;
   introduced: string[];
   terms: string[];
+  /** Other profiles of the same person that also match (set when results are folded by person) */
+  siblings?: Candidate[];
 }) {
   const revealed = reveals.includes(c.personId || c.id);
   const intro = introduced.includes(c.id);
@@ -272,6 +275,12 @@ export default function CanCard({
             </div>
           );
         })()}
+
+        {siblings && siblings.length > 0 && (
+          <div className="mb-1.75 text-[10.5px] font-semibold text-[#8a5a1f]">
+            Also matches as {siblings.map((s) => s.title).join(", ")}
+          </div>
+        )}
 
         {/* Key facts */}
         <div className="mb-1.75 grid grid-cols-2 gap-x-3 gap-y-2">

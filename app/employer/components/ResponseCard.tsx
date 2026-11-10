@@ -4,9 +4,16 @@ import { Candidate } from "@/app/data/registry";
 
 export type ResponseMeta = {
   respondedAt: string; // ISO timestamp
-  // earliestStart: string;
+  /** The responder's confirmed earliest start for THIS request (not their profile availability). */
+  earliestStart: string;
   distanceKm: number;
+  /** "local" = within the request radius; "relocation" = candidate is open to relocating there */
+  locationMatch?: "local" | "relocation";
 };
+
+const MATCH_LABELS = {
+  relocation: "Open to relocation",
+} as const;
 
 /** "just now" · "12 min ago" · "3 hr ago" */
 export function timeAgo(iso: string, now: number) {
@@ -49,23 +56,36 @@ function Stat({
 export default function ResponseCard({
   candidate,
   response,
+  requestedShifts = [],
   now,
   isNew = false,
   onViewProfile,
   onIntroduction,
   introduced,
+  revealed = [],
+  onReveal,
 }: {
   candidate: Candidate;
   response: ResponseMeta;
+  /** shifts asked for in the request; the coverage label comes from these, not the profile */
+  requestedShifts?: string[];
   /** current time in ms; passed in so every card ticks off one shared clock */
   now: number;
   isNew?: boolean;
   onViewProfile?: (c: Candidate) => void;
   onIntroduction?: (c: Candidate) => void;
   introduced: string[];
+  /** ids already revealed (and paid for) anywhere in the app */
+  revealed?: string[];
+  onReveal?: (c: Candidate) => void;
 }) {
   const environment = candidate.env?.[0];
   const intro = introduced.includes(candidate.id);
+  const isRevealed = revealed.includes(candidate.id);
+  // Coverage comes from the request; the setting (environment) comes from the profile
+  const coverage = requestedShifts.length
+    ? requestedShifts.map((s) => coverageLabel(s)).join(" / ")
+    : coverageLabel();
   return (
     <article className="group flex h-full flex-col gap-3 rounded-2xl border border-ash bg-white p-4 text-xs shadow-sm">
       {/* status */}
@@ -93,14 +113,22 @@ export default function ResponseCard({
           </p>
 
           <p className="mt-2 text-ink-mid">
-            {[environment, coverageLabel(candidate.shift?.[0])]
-              .filter(Boolean)
-              .join(" · ")}
+            {[environment, coverage].filter(Boolean).join(" · ")}
+          </p>
+          <p className="text-ink-mid">
+            Confirmed {candidate.confirmedDays}d ago
           </p>
         </div>
-        <p className="mt-0.5 text-[.6rem] uppercase tracking-wider text-ink-soft">
-          {candidate.loc}
-        </p>
+        <div className="mt-0.5 flex flex-col items-end gap-1">
+          <p className="text-[.6rem] uppercase tracking-wider text-ink-soft">
+            {candidate.loc}
+          </p>
+          {candidate.relocation === "Open to relocation" && (
+            <span className="rounded-full bg-forest-light px-2 py-0.5 text-[.5rem] font-semibold text-forest">
+              Open to relocation
+            </span>
+          )}
+        </div>
       </div>
 
       {/* response details */}
@@ -111,7 +139,11 @@ export default function ResponseCard({
             {timeAgo(response.respondedAt, now)}
           </span>
         </Stat>
-        {/* <Stat label="Earliest start">{response.earliestStart}</Stat> */}
+        {response.earliestStart && (
+          <Stat label="Earliest start (this request)">
+            {response.earliestStart}
+          </Stat>
+        )}
         <Stat label="Shift">{candidate.shift?.join(", ") || "Flexible"}</Stat>
         <Stat label="Distance">
           <span className="flex items-center gap-1.5">
@@ -120,6 +152,23 @@ export default function ResponseCard({
           </span>
         </Stat>
       </div>
+
+      {/* Already revealed: show the state only. The reveal action (and its charge) is never offered again. */}
+      {isRevealed ? (
+        <p className="rounded-[7px] border border-forest/30 bg-forest-light py-1.5 text-center text-[11px] font-bold text-forest">
+          Revealed ✓
+        </p>
+      ) : (
+        !candidate.specialist && (
+          <button
+            type="button"
+            onClick={() => onReveal?.(candidate)}
+            className="cursor-pointer rounded-[7px] bg-forest py-1.5 text-center text-[11px] font-bold text-white transition-colors hover:bg-forest-dark"
+          >
+            Reveal →
+          </button>
+        )
+      )}
 
       <div className="flex flex-col md:flex-row items-center justify-between">
         {onViewProfile && (

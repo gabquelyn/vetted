@@ -1,5 +1,6 @@
 import React from "react";
 import { MOBILITY, PROFESSIONS, PROFILE } from "@/app/data/professions";
+import { resolveTypedCity } from "./LocationSelect";
 
 const VALUE_LABELS: Record<string, Record<string, string>> = {
   profession: Object.fromEntries(PROFESSIONS.map(([v, l]) => [v, l])),
@@ -26,6 +27,7 @@ export default function SearchItem({
   variant = "saved",
   onApply,
   onDelete,
+  setResolved
 }: {
   id: string;
   timestamp: string;
@@ -34,6 +36,7 @@ export default function SearchItem({
   variant?: "saved" | "history";
   onApply?: (search: Search) => void;
   onDelete?: () => void;
+   setResolved: (value: React.SetStateAction<string | null>) => void
 }) {
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-ash bg-white px-[15px] py-[13px]">
@@ -69,10 +72,14 @@ export default function SearchItem({
 
       {/* actions */}
       {onApply && (
-        <div className="mt-1 flex gap-[7px]">
+        <div className="mt-1 flex gap-1.75">
           <button
             type="button"
-            onClick={() => onApply(search)}
+            onClick={() => {
+              onApply(search)
+              const resolved = resolveTypedCity(search.location)
+              if(resolved) setResolved(resolved)
+            }}
             className="flex-1 cursor-pointer rounded-[7px] border border-ash bg-white p-[7px] text-[11px] font-bold text-ink-soft transition-colors hover:border-ink-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
           >
             Restore search

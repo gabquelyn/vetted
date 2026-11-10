@@ -10,23 +10,35 @@ import {
 // Adjust to wherever CITY_COORDS / resolveCity live
 import { CITY_COORDS, resolveCity } from "@/app/utils/geo";
 
-/** Every supported city, A-Z. Driven by CITY_COORDS so there is one source of truth. */
-export const SUPPORTED_CITIES = Object.keys(CITY_COORDS).sort((a, b) =>
+/** Every supported city, A-Z. Driven by CITY_COORDS so there is one source of truth (same as the HTML). */
+export const SUPPORTED_CITIES: string[] = Object.keys(CITY_COORDS).sort((a, b) =>
   a.localeCompare(b),
 );
 /** Kept for existing imports. */
 export const LOCATIONS = SUPPORTED_CITIES;
 
-const MAX_SUGGESTIONS = 8; // when typing (the full list shows when empty)
+const MAX_SUGGESTIONS = 8; // first 8 matches, including when the box is empty
 const PANEL_MAX_PX = 256; // max-h-64
 
 /**
- * Resolves what the user typed to a supported city, or null.
+ * Resolves what the user typed (or picked) by searching CITY_COORDS via resolveCity,
+ * returning the CITY_COORDS key, or null if it has no coordinates.
  * Case-insensitive, and the province is optional: "toronto" -> "Toronto, ON".
  * Use this in the parent to enable the radius control and to compute distances.
  */
 export const resolveTypedCity = (input: string): string | null =>
   resolveCity(input) ?? resolveCity(`${input.trim()}, ON`);
+
+/** Comparable form of a city or query: no accents or punctuation, optional ", ON" dropped. */
+const normCity = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/(,\s*|\s+)(on|ontario)$/, "")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 /** Bolds the part of a city that matches what was typed. */
 function Highlighted({ text, query }: { text: string; query: string }) {
@@ -49,7 +61,8 @@ export default function LocationSelect({
   placeholder = "Location",
   disabled = false,
   className = "",
-  resolved
+  resolved,
+  setRadius
 }: {
   /** The text in the box (a supported city or whatever the user is typing). */
   value: string;
@@ -59,7 +72,8 @@ export default function LocationSelect({
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  resolved: boolean
+  resolved: boolean;
+  setRadius?: React.Dispatch<React.SetStateAction<number>>
 }) {
   const [open, setOpen] = useState(false);
   const [flipUp, setFlipUp] = useState(false);
@@ -78,16 +92,14 @@ export default function LocationSelect({
   const lastResolved = useRef<string | null>(resolveTypedCity(value));
   const listId = useId();
 
-  const normalizedQuery = query.trim().toLowerCase();
+  const normalizedQuery = normCity(query);
 
+  // Same as the HTML: the sorted supported cities, filtered by what was typed
+  // (ignoring case, accents and ", ON"), first 8 only. An empty box shows the first 8.
   const matches = SUPPORTED_CITIES.filter((city) =>
-    city.toLowerCase().includes(normalizedQuery),
+    normCity(city).includes(normalizedQuery),
   );
-
-  // Empty input: "Any location" (clears) + every city. Typing: top matches only.
-  // Empty input: every city. Typing: top matches only.
-  const suggestions =
-    normalizedQuery.length === 0 ? matches : matches.slice(0, MAX_SUGGESTIONS);
+  const suggestions = matches.slice(0, MAX_SUGGESTIONS);
 
   const unsupported = normalizedQuery.length > 0 && matches.length === 0;
 
@@ -123,19 +135,35 @@ export default function LocationSelect({
     closeList();
   };
 
+  // Settle whatever is typed: a supported city is kept (normalised to "Toronto, ON"),
+  // anything else is cleared so free text never stays as the location.
+  const commit = () => {
+    closeList();
+    const city = resolveTypedCity(query);
+    if (city) {
+      if (city !== value) onChange(city);
+      setQuery(city);
+      emitResolved(city);
+    } else if (query.trim()) {
+      onChange("");
+      setQuery("");
+      emitResolved("");
+    } else {
+      setQuery(value);
+    }
+  };
+
   // Close on focus leaving the whole control (covers outside click and Tab away).
   const onBlurCapture = (event: React.FocusEvent<HTMLDivElement>) => {
     if (!rootRef.current?.contains(event.relatedTarget as Node | null)) {
-      closeList();
-      setQuery(value);
+      commit();
     }
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape") {
       event.preventDefault();
-      closeList();
-      setQuery(value);
+      commit();
       return;
     }
 
@@ -192,7 +220,9 @@ export default function LocationSelect({
           aria-controls={listId}
           aria-autocomplete="list"
           aria-activedescendant={
-            open && active >= 0 ? `${listId}-option-${active}` : undefined
+            open && active >= 0 && active < suggestions.length
+              ? `${listId}-option-${active}`
+              : undefined
           }
           onFocus={() => {
             openList();
@@ -207,7 +237,8 @@ export default function LocationSelect({
             onChange(next);
             emitResolved(next);
             openList();
-            setActive(-1);
+            // highlight the best match so Enter picks it
+            setActive(next.trim() ? 0 : -1);
           }}
           onKeyDown={onKeyDown}
           className="w-full min-w-0 border-none bg-transparent py-1.5 pl-6 pr-1 text-xs font-[inherit] text-ink outline-none placeholder:text-ink-soft disabled:cursor-not-allowed disabled:text-ink-soft"
@@ -220,7 +251,9 @@ export default function LocationSelect({
             onClick={() => {
               setQuery("");
               onChange("");
+              onResolvedChange?.(null)
               emitResolved("");
+              setRadius?.(25)
               setActive(-1);
               openList();
               inputRef.current?.focus();

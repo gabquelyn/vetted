@@ -2,12 +2,9 @@
 
 import React, { useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import {
-  DEMO_ONLY_ONTARIO_MUNICIPALITIES,
-} from "@/app/professional/components/data";
 import SearchableSelect from "./SearchableSelect";
 import { PROFESSIONS } from "@/app/data/professions";
-import { LOCATIONS } from "./LocationSelect";
+import LocationSelect from "./LocationSelect";
 
 export interface PlacementRequestValues {
   profession: string;
@@ -36,7 +33,6 @@ const START_TIMINGS = [
   "1–3 months",
   "Flexible",
 ];
-
 
 const ABOUT_MAX = 300;
 const WORK_MAX = 300;
@@ -148,7 +144,7 @@ export default function PlacementRequestForm({
   onSubmit,
   onBack,
   initialValues,
-  professions = PROFESSIONS.map(p => p[1]),
+  professions = PROFESSIONS.map((p) => p[1]),
   submitting = false,
   submitLabel = "Continue",
 }: PlacementRequestFormProps) {
@@ -184,11 +180,7 @@ export default function PlacementRequestForm({
     profession: !values.profession ? "Choose a profession." : "",
     shifts: values.shifts.length === 0 ? "Select at least one shift." : "",
     startTiming: !values.startTiming ? "Choose a start timing." : "",
-    aboutSetting: !values.aboutSetting.trim()
-      ? "Tell us about the setting."
-      : "",
-    work: !values.work.trim() ? "Describe the work." : "",
-    location: !values.location.trim() ? "Select Location" : ""
+    location: !values.location.trim() ? "Select Location" : "",
   };
   const hasErrors = Object.values(errors).some(Boolean);
   const show = (k: keyof typeof errors) => (attempted ? errors[k] : "");
@@ -221,15 +213,16 @@ export default function PlacementRequestForm({
         htmlFor={id("location")}
         //  error={show('location')}
       >
-        <SearchableSelect
-          id={id("loc")}
-          options={LOCATIONS.map((demo) => demo)}
+        <LocationSelect
           value={values.location}
-          onChange={(v) => set("location", v)}
-          placeholder="Select…"
-          searchPlaceholder="Search Location…"
-          invalid={!!show("location")}
+          onChange={() => {}}
+          onResolvedChange={(v) => set("location", v || "")}
+          resolved={false}
+          className={"py-2 bg-cream/80"}
+        
         />
+
+        {attempted && !values.location ? <p className="text-highlight my-2">Select location</p> : null}
       </Field>
 
       <Field label="Shift" error={show("shifts")}>
@@ -264,7 +257,6 @@ export default function PlacementRequestForm({
       <Field
         label="About the setting"
         htmlFor={id("about")}
-        error={show("aboutSetting")}
         counter={<Counter value={values.aboutSetting.length} max={ABOUT_MAX} />}
       >
         <textarea
@@ -280,7 +272,6 @@ export default function PlacementRequestForm({
       <Field
         label="Work"
         htmlFor={id("work")}
-        error={show("work")}
         counter={<Counter value={values.work.length} max={WORK_MAX} />}
       >
         <textarea

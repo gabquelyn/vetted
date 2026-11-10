@@ -3,32 +3,34 @@ import React from "react";
 
 export default function RevealedPreview({
   c,
-  reveals,
   onViewProfile,
   onViewSibling,
 }: {
   /** id of the primary (revealed) profile to show */
   c: string;
-  reveals: string[];
+  /** Kept for call-site compatibility; reveal state is not needed to list a person's profiles */
+  reveals?: string[];
   /** "View profile" / "View RN profile" — opens the primary profile */
   onViewProfile: (c: Candidate) => void;
   /** Optional. Called when an "Also revealed as" link is clicked. Defaults to nothing. */
   onViewSibling?: (sibling: Candidate) => void;
 }) {
-  const primary = FULL_CANDIDATES.find(
-    (can) => can?.personId == c || can.id == c,
+  // Reveals are keyed by person (personId ?? id), so `c` may be either an
+  // id or a person key. Always show a discoverable profile as the primary.
+  const matches = FULL_CANDIDATES.filter(
+    (x) => x.id === c || (x.personId ?? x.id) === c,
   );
+  const primary =
+    matches.find((x) => x.id === c && x.discoverable !== false) ??
+    matches.find((x) => x.discoverable !== false);
   if (!primary) return null;
 
-  // All revealed, discoverable profiles of this person (personId is optional,
-  // so fall back to the candidate's own id)
+  // Every discoverable profile of this person. Reveal status belongs to the
+  // person, so we do NOT filter by reveals, and we deliberately do not filter
+  // by Hidden: a hidden revealed designation stays listed and openable here.
   const personKey = primary.personId ?? primary.id;
-  
   const profiles = FULL_CANDIDATES.filter(
-    (x) =>
-      (x.personId ?? x.id) === personKey &&
-      !reveals.includes(x.id) &&
-      x.discoverable !== false,
+    (x) => (x.personId ?? x.id) === personKey && x.discoverable !== false,
   );
   const others = profiles.filter((x) => x.id !== primary.id);
 

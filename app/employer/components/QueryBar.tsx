@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 // import AddressAutocomplete from "@/app/components/AutoComplete";
 import LocationSelect from "./LocationSelect";
 import RadiusSelect from "./RadiusSelector";
 import HelpButton from "./HelpButton";
 import { restartTour } from "./TourController";
-import { termLabel } from "@/app/utils/search";
-import { parseQuery } from "@/app/utils/search";
+import { parseQuery, type ResolvedTerm } from "@/app/utils/search";
 export default function QueryBar({
   query,
   setQuery,
@@ -20,7 +19,8 @@ export default function QueryBar({
   filters,
   setFilters,
   onResolveLoc,
-  resolved
+  resolved,
+  keywordOnly = false,
 }: {
   /** The live draft: text typed but not yet committed. It still filters as you type. */
   query: string;
@@ -42,6 +42,8 @@ export default function QueryBar({
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   onResolveLoc:(lo: string | null) => void;
   resolved: string | null
+  /** Revealed workspace: every entry is a plain keyword (no filter promotion, no PT prompt) */
+  keywordOnly?: boolean;
 }) {
   // Segment: stacked with a bottom rule on small screens, inline from 900px
   const seg =
@@ -49,19 +51,17 @@ export default function QueryBar({
   const divider =
     "hidden h-5 w-px shrink-0 self-center bg-ash min-[900px]:block";
 
-  /**
-   * "mental health np":
-   *   - "np" is a profession -> added to filters.profession, no search chip
-   *   - "mental health" is not a filter -> added to the search terms
-   */
-  const commit = (phrases: string[]) => {
+  // Ambiguous wording ("PT"): nothing is applied until the user picks a meaning.
+  const [pending, setPending] = useState<NonNullable<ResolvedTerm["clarify"]> | null>(null);
+
+  /** Applies resolved terms: filter terms update filters, everything else is a search chip. */
+  const apply = (items: ResolvedTerm[]) => {
     const nextTerms = [...terms];
     const nextFilters: Filters = { ...filters };
     let filtersChanged = false;
 
-    phrases.flatMap(parseQuery).forEach(({ label, filter, value }) => {
+    items.forEach(({ label, filter, value }) => {
       if (filter && value) {
-        // Filter term: update the filter only
         const current = nextFilters[filter] ?? [];
         if (!current.some((v) => v.toLowerCase() === value.toLowerCase())) {
           nextFilters[filter] = [...current, value] as never;
@@ -69,8 +69,6 @@ export default function QueryBar({
         }
         return;
       }
-
-      // Everything else: search only
       if (!label) return;
       if (!nextTerms.some((t) => t.toLowerCase() === label.toLowerCase())) {
         nextTerms.push(label);
@@ -79,6 +77,26 @@ export default function QueryBar({
 
     if (nextTerms.length !== terms.length) onTermsChange(nextTerms);
     if (filtersChanged) setFilters(nextFilters);
+  };
+
+  /**
+   * "mental health np":
+   *   - "np" is a profession -> added to filters.profession, no search chip
+   *   - "mental health" is not a filter -> added to the search terms
+   * "PT" shows the "PT could mean…" prompt and applies nothing yet.
+   */
+  const commit = (phrases: string[]) => {
+    const items: ResolvedTerm[] = keywordOnly
+      ? phrases.map((p) => ({ label: p.trim() })).filter((t) => t.label)
+      : phrases.flatMap(parseQuery);
+    const ask = items.find((t) => t.clarify);
+    if (ask?.clarify) setPending(ask.clarify);
+    apply(items.filter((t) => !t.clarify));
+  };
+
+  const choose = (option: ResolvedTerm) => {
+    setPending(null);
+    apply([option]);
   };
 
   // A comma ends a phrase. Everything before the last comma is committed
@@ -93,6 +111,7 @@ export default function QueryBar({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape" && pending) return setPending(null);
     if (e.key !== "Enter") return;
     e.preventDefault();
     commit([query]);
@@ -133,6 +152,34 @@ export default function QueryBar({
             />
 
             <HelpButton restartTours={restartTour} />
+
+            {pending && (
+              <div
+                role="group"
+                aria-label={pending.prompt}
+                className="absolute left-0 top-full z-30 mt-1 flex flex-wrap items-center gap-2 rounded-xl border border-black/10 bg-white px-3 py-2 text-xs shadow-xl"
+              >
+                <span className="font-semibold text-ink">{pending.prompt}</span>
+                {pending.options.map((o) => (
+                  <button
+                    key={o.label + (o.value ?? "")}
+                    type="button"
+                    onClick={() => choose(o)}
+                    className="cursor-pointer rounded-full border-none bg-forest-light px-3 py-1 font-bold text-[#16260c] hover:bg-[#dcead0] focus-visible:outline-2 focus-visible:outline-forest"
+                  >
+                    {o.filter ? o.label : `Keyword "${o.label}"`}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  aria-label="Dismiss"
+                  onClick={() => setPending(null)}
+                  className="cursor-pointer border-none bg-transparent text-ink-soft hover:text-ink"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
 
           <div className={divider} />
@@ -147,6 +194,7 @@ export default function QueryBar({
                 onChange={setLocation}
                 onResolvedChange={onResolveLoc}
                 resolved = {!!resolved}
+                setRadius={setRadius}
               />
             </div>
           </div>

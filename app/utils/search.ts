@@ -1,6 +1,9 @@
 // app/utils/search.ts
 import type { Candidate } from "@/app/data/registry"; // adjust Filters to wherever it lives
 import { PROFESSIONS } from "../data/professions";
+// Dictionary-backed lemmatizer (WordNet). Only real words are lemmatised, so fragments
+// like "nurs" or "manag" are left alone. Needs: npm i wink-lemmatizer (see wink-lemmatizer.d.ts)
+import { noun as lemmaNoun, verb as lemmaVerb, adjective as lemmaAdjective } from "wink-lemmatizer";
 
 /* ------------------------------------------------------------------ *
  * 1. Fields (display order = SEARCH_FIELDS order)
@@ -13,6 +16,14 @@ export interface SearchField {
   get: (c: Candidate) => unknown;
 }
 
+/** Answers that say "not open" carry no searchable evidence ("Rural & fly-in: No" must not match "no"). */
+const NO_ANSWERS = new Set(["no", "not open", "within my region"]);
+const answered = (v: string | undefined) =>
+  v && !NO_ANSWERS.has(v.trim().toLowerCase()) ? v : undefined;
+
+/** The degree part of the display string "BScN · Institution · 2022". */
+const degreeLabel = (edu: string | undefined) => edu?.split(" · ")[0];
+
 // Most important first. Position in this array is the display rank.
 export const SEARCH_FIELDS: SearchField[] = [
   { key: "title", label: "Title", get: (c) => [c.title, c.code] },
@@ -23,7 +34,19 @@ export const SEARCH_FIELDS: SearchField[] = [
     label: "Employment preference",
     get: (c) => c.acceptedEmpTypes,
   },
-  { key: "specialties", label: "Specialties", get: (c) => c.specialties },
+  // Preference evidence: what the candidate confirmed about shifts, notice, relocation,
+  // rural / fly-in work and resource-pool experience. "No" answers are never indexed.
+  { key: "shift", label: "Shift", get: (c) => c.shift },
+  { key: "availability", label: "Availability", get: (c) => c.avail },
+  { key: "relocation", label: "Relocation", get: (c) => answered(c.relocation) },
+  { key: "rural", label: "Rural & fly-in", get: (c) => answered(c.rural) },
+  { key: "float", label: "Resource pool", get: (c) => answered(c.float) },
+  {
+    key: "specialties",
+    label: "Specialties",
+    // structured ids ("paediatrics") are searched by their label ("Paediatrics")
+    get: (c) => c.specialties?.map((id) => BY_ID.get(id)?.label ?? id),
+  },
   { key: "env", label: "Environment", get: (c) => c.env },
   // { key: "openToWorkingIn", label: "Open to working in", get: (c) => c.openToWorkingIn },
   { key: "context", label: "Past experience", showTerm: true, get: (c) => c.exp?.map((e) => e.context) },
@@ -31,9 +54,10 @@ export const SEARCH_FIELDS: SearchField[] = [
     key: "experience",
     label: "Experience",
     showTerm: true,
-    // everything except context, with the comma-separated skills split into separate items
+    // everything except context and dates, with the comma-separated skills split into
+    // separate items. Dates are not searchable, so "2016" never matches a work history.
     get: (c) =>
-      c.exp?.flatMap(({ context, skills, ...rest }) => [
+      c.exp?.flatMap(({ context, skills, dates, ...rest }) => [
         ...Object.values(rest),
         ...(typeof skills === "string" ? skills.split(", ") : []),
       ]),
@@ -56,7 +80,17 @@ export const SEARCH_FIELDS: SearchField[] = [
   {
     key: "education",
     label: "Education",
-    get: (c) => [c.edu, c.eduChips, c.eduRecords],
+    // Degree wording only. Institution, country and year are deliberately not searchable,
+    // so "Toronto", "McMaster" or "2016" never match through a school.
+    get: (c) => [
+      c.eduChips,
+      c.eduRecords?.map(({ degree, fieldOfStudy, status }) => [
+        degree,
+        fieldOfStudy,
+        status,
+      ]),
+      degreeLabel(c.edu), // "BScN" from "BScN · Toronto Metropolitan University · 2022"
+    ],
   },
   { key: "languages", label: "Languages", get: (c) => c.lang },
   { key: "location", label: "Location", get: (c) => c.loc },
@@ -96,21 +130,128 @@ const normQuery = (s: string) =>
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// Whole-word phrase match; hyphen/space tolerant (already folded) and each word
-// tolerates a plural "s"/"es". Words are never matched independently.
-const regexCache = new Map<string, RegExp>();
-const phraseRegex = (variant: string) => {
-  let re = regexCache.get(variant);
-  if (!re) {
-    const body = variant
-      .split(/\s+/)
-      .map((w) => esc(w) + "(?:es|s)?")
-      .join("\\s+");
-    re = new RegExp(`\\b(${body})\\b`, "g");
-    regexCache.set(variant, re);
+/* ------------------------------------------------------------------ *
+ * Word forms: bounded grammatical inflection
+ *
+ * A query word matches an evidence word only if they are regular inflected forms of
+ * the same dictionary word (plural, -s/-es, -ed, -ing, -er/-est, with the usual
+ * spelling changes: car/cars, plan/planning, run/running, disability/disabilities,
+ * manage/managing). Never fragments ("car" is not "care"), never different words,
+ * derivations ("nurse" is not "nursery") or abbreviation inflections ("ICU" is not "ICUs").
+ * Irregular forms (ran, children) are not expanded.
+ * ------------------------------------------------------------------ */
+
+// Abbreviations are exact-only: no plural/inflection is ever applied to them.
+const ABBREVIATIONS = new Set([
+  ...PROFESSIONS.map(([code]) => code.trim().toLowerCase()),
+  "ltc", "icu", "picu", "nicu", "pacu", "chc", "emr", "msw", "nswoc", "ed", "er", "ic",
+]);
+
+const isCVC = (w: string) => /[^aeiou][aeiou][^aeiouwxy]$/.test(w);
+
+/** Every regular surface form of a base word, including spelling changes. */
+const regularForms = (base: string): Set<string> => {
+  const f = new Set<string>([base + "s", base + "es", base + "ed", base + "ing", base + "er", base + "est"]);
+  if (/[^aeiou]y$/.test(base)) {
+    const b = base.slice(0, -1); // disability -> disabilities, carry -> carried
+    ["ies", "ied", "ier", "iest"].forEach((x) => f.add(b + x));
   }
-  return re;
+  if (base.endsWith("e")) {
+    const b = base.slice(0, -1); // care -> caring, cared
+    f.add(b + "ing");
+    ["d", "r", "st"].forEach((x) => f.add(base + x));
+  }
+  if (isCVC(base)) {
+    const d = base + base[base.length - 1]; // plan -> planned, planning; run -> running
+    ["ed", "ing", "er", "est"].forEach((x) => f.add(d + x));
+  }
+  return f;
 };
+
+const formsCache = new Map<string, ReadonlySet<string>>();
+/**
+ * The word plus its dictionary base form(s). The base is accepted only if the word is a
+ * regular inflection of it, so "wound" is never "wind" and "ran" is never "run".
+ */
+const wordForms = (word: string, exactOnly = false): ReadonlySet<string> => {
+  if (exactOnly || word.length < 4 || ABBREVIATIONS.has(word)) return new Set([word]);
+  let out = formsCache.get(word);
+  if (!out) {
+    const forms = new Set([word]);
+    for (const base of [lemmaNoun(word), lemmaVerb(word), lemmaAdjective(word)]) {
+      if (base !== word && !ABBREVIATIONS.has(base) && regularForms(base).has(word)) {
+        forms.add(base);
+      }
+    }
+    out = forms;
+    formsCache.set(word, out);
+  }
+  return out;
+};
+
+interface Tok {
+  start: number;
+  end: number;
+  word: string;
+  forms: ReadonlySet<string>;
+}
+
+const WORD = /[a-z0-9]+(?:'[a-z0-9]+)*/g;
+
+/** Words of a folded text with their offsets. `raw` is the same text before folding. */
+const tokenize = (folded: string, raw: string): Tok[] =>
+  [...folded.matchAll(WORD)].map((m) => {
+    const start = m.index!;
+    const end = start + m[0].length;
+    // ALL-CAPS words in the evidence (BLS, ACLS, IPAC) are abbreviations: exact only
+    const acronym = /^[A-Z][A-Z0-9]+$/.test(raw.slice(start, end));
+    return { start, end, word: m[0], forms: wordForms(m[0], acronym) };
+  });
+
+/** A query phrase prepared for matching, one entry per word. */
+interface Phrase {
+  text: string;
+  words: string[];
+  forms: ReadonlySet<string>[];
+  /** quoted terms: literal words, no inflection */
+  exact: boolean;
+}
+
+const preparePhrase = (text: string, exact = false): Phrase => {
+  const words = text.split(/\s+/).filter(Boolean);
+  return { text, words, exact, forms: words.map((w) => wordForms(w, exact)) };
+};
+
+const sharesForm = (a: ReadonlySet<string>, b: ReadonlySet<string>) => {
+  for (const x of a) if (b.has(x)) return true;
+  return false;
+};
+
+// What may sit between two words of one phrase in the evidence: spaces and the joiners
+// used in labels ("Long-Term", "Residential / Supported", "Perioperative & OR", "(LTC)").
+// A comma, full stop or any other punctuation ends the phrase: "medical, surgical" is a
+// list of two things, not "medical-surgical".
+const PHRASE_GAP = /^[\s\-\u2010-\u2015/&()+]+$/;
+
+/**
+ * Whole-word phrase match: consecutive words, each query word matching an inflected form
+ * of itself, joined only by PHRASE_GAP characters in the original text. Words are never
+ * matched independently.
+ */
+function* phraseHits(tokens: Tok[], raw: string, phrase: Phrase) {
+  const n = phrase.words.length;
+  for (let i = 0; i + n <= tokens.length; i++) {
+    let ok = true;
+    for (let k = 0; k < n && ok; k++) {
+      const t = tokens[i + k];
+      ok = phrase.exact
+        ? t.word === phrase.words[k]
+        : sharesForm(t.forms, phrase.forms[k]);
+      if (ok && k > 0) ok = PHRASE_GAP.test(raw.slice(tokens[i + k - 1].end, t.start));
+    }
+    if (ok) yield { start: tokens[i].start, end: tokens[i + n - 1].end };
+  }
+}
 
 /* ------------------------------------------------------------------ *
  * 3. Negation guard ("no ICU experience" must not count as ICU)
@@ -158,159 +299,260 @@ interface Concept {
   label: string;
   aliases: string[];
   descendants?: string[];
-}
-
-interface Concept {
-  id: string;
-  label: string;
-  aliases: string[];
-  descendants?: string[];
   /** Filter group this concept feeds; omit for search-only concepts */
-  filter?: keyof Filters;
+  filter?: keyof Filters | "specialty";
   /** Value stored in that filter group when it differs from the label */
   value?: string;
+  /**
+   * Structured evidence only: the exact leaf is matched in this one source field
+   * ("env", "specialties") and never expanded to a broader umbrella.
+   */
+  scope?: string;
+  /** Every alias is the leaf (environments). Otherwise only the label and `strictAliases` are. */
+  strictAll?: boolean;
+  strictAliases?: string[];
 }
 
+const ENV = "env";
+const SPEC = "specialties";
+
 const TERMINOLOGY: Concept[] = [
+  /* ---- Experience environments: every label and alias promotes to the green chip ---- */
   {
     id: "ltc",
     label: "Long-Term Care (LTC)",
     aliases: ["ltc", "long term care"],
     filter: "environment",
+    scope: ENV,
+    strictAll: true,
+  },
+  {
+    id: "hospital",
+    label: "Hospital",
+    aliases: ["hospitals"],
+    filter: "environment",
+    scope: ENV,
+    strictAll: true,
+  },
+  {
+    id: "clinic",
+    label: "Clinic",
+    aliases: ["clinics", "outpatient clinic"],
+    filter: "environment",
+    scope: ENV,
+    strictAll: true,
+  },
+  {
+    id: "diagnostic_laboratory",
+    label: "Laboratory",
+    aliases: ["laboratories", "diagnostic laboratory", "diagnostic lab"],
+    value: "Laboratory",
+    filter: "environment",
+    scope: ENV,
+    strictAll: true,
+  },
+  {
+    id: "private_practice",
+    label: "Private Practice",
+    aliases: [],
+    filter: "environment",
+    scope: ENV,
+    strictAll: true,
+  },
+  {
+    id: "community_based_services_outreach",
+    label: "Community-Based Services / Outreach",
+    aliases: ["community based services", "outreach program", "community agency"],
+    filter: "environment",
+    scope: ENV,
+    strictAll: true,
+  },
+  {
+    id: "residential_supported_living",
+    label: "Residential / Supported Living",
+    aliases: ["residential support", "supported living", "group home", "supportive housing"],
+    filter: "environment",
+    scope: ENV,
+    strictAll: true,
+  },
+  {
+    id: "residential_hospice",
+    label: "Residential Hospice",
+    aliases: ["hospice", "hospice unit", "hospice facility"],
+    filter: "environment",
+    scope: ENV,
+    strictAll: true,
   },
   {
     id: "retirement_home",
     label: "Retirement Home",
     aliases: ["retirement settings", "retirement residence"],
     filter: "environment",
+    scope: ENV,
+    strictAll: true,
   },
   {
     id: "home_care",
     label: "Home Care",
     aliases: ["in home care"],
     filter: "environment",
+    scope: ENV,
+    strictAll: true,
   },
   {
-    id: "chc",
+    id: "community_health_centre",
     label: "Community Health Centre",
     aliases: ["community health center"],
     filter: "environment",
+    scope: ENV,
+    strictAll: true,
   },
 
+  /* ---- Specialties. Leaves (filter "specialty") are matched against the candidate's
+         structured specialties by their exact label; broad terms and aliases are
+         keyword-scope and never resolve to a leaf or the other way round. ---- */
   {
-    id: "emergency",
+    id: "emergency_domain",
     label: "Emergency",
-    aliases: [
-      "ed",
-      "er",
-      "emergency department",
-      "emergency room",
-      "emergency trauma",
-    ],
+    aliases: ["ed", "er", "emergency department", "emergency room"],
     descendants: ["emergency_trauma"],
-    // filter: "environment",
   },
   {
     id: "emergency_trauma",
     label: "Emergency & Trauma",
     aliases: [],
-    filter: "environment",
+    filter: "specialty",
+    scope: SPEC,
+    strictAliases: ["emergency trauma"],
   },
 
   {
     id: "critical_care_icu",
     label: "Critical Care / ICU",
     aliases: ["icu", "intensive care", "critical care"],
-    descendants: ["icu_adult", "picu", "nicu"],
-    // filter: "environment",
+    descendants: [
+      "icu_critical_care_adult",
+      "icu_critical_care_paediatric",
+      "neonatal_nicu",
+    ],
   },
   {
-    id: "icu_adult",
+    id: "icu_critical_care_adult",
     label: "ICU Critical Care Adult",
     aliases: ["adult icu"],
-    filter: "skills",
+    filter: "specialty",
+    scope: SPEC,
+    strictAliases: ["icu critical care adult"],
   },
   {
-    id: "picu",
+    id: "icu_critical_care_paediatric",
     label: "ICU Critical Care Paediatric / PICU",
     aliases: ["picu", "paediatric icu", "pediatric icu"],
-    filter: "skills",
+    filter: "specialty",
+    scope: SPEC,
+    strictAliases: ["icu critical care paediatric"],
   },
   {
-    id: "nicu",
+    id: "neonatal_nicu",
     label: "Neonatal NICU",
     aliases: ["nicu", "neonatal"],
-    filter: "skills",
+    filter: "specialty",
+    scope: SPEC,
   },
 
+  // Med-surg has no structured specialty in the data: keyword scope, whole phrase only
   {
     id: "medsurg",
     label: "Medical-Surgical",
-    aliases: ["med surg", "medical-surgical", "merd-surg"],
-    // filter: "skills",
+    aliases: ["med surg", "merd-surg"],
   },
   {
-    id: "pacu",
+    id: "periop_or",
+    label: "Perioperative & OR",
+    aliases: ["operating room", "perioperative"],
+    filter: "specialty",
+    scope: SPEC,
+  },
+  {
+    id: "perianesthesia_pacu",
     label: "PeriAnesthesia & PACU",
     aliases: ["pacu", "perianesthesia", "peri anesthesia", "recovery room"],
-    filter: "skills",
+    filter: "specialty",
+    scope: SPEC,
   },
   {
-    id: "cardiac",
+    id: "cardiac_domain",
     label: "Cardiac",
     aliases: ["cardiovascular"],
     descendants: ["cardiovascular_cardiac"],
-    // filter: "environment",
   },
   {
     id: "cardiovascular_cardiac",
     label: "Cardiovascular & Cardiac",
     aliases: [],
-    filter: "environment",
+    filter: "specialty",
+    scope: SPEC,
   },
   {
-    id: "obstetrics",
+    id: "obstetrics_labour",
     label: "Obstetrics & Labour",
-    aliases: ["obstetrics", "labour and delivery", "labor and delivery"],
-    filter: "skills",
+    aliases: ["obstetrics", "labour and delivery", "labor and delivery", "l&d"],
+    filter: "specialty",
+    scope: SPEC,
+    strictAliases: ["l&d"],
   },
   {
-    id: "palliative",
+    id: "perinatal",
+    label: "Perinatal",
+    aliases: [],
+    filter: "specialty",
+    scope: SPEC,
+  },
+  {
+    id: "maternal_newborn",
+    label: "Maternal-Newborn",
+    aliases: [],
+    filter: "specialty",
+    scope: SPEC,
+  },
+  {
+    // Broad term: keyword scope. "hospice" is an environment, not an alias of this.
+    id: "palliative_domain",
     label: "Palliative Care",
-    aliases: ["palliative", "hospice", "hospice palliative"],
-    filter: "skills",
+    aliases: ["palliative", "hospice palliative"],
   },
   {
-    id: "mental_health",
+    id: "mental_health_domain",
     label: "Mental Health",
     aliases: ["psychiatric"],
     descendants: ["mental_health_psychiatric"],
-    // filter: "environment",
   },
   {
     id: "mental_health_psychiatric",
     label: "Mental Health & Psychiatric",
-    aliases: ["psychiatric"],
-    // filter: "skills",
+    aliases: [],
+    filter: "specialty",
+    scope: SPEC,
   },
   {
-    id: "addictions",
+    id: "addictions_concurrent",
     label: "Addictions & Concurrent Disorders",
     aliases: ["addictions", "substance use", "concurrent disorders"],
-    // filter: "environment",
+    filter: "specialty",
+    scope: SPEC,
   },
   {
-    id: "paediatric",
+    id: "paediatric_domain",
     label: "Paediatric",
-    aliases: ["paediatrics", "pediatrics", "pediatric"],
+    aliases: ["pediatrics", "pediatric"],
     descendants: ["paediatrics"],
-    // filter: "environment",
   },
   {
     id: "paediatrics",
     label: "Paediatrics",
     aliases: [],
-    filter: "environment",
+    filter: "specialty",
+    scope: SPEC,
   },
 
   // Wound care and ostomy are related, not equivalent: no cross-expansion
@@ -330,70 +572,62 @@ const TERMINOLOGY: Concept[] = [
     label: "NSWOC",
     aliases: ["wound ostomy continence nurse"],
   },
+  {
+    id: "wound_care_certification",
+    label: "Wound Care Certification",
+    aliases: ["wound certification"],
+  },
 
   {
     id: "msw",
     label: "Master of Social Work",
-    aliases: ["msw", "masters of social work"],
+    aliases: ["msw", "masters of social work", "master s of social work"],
   },
   { id: "ic", label: "Independent Contractor", aliases: ["ic"] },
   {
     id: "immediate",
     label: "Immediate",
-    aliases: ["immediate", "immediately"],
+    aliases: ["immediate", "immediately", "immediate availability"],
     filter: "availability",
   }, // must equal your c.avail option text
 ];
 const BY_ID = new Map(TERMINOLOGY.map((c) => [c.id, c]));
 const BY_PHRASE = new Map<string, Concept[]>();
 TERMINOLOGY.forEach((c) =>
-  [c.label, ...c.aliases].forEach((a) => {
+  [c.label, ...c.aliases, ...(c.strictAliases ?? [])].forEach((a) => {
     const k = normQuery(a);
     BY_PHRASE.set(k, [...(BY_PHRASE.get(k) ?? []), c]);
   }),
 );
+
+/** The exact wordings of a leaf: the ones that resolve to it and nothing broader. */
+const strictPhrases = (c: Concept): Set<string> =>
+  new Set(
+    (c.strictAll
+      ? [c.label, ...c.aliases]
+      : [c.label, ...(c.strictAliases ?? [])]
+    ).map(normQuery),
+  );
+
+/** The leaf a phrase names exactly (environment alias, or specialty label), if any. */
+const leafFor = (phrase: string): Concept | undefined =>
+  BY_PHRASE.get(phrase)?.find((c) => c.scope && strictPhrases(c).has(phrase));
 
 // Alias phrases that contain the word "and" must survive AND-splitting
 const PROTECTED_PHRASES = [...BY_PHRASE.keys()].filter((k) =>
   k.split(" ").includes("and"),
 );
 
-// Regular inflections only (fall/falls/falling, nurse/nursing, therapy/therapies)
-const morph = (t: string): string[] => {
-  const out = new Set([t]);
-  let root = t;
-  if (t.length > 4) {
-    if (t.endsWith("ies")) root = t.slice(0, -3) + "y";
-    else if (t.endsWith("ing")) root = t.slice(0, -3);
-    else if (t.endsWith("ed")) root = t.slice(0, -2);
-    else if (t.endsWith("es")) root = t.slice(0, -2);
-    else if (t.endsWith("s") && !t.endsWith("ss")) root = t.slice(0, -1);
-  }
-  if (root.length < 3) return [...out];
-  [root, root + "s", root + "es", root + "ed", root + "ing"].forEach((v) =>
-    out.add(v),
-  );
-  if (root.endsWith("e")) {
-    const n = root.slice(0, -1);
-    if (n.length >= 3) {
-      out.add(n + "ing");
-      out.add(n + "ed");
-    }
-  } else {
-    out.add(root + "e");
-  }
-  return [...out].filter((v) => v.length >= 3);
-};
-
 /* ------------------------------------------------------------------ *
  * 5. Compile a committed term into one phrase criterion
  * ------------------------------------------------------------------ */
 const CONNECTORS = new Set(["and", "but", "or"]);
 
-interface Variant {
-  text: string;
+interface Variant extends Phrase {
   /** the concept whose wording this variant is (umbrella or descendant) */
   conceptId?: string;
+  /** structured leaf: only this source field can satisfy it */
+  scope?: string;
 }
 interface Compiled {
   term: string;
@@ -401,6 +635,16 @@ interface Compiled {
 }
 
 const variantsFor = (phrase: string): Variant[] => {
+  // An exact leaf (environment, specialty label) is itself: no umbrella, no sibling wording,
+  // and only its own structured field counts.
+  const leaf = leafFor(phrase);
+  if (leaf) {
+    return [...strictPhrases(leaf)].map((text) => ({
+      ...preparePhrase(text),
+      conceptId: leaf.id,
+      scope: leaf.scope,
+    }));
+  }
   const map = new Map<string, string | undefined>();
   for (const c of BY_PHRASE.get(phrase) ?? []) {
     [c.label, ...c.aliases].forEach((a) => map.set(normQuery(a), c.id));
@@ -411,9 +655,7 @@ const variantsFor = (phrase: string): Variant[] => {
     }
   }
   if (!map.has(phrase)) map.set(phrase, undefined);
-  if (!phrase.includes(" "))
-    morph(phrase).forEach((v) => !map.has(v) && map.set(v, undefined));
-  return [...map].map(([text, conceptId]) => ({ text, conceptId }));
+  return [...map].map(([text, conceptId]) => ({ ...preparePhrase(text), conceptId }));
 };
 
 const compileCache = new Map<string, Compiled | null>();
@@ -428,7 +670,7 @@ const compile = (raw: string): Compiled | null => {
   if (!words.length || (words.length === 1 && CONNECTORS.has(words[0]))) {
     result = null; // contributes no constraint
   } else if (quoted) {
-    result = { term: raw, variants: [{ text: phrase }] }; // literal: no expansion
+    result = { term: raw, variants: [preparePhrase(phrase, true)] }; // literal: no expansion, no inflection
   } else {
     result = { term: raw, variants: variantsFor(phrase) };
   }
@@ -446,6 +688,7 @@ interface Source {
   key: string;
   raw: string;
   text: string; // folded, same length as raw
+  tokens: Tok[];
 }
 
 const toLeaves = (v: unknown): string[] => {
@@ -462,7 +705,10 @@ const getSources = (c: Candidate): Source[] => {
   let s = sourceCache.get(c);
   if (!s) {
     s = SEARCH_FIELDS.flatMap((f) =>
-      toLeaves(f.get(c)).map((raw) => ({ key: f.key, raw, text: fold(raw) })),
+      toLeaves(f.get(c)).map((raw) => {
+        const text = fold(raw);
+        return { key: f.key, raw, text, tokens: tokenize(text, raw) };
+      }),
     );
     sourceCache.set(c, s);
   }
@@ -474,14 +720,14 @@ const getSources = (c: Candidate): Source[] => {
  * ------------------------------------------------------------------ */
 function* hits(sources: Source[], term: Compiled) {
   for (const v of term.variants) {
-    const re = phraseRegex(v.text);
     for (const src of sources) {
-      for (const m of src.text.matchAll(re)) {
-        if (!isNegated(src.text, m.index!)) {
+      if (v.scope && src.key !== v.scope) continue;
+      for (const m of phraseHits(src.tokens, src.raw, v)) {
+        if (!isNegated(src.text, m.start)) {
           yield {
             src,
-            start: m.index!,
-            len: m[0].length,
+            start: m.start,
+            len: m.end - m.start,
             conceptId: v.conceptId,
           };
         }
@@ -550,14 +796,16 @@ export function findCandidateMatches(
 export function findHighlightRanges(
   text: string,
   terms: string[],
+  /** The field `text` belongs to; lets structured terms highlight only their own field */
+  key?: string,
 ): [number, number][] {
   const folded = fold(text);
+  const tokens = tokenize(folded, text);
   const ranges: [number, number][] = [];
   for (const t of compileAll(terms)) {
     for (const v of t.variants) {
-      for (const m of folded.matchAll(phraseRegex(v.text))) {
-        ranges.push([m.index!, m.index! + m[0].length]);
-      }
+      if (key && v.scope && v.scope !== key) continue;
+      for (const m of phraseHits(tokens, text, v)) ranges.push([m.start, m.end]);
     }
   }
   ranges.sort((a, b) => a[0] - b[0]);
@@ -644,10 +892,12 @@ export function suggestBroadening(
 export interface ResolvedTerm {
   /** Chip text */
   label: string;
-  /** Filter group this chip is promoted into (only professions for now) */
-  filter?: keyof Filters;
-  /** Value stored in that filter group (the profession code) */
+  /** Filter group this chip is promoted into (profession, environment, specialty, availability) */
+  filter?: keyof Filters | "specialty";
+  /** Value stored in that filter group */
   value?: string;
+  /** Ambiguous wording ("PT"): show the prompt and apply nothing until one option is chosen */
+  clarify?: { prompt: string; options: ResolvedTerm[] };
 }
 
 // "np" / "nurse practitioner" -> { code: "NP", name: "Nurse Practitioner" }
@@ -657,89 +907,116 @@ PROFESSIONS.forEach(([code, name]) => {
   PROFESSION_BY_PHRASE.set(normQuery(code), entry);
   PROFESSION_BY_PHRASE.set(normQuery(name), entry);
 });
+// "Physical Therapist" is a plain alias of Physiotherapist (no prompt)
+const PHYSIO = PROFESSION_BY_PHRASE.get("pt");
+if (PHYSIO) PROFESSION_BY_PHRASE.set("physical therapist", PHYSIO);
+// RN(EC) is the Nurse Practitioner designation
+const NP = PROFESSION_BY_PHRASE.get("np");
+if (NP) {
+  PROFESSION_BY_PHRASE.set(normQuery("RN(EC)"), NP);
+  PROFESSION_BY_PHRASE.set(normQuery("Registered Nurse (Extended Class)"), NP);
+}
 
-// tolerates plurals: "nurse practitioners", "rns"
-const professionFor = (phrase: string) =>
-  PROFESSION_BY_PHRASE.get(phrase) ??
-  PROFESSION_BY_PHRASE.get(phrase.replace(/s$/, "")) ??
-  PROFESSION_BY_PHRASE.get(phrase.replace(/es$/, ""));
+// Exact names and codes only. Word forms never promote ("nurses", "rns" stay keywords).
+const professionFor = (phrase: string) => PROFESSION_BY_PHRASE.get(phrase);
 
-/** A folded phrase -> profession (promoted) or terminology label (search-only). */
-const resolvePhrase = (phrase: string): ResolvedTerm | undefined => {
+/** "PT" alone is ambiguous. Only this exact abbreviation prompts. */
+const PT_PROMPT: ResolvedTerm = {
+  label: "PT",
+  clarify: {
+    prompt: "PT could mean…",
+    options: [
+      {
+        label: PHYSIO?.name ?? "Physiotherapist",
+        filter: "profession",
+        value: PHYSIO?.code ?? "PT",
+      },
+      { label: "Part-time", filter: "empType" as keyof Filters, value: "Part-Time" },
+      { label: "PT" }, // keep as a plain keyword
+    ],
+  },
+};
+
+const fromConcept = (c: Concept, asLeaf: boolean): ResolvedTerm =>
+  asLeaf && c.filter
+    ? { label: c.label, filter: c.filter, value: c.value ?? c.label }
+    : { label: c.label };
+
+/**
+ * A whole folded phrase -> profession, PT prompt, environment/specialty leaf (promoted),
+ * or terminology label (search-only). Specialty aliases and broad terms never promote.
+ */
+const resolvePhrase = (phrase: string, text?: string): ResolvedTerm | undefined => {
+  if (phrase === "pt") return PT_PROMPT;
+
   const p = professionFor(phrase);
   if (p) return { label: p.name, filter: "profession", value: p.code };
 
-  const c = BY_PHRASE.get(phrase)?.[0];
-  if (c)
-    return {
-      label: c.label,
-      filter: c.filter,
-      value: c.filter ? c.label : undefined,
-    };
+  const leaf = leafFor(phrase);
+  if (leaf) return fromConcept(leaf, true);
 
+  const c = BY_PHRASE.get(phrase)?.[0];
+  if (c) {
+    // availability keeps its own promotion; every other filtered concept reached by an
+    // alias stays keyword-scope
+    // A broad alias of a structured leaf ("obstetrics" -> Obstetrics & Labour) keeps the
+    // wording the user typed: the leaf's own label would search that one field only and
+    // lose profiles that mention the word elsewhere (RN-511 "High-Risk Obstetrics").
+    if (c.scope && text) return { label: text };
+    return fromConcept(c, c.filter === "availability");
+  }
   return undefined;
 };
 
-/** One committed chip -> its label and, for professions, the filter it feeds. */
+/** One committed chip -> its label and, for approved terms, the filter it feeds. */
 export function resolveTerm(raw: string): ResolvedTerm {
   const t = raw.trim();
   const quoted = t.length > 2 && t.startsWith('"') && t.endsWith('"');
   if (quoted) return { label: raw };
-  return resolvePhrase(normQuery(t)) ?? { label: raw };
+  return resolvePhrase(normQuery(t), t) ?? { label: raw };
 }
 
 export const termLabel = (raw: string) => resolveTerm(raw).label;
 
 /**
- * Splits a typed query into chips, longest phrase first:
- *   "mental health np" -> [Mental Health, Nurse Practitioner (profession)]
- *   "palliative RN dementia" -> [Palliative Care, Registered Nurse (profession), dementia]
- * Unrecognised words stay together as one keyword chip. Quoted input is never split.
+ * Turns a committed entry into chips. The whole entry is checked literally first:
+ *   "Mental Health First Aid", "wound care certification", "residential hospice"
+ *   stay one chip, and an approved whole phrase ("Perioperative & OR") is one chip.
+ * Only when every word of the entry belongs to approved terms is it split, longest phrase
+ * first: "mental health np" -> [Mental Health, Nurse Practitioner (profession)].
+ * Anything else stays together as one keyword chip. Quoted input is never split.
  */
 export function parseQuery(raw: string): ResolvedTerm[] {
   const text = raw.trim();
   if (!text) return [];
   if (text.includes('"')) return [resolveTerm(text)];
 
+  const whole = resolvePhrase(normQuery(text), text);
+  if (whole) return [whole];
+
   const tokens = text.split(/\s+/);
   const folded = tokens.map(normQuery);
   const MAX_WORDS = 5;
 
   const out: ResolvedTerm[] = [];
-  let rest: string[] = [];
-
-  const flush = () => {
-    // drop dangling connectors: "mental health and np" must not leave an "and" chip
-    while (rest.length && CONNECTORS.has(rest[0].toLowerCase())) rest.shift();
-    while (rest.length && CONNECTORS.has(rest[rest.length - 1].toLowerCase()))
-      rest.pop();
-    if (rest.length) out.push({ label: rest.join(" ") });
-    rest = [];
-  };
-
   for (let i = 0; i < tokens.length; ) {
+    if (CONNECTORS.has(folded[i])) {
+      i++; // "mental health and np": the connector is not a chip
+      continue;
+    }
     let hit: ResolvedTerm | undefined;
     let len = 0;
     for (let n = Math.min(MAX_WORDS, tokens.length - i); n >= 1 && !hit; n--) {
-      const phrase = folded
-        .slice(i, i + n)
-        .filter(Boolean)
-        .join(" ");
-      const found = phrase ? resolvePhrase(phrase) : undefined;
+      const phrase = folded.slice(i, i + n).filter(Boolean).join(" ");
+      const found = phrase ? resolvePhrase(phrase, tokens.slice(i, i + n).join(" ")) : undefined;
       if (found) {
         hit = found;
         len = n;
       }
     }
-    if (hit) {
-      flush();
-      out.push(hit);
-      i += len;
-    } else {
-      rest.push(tokens[i]);
-      i++;
-    }
+    if (!hit) return [{ label: text }]; // not entirely approved terms: one literal chip
+    out.push(hit);
+    i += len;
   }
-  flush();
   return out;
 }
