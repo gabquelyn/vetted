@@ -47,8 +47,6 @@ export type UrgentRequest = {
 const randomBetween = (min: number, max: number) =>
   Math.round(min + Math.random() * (max - min));
 
-const shuffle = <T,>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
-
 const asText = (v: unknown) =>
   Array.isArray(v) ? v.join(", ") : String(v ?? "").trim();
 
@@ -88,8 +86,8 @@ const getPostLocation = (values: unknown): string =>
 
 /**
  * DEMO ONLY: picks which candidates will "respond" to a request.
- * Every request draws from the full pool, so an identical request
- * can be answered by the same candidates as an earlier one.
+ * Eligible = own profession and within 25 km, or listed relocation city.
+ * Responders = the 3 newest confirmed, so identical requests give identical results.
  */
 function planDemoResponders(values: PlacementRequestValues): {
   eligibleCount: number;
@@ -101,8 +99,10 @@ function planDemoResponders(values: PlacementRequestValues): {
     (c) =>
       c.discoverable !== false &&
       c.title === values.profession &&
-      locationMatch(c, location, MATCH_RADIUS_KM) === "local",
-    // ||  c.relocation == "Open to relocation"),
+      // Within the 25 km radius, or confirmed willing to relocate to the request's city
+      // (relocationReach). Not the generic "Open to relocation" answer, and never the
+      // travel flag.
+      locationMatch(c, location, MATCH_RADIUS_KM) !== null,
   );
 
   // Dedupe by id in case the data contains the same candidate twice
@@ -110,7 +110,13 @@ function planDemoResponders(values: PlacementRequestValues): {
 
   return {
     eligibleCount: unique.length,
-    plannedIds: shuffle(unique)
+    // Deterministic: the same request always gets the same responders.
+    // Newest confirmed first (fewest days since confirmation), id as the tie-break.
+    plannedIds: [...unique]
+      .sort(
+        (a, b) =>
+          a.confirmedDays - b.confirmedDays || a.id.localeCompare(b.id),
+      )
       .slice(0, RESPONSES_PER_REQUEST)
       .map((c) => c.id),
   };
