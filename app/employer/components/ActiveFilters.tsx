@@ -115,9 +115,9 @@ export default function ActiveFilters({
             className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]"
           >
             {chip.key == "confirmed"
-              ? `Confirmed ≤ ${chip.value}d`
+              ? `Confirmed ≤${chip.value}d`
               : chip.key == "openTo"
-                ? `${chip.key}: ${chip.value}`
+                ? `Open to: ${chip.value}`
                 : chip.label}
             <button
               type="button"

@@ -478,7 +478,7 @@ const TERMINOLOGY: Concept[] = [
   },
   {
     id: "cardiac_domain",
-    label: "Cardiac",
+    label: "cardiac",
     aliases: ["cardiovascular"],
     filter: "specialty",
     descendants: ["cardiovascular_cardiac"],

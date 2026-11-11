@@ -8,6 +8,7 @@ import Chip from "./Chip";
 import Highlight from "./Highlight";
 import EducationRecords from "./EduRecords";
 import Divider from "./Divider";
+import { locationMatch } from "@/app/utils/geo";
 
 // Show the "scroll to bottom" button only when more than this many px remain
 const SCROLL_BUTTON_THRESHOLD = 40;
@@ -105,6 +106,8 @@ export default function ProfileView({
   terms,
   allRevealed,
   backLabel = "Back to results",
+  location = "",
+  radius = 25,
   stale = false,
   notice,
   onClearChanges,
@@ -140,6 +143,9 @@ export default function ProfileView({
   allRevealed?: boolean;
   /** Label of the back button, named after the surface it returns to */
   backLabel?: string;
+  /** Active Location / Radius search, used to say when a profile matches only through relocation */
+  location?: string;
+  radius?: number;
   /** The open profile no longer matches (zero results): keep it open, marked as a stale reference */
   stale?: boolean;
   /** Shown at the top of the profile, e.g. when the profile shown was switched after a search change */
@@ -282,6 +288,9 @@ export default function ProfileView({
   const revealedPeople = new Set(results.map((c) => c.personId || c.id)).size;
   const reloc = candidate.relocation as unknown;
   const relocOpen = !!reloc && reloc !== "Not open";
+  // Outside the radius, but candidate-confirmed willing to relocate to the searched city
+  const viaRelocation =
+    !!location.trim() && locationMatch(candidate, location, radius) === "relocation";
 
   const fitRows: [string, React.ReactNode][] = (
     [
@@ -348,11 +357,10 @@ export default function ProfileView({
       [
         "Relocation",
         relocOpen ? (
-          typeof reloc === "string" ? (
-            reloc
-          ) : (
-            "Open"
-          )
+          <>
+            {typeof reloc === "string" ? reloc : "Open"}
+            {viaRelocation && " · Matches via relocation"}
+          </>
         ) : (
           <Muted>Not open</Muted>
         ),
