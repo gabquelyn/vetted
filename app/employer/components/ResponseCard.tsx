@@ -82,7 +82,9 @@ export default function ResponseCard({
 }) {
   const environment = candidate.env?.[0];
   const intro = introduced.includes(candidate.id);
-  const isRevealed = revealed.includes(candidate.id);
+  // Registry stores reveals by person (personId), so a linked designation
+  // (e.g. RN-042 / MOA-233) is revealed as soon as the person is.
+  const isRevealed = revealed.includes(candidate.personId || candidate.id);
   // Coverage comes from the request; the setting (environment) comes from the profile
   const coverage = requestedShifts.length
     ? requestedShifts.map((s) => coverageLabel(s)).join(" / ")
@@ -112,6 +114,12 @@ export default function ResponseCard({
           <p className="mt-0.5 text-[.6rem] uppercase tracking-wider text-ink-soft">
             {candidate.id}
           </p>
+          {isRevealed && (
+            <p className="mt-1.5 text-sm font-semibold text-ink">
+              {candidate.reveal.name}
+            </p>
+          )}
+
           <p className="mt-2 text-ink-mid">
             {[environment, coverage]
               .filter(Boolean)
@@ -158,10 +166,10 @@ export default function ResponseCard({
           Revealed ✓
         </p>
       ) : (
-        onReveal && (
+        !candidate.specialist && (
           <button
             type="button"
-            onClick={() => onReveal(candidate)}
+            onClick={() => onReveal?.(candidate)}
             className="cursor-pointer rounded-[7px] bg-forest py-1.5 text-center text-[11px] font-bold text-white transition-colors hover:bg-forest-dark"
           >
             Reveal →
