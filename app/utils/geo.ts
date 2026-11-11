@@ -30,8 +30,18 @@ export const CITY_COORDS: Record<string, LatLng> = {
   "Oshawa, ON": [43.8971, -78.8658],
   "Napanee, ON": [44.2484, -76.9511],
   "Belleville, ON": [44.1628, -77.3832],
-  "Scarborough, ON": [43.7731, -79.2577],
 };
+
+/** Cities listed in the location dropdown while the box is empty. Typing searches all of CITY_COORDS. */
+export const CITY_SELECT = [
+  "Barrie, ON",
+  "Brampton, ON",
+  "Burlington, ON",
+  "Cornwall, ON",
+  "Goderich, ON",
+  "Hamilton, ON",
+  "Kingston, ON",
+];
 
 export const haversineKm = (a: LatLng, b: LatLng) => {
   const rad = (d: number) => (d * Math.PI) / 180;
