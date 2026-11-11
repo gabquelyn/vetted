@@ -101,8 +101,8 @@ function planDemoResponders(values: PlacementRequestValues): {
     (c) =>
       c.discoverable !== false &&
       c.title === values.profession &&
-      (locationMatch(c, location, MATCH_RADIUS_KM) === "local" ||
-        c.relocation == "Open to relocation"),
+      locationMatch(c, location, MATCH_RADIUS_KM) === "local",
+    // ||  c.relocation == "Open to relocation"),
   );
 
   // Dedupe by id in case the data contains the same candidate twice
@@ -141,10 +141,9 @@ const URGENT_TIMERS = new Map<string, ReturnType<typeof setTimeout>[]>();
 function sortResponses(responses: Response[]): Response[] {
   const rank = (r: Response) => (r.locationMatch === "relocation" ? 1 : 0);
   const days = (r: Response) =>
-    CANDIDATES_BY_ID.get(r.candidateId)?.confirmedDays ?? Number.MAX_SAFE_INTEGER;
-  return [...responses].sort(
-    (a, b) => rank(a) - rank(b) || days(a) - days(b),
-  );
+    CANDIDATES_BY_ID.get(r.candidateId)?.confirmedDays ??
+    Number.MAX_SAFE_INTEGER;
+  return [...responses].sort((a, b) => rank(a) - rank(b) || days(a) - days(b));
 }
 
 function makeDemoResponse(
