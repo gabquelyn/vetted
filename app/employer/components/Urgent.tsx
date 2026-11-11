@@ -152,10 +152,22 @@ function sortResponses(responses: Response[]): Response[] {
   return [...responses].sort((a, b) => rank(a) - rank(b) || days(a) - days(b));
 }
 
+/** Small stable string hash (FNV-1a), so demo values never change between runs. */
+function stableHash(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
 function makeDemoResponse(
   candidate: Candidate,
   postLocation: string,
+  requestedStart: string,
 ): Response {
+  const seed = stableHash(`${candidate.id}|${requestedStart}`);
   return {
     // Not within the request radius = responding because they're open to relocating
     locationMatch:
@@ -165,13 +177,12 @@ function makeDemoResponse(
     responseId: uuid(),
     candidateId: candidate.id,
     respondedAt: new Date().toISOString(),
-    // Random per response; belongs to this request only, profile availability is untouched
-    earliestStart:
-      START_TIMINGS[Math.floor(Math.random() * START_TIMINGS.length)],
-    // Real straight-line distance; random fallback only if a city isn't in CITY_COORDS
+    // Deterministic per candidate and requested start, so identical requests give
+    // identical cards. Belongs to this request only; profile availability is untouched.
+    earliestStart: START_TIMINGS[seed % START_TIMINGS.length],
+    // Real straight-line distance; stable fallback only if a city isn't in CITY_COORDS
     distanceKm:
-      distanceBetweenCitiesKm(postLocation, candidate.loc) ||
-      randomBetween(2, 45),
+      distanceBetweenCitiesKm(postLocation, candidate.loc) || 2 + (seed % 44),
   };
 }
 
@@ -247,6 +258,7 @@ export default function Urgent({
     requestId: string,
     candidateIds: string[],
     postLocation: string,
+    requestedStart: string,
   ) => {
     let delay = 0;
     const handles = candidateIds.map((candidateId, i) => {
@@ -267,7 +279,7 @@ export default function Urgent({
               : {
                   ...r,
                   responses: [
-                    makeDemoResponse(candidate, postLocation),
+                    makeDemoResponse(candidate, postLocation, requestedStart),
                     ...r.responses,
                   ],
                 },
@@ -294,7 +306,12 @@ export default function Urgent({
         ),
       );
       setSelectedId(editing.id);
-      scheduleResponses(editing.id, plannedIds, getPostLocation(values));
+      scheduleResponses(
+        editing.id,
+        plannedIds,
+        getPostLocation(values),
+        asText(values.startTiming),
+      );
       setOpen(false);
       setEditingId(null);
       return toast.success("Urgent request updated");
@@ -319,7 +336,12 @@ export default function Urgent({
       ...prev,
     ]);
     setSelectedId(id);
-    scheduleResponses(id, plannedIds, getPostLocation(values));
+    scheduleResponses(
+      id,
+      plannedIds,
+      getPostLocation(values),
+      asText(values.startTiming),
+    );
     setOpen(false);
     toast.success("Urgent request created");
   };
