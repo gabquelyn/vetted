@@ -1,4 +1,3 @@
-// app/components/Overlay.tsx
 "use client";
 
 import React, { useEffect, useSyncExternalStore } from "react";
@@ -18,6 +17,8 @@ type OverlayProps = {
   open: boolean;
   onClose: () => void;
   title?: string;
+  /** Optional line under the title, e.g. "2 professionals hidden from your results" */
+  subtitle?: string;
   children: React.ReactNode;
   className?: string;
 };
@@ -26,6 +27,7 @@ export default function Overlay({
   open,
   onClose,
   title,
+  subtitle,
   children,
   className = "",
 }: OverlayProps) {
@@ -81,7 +83,12 @@ export default function Overlay({
             className={`absolute right-0 top-0 flex h-full w-full flex-col bg-cream shadow-2xl sm:w-[85%] md:w-[37%] lg:w-[27%] xl:w-[22%] ${className}`}
           >
             <header className="flex items-center justify-between border-b border-ash px-5 py-4">
-              <p className="text-lg text-ink font-serif">{title}</p>
+              <div className="min-w-0">
+                <p className="text-lg text-ink font-serif">{title}</p>
+                {subtitle && (
+                  <p className="mt-0.5 text-xs text-ink-soft">{subtitle}</p>
+                )}
+              </div>
               <button
                 type="button"
                 aria-label="Close"

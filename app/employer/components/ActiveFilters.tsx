@@ -35,7 +35,15 @@ const ORDER: FilterKey[] = [
 
 const VALUE_LABELS: Partial<Record<FilterKey, Record<string, string>>> = {
   profession: Object.fromEntries(PROFESSIONS.map(([v, l]) => [v, l])),
-  mobility: Object.fromEntries(MOBILITY.map(([v, l]) => [v, l])),
+  mobility: {
+    ...Object.fromEntries(MOBILITY.map(([v, l]) => [v, l])),
+    // chip wording from the reference HTML
+    vehicle: "Own vehicle",
+    licence: "Driver's licence",
+    rural: "Open to rural roles",
+    travel: "Open to travel / fly-in roles",
+    relocation: "Open to relocation",
+  },
   profile: Object.fromEntries(PROFILE.map(([v, l]) => [v, l])),
   environment: Object.fromEntries(ENVIRONMENT.map((e) => [e, e])),
   availability: Object.fromEntries(AVAILABILITY.map((e) => [e, e])),

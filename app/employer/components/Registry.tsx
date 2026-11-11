@@ -59,7 +59,7 @@ export default function Registry({
   // View to return to when the open profile is closed (set when a profile is opened from Urgent)
   const [returnTo, setReturnTo] = useState<ActiveView | null>(null);
   const [result, setResults] = useState("20");
-    const [viewAll, setViewAll] = useState(false);
+  const [viewAll, setViewAll] = useState(false);
   const [sort, setSort] = useState<"new" | "most">("new");
   const [query, setQuery] = useState("");
   const [activeView, setActiveView] = useState<ActiveView>("registry");
@@ -126,7 +126,9 @@ export default function Registry({
   // Where the open profile came from. Only profiles opened from the Registry results are
   // reconciled with the search; ones opened from Saved / Hidden / Recents / Introductions /
   // Compare / Urgent are inspected on their own.
-  const [profileCtx, setProfileCtx] = useState<"registry" | "other">("registry");
+  const [profileCtx, setProfileCtx] = useState<"registry" | "other">(
+    "registry",
+  );
   const openOther = (id: string, from?: ActiveView) => {
     setProfileCtx("other");
     if (from) setReturnTo(from); // Back returns to that surface (and is labelled after it)
@@ -417,6 +419,12 @@ export default function Registry({
     [revealedProffesionals, wsTerms, wsLocation, wsRadius],
   );
 
+  const plural = (n: number, one: string, many = `${one}s`) =>
+    n === 1 ? one : many;
+  const emptyNote = (text: string) => (
+    <div className="text-xs text-ink-soft">{text}</div>
+  );
+
   const openRevealedWorkspace = () => {
     const first = revealedProffesionals[0];
     if (!first) return;
@@ -511,7 +519,10 @@ export default function Registry({
   );
   // Adjusted while rendering (no effect): the notice is tied to the profile it was raised for,
   // so it disappears as soon as the employer opens a different one.
-  const [profileNotice, setProfileNotice] = useState<{ id: string; text: string } | null>(null);
+  const [profileNotice, setProfileNotice] = useState<{
+    id: string;
+    text: string;
+  } | null>(null);
   if (
     viewing &&
     !viewAll &&
@@ -541,14 +552,15 @@ export default function Registry({
   // Label for the profile's back button: names the surface Back returns to
   const backLabel = viewAll
     ? "Back to Revealed"
-    : ({
-        requests: "Back to Introductions",
-        saved: "Back to Saved Candidates",
-        hidden: "Back to Hidden",
-        recent: "Back to Recently Viewed",
-        urgent: "Back to Urgent",
-      } as Partial<Record<ActiveView, string>>)[returnTo ?? "registry"] ??
-      "Back to results";
+    : ((
+        {
+          requests: "Back to Introductions",
+          saved: "Back to Saved Candidates",
+          hidden: "Back to Hidden",
+          recent: "Back to Recently Viewed",
+          urgent: "Back to Urgent",
+        } as Partial<Record<ActiveView, string>>
+      )[returnTo ?? "registry"] ?? "Back to results");
 
   const goToPage = (p: number) => {
     setPage(p);
@@ -561,7 +573,11 @@ export default function Registry({
       filters={filters}
       setFilters={setFilters}
       onClear={clearFilters}
-      location={{ radius, location, resolved: !!resolved }}
+      location={{
+        radius,
+        location: resolved ?? location,
+        resolved: !!resolved,
+      }}
       onSave={() => {
         toast.info("Search saved");
         setRecentSearch((prev) => [
@@ -578,9 +594,7 @@ export default function Registry({
         setToggle(false);
       }}
       terms={terms}
-      removeTerm={(term: string) =>
-        setTerms(terms.filter((t) => t !== term))
-      }
+      removeTerm={(term: string) => setTerms(terms.filter((t) => t !== term))}
       removeLoc={() => {
         setLocation("");
         setResolved(null);
@@ -663,6 +677,11 @@ export default function Registry({
           open={activeView == "searches"}
           onClose={() => setActiveView("registry")}
           title="Saved Searches"
+          subtitle={
+            recentSearch.length
+              ? `${recentSearch.length} saved ${plural(recentSearch.length, "search", "searches")}`
+              : undefined
+          }
         >
           <p className="text-[.6rem] uppercase text-ink-soft leading-1 mb-2">
             Saved searches
@@ -694,6 +713,8 @@ export default function Registry({
           <p className="text-[.6rem] uppercase text-ink-soft leading-1 my-2 mt-4">
             Recent history
           </p>
+          {sortedHistory.length == 0 &&
+            emptyNote("Your recent committed searches will appear here.")}
           <div className="flex flex-col gap-1">
             {sortedHistory.map((search) => (
               <SearchItem
@@ -717,10 +738,16 @@ export default function Registry({
           open={activeView == "hidden"}
           onClose={() => setActiveView("registry")}
           title="Hidden"
+          subtitle={
+            hidden.length
+              ? `${hidden.length} ${plural(hidden.length, "professional")} hidden from your results`
+              : undefined
+          }
         >
-          {hidden.length == 0 && (
-            <div className="text-xs text-ink-soft">Empty</div>
-          )}
+          {hidden.length == 0 &&
+            emptyNote(
+              "Candidates you hide from the Registry will appear here so you can restore them anytime.",
+            )}
 
           <div className="flex flex-col gap-1">
             {hidden.map((s) => (
@@ -751,7 +778,16 @@ export default function Registry({
           open={activeView == "requests"}
           onClose={() => setActiveView("registry")}
           title="Introductions"
+          subtitle={
+            introduced.length
+              ? `${introduced.length} ${plural(introduced.length, "introduction request")} pending`
+              : undefined
+          }
         >
+          {introduced.length == 0 &&
+            emptyNote(
+              "Specialist introduction requests you submit will appear here while pending.",
+            )}
           <div className="flex flex-col gap-1">
             {introduced.map((c) => (
               <Preview
@@ -776,9 +812,17 @@ export default function Registry({
         <Overlay
           open={activeView == "saved"}
           onClose={() => setActiveView("registry")}
-          title="Saved Professionals"
+          title="Saved Candidates"
+          subtitle={
+            saved.length
+              ? `${saved.length} ${plural(saved.length, "professional")} saved this session`
+              : undefined
+          }
         >
-          {saved.length == 0 && <p className="text-xs text-ink-mid">Empty</p>}
+          {saved.length == 0 &&
+            emptyNote(
+              "Save professionals from the Registry to revisit them here.",
+            )}
 
           <div className="min-h-0 space-y-2 overflow-y-auto">
             {saved.map((s) => (
@@ -806,8 +850,17 @@ export default function Registry({
         <Overlay
           open={activeView == "recent"}
           onClose={() => setActiveView("registry")}
-          title="Recents"
+          title="Recently Viewed"
+          subtitle={
+            recents.length
+              ? `${recents.length} ${plural(recents.length, "professional")} viewed this session`
+              : undefined
+          }
         >
+          {recents.length == 0 &&
+            emptyNote(
+              "Professionals you open will appear here for quick return.",
+            )}
           <div className="min-h-0 space-y-2 overflow-y-auto">
             {recents.map((c) => (
               <Preview
@@ -833,7 +886,16 @@ export default function Registry({
           open={activeView == "reveals"}
           onClose={() => setActiveView("registry")}
           title="Revealed Professionals"
+          subtitle={
+            revealedCount
+              ? `${revealedCount} ${plural(revealedCount, "professional")} revealed this session`
+              : undefined
+          }
         >
+          {reveals.length == 0 &&
+            emptyNote(
+              "Reveal a professional's contact information to see them organized here.",
+            )}
           <div className="pb-3 pt-1">
             {reveals.length > 0 && (
               <button
@@ -951,13 +1013,17 @@ export default function Registry({
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
           {!viewing && activeView == "registry" && (
             <p className="text-xs py-3 text-ink-soft px-8 lg:px-12 font-semibold">
-              {data.length} {data.length == 0 ? "results" : "professionals"}
+              {data.length}{" "}
+              {data.length == 0
+                ? "matches"
+                : `professional${data.length > 1 ? "s" : ""}`}
             </p>
           )}
 
           {viewing && viewAll && (
             <p className="px-8 py-3 text-xs font-semibold text-ink-soft lg:px-12">
-              {revealedCount} revealed {revealedCount === 1 ? "person" : "people"}
+              {revealedCount} revealed{" "}
+              {revealedCount === 1 ? "person" : "people"}
               {wsResults.length !== revealedProffesionals.length &&
                 ` · ${wsResults.length} shown`}
             </p>
@@ -974,65 +1040,71 @@ export default function Registry({
                     </div>
                   )}
                   <div className="min-h-0 flex-1">
-                <ProfileView
-                  viewing={viewing}
-                  closed={!revealing}
-                  results={
-                    viewAll ? wsResults : pageResults.slice(0, +result)
-                  }
-                  activeView={activeView}
-                  setView={(id) => {
-                    setProfileCtx("registry");
-                    setViewing(id);
-                  }}
-                  onOpenSibling={(c) => openOther(c.id)}
-                  stale={profileStale}
-                  notice={profileNotice?.id === viewing ? profileNotice.text : undefined}
-                  onClearChanges={viewAll ? clearWsSearch : clearFilters}
-                  emptyMessage={
-                    viewAll
-                      ? "No revealed professionals match this search."
-                      : "No professionals match your current search."
-                  }
-                  staleMessage={
-                    viewAll
-                      ? "This professional no longer matches this search."
-                      : "This professional no longer matches your current search."
-                  }
-                  clearLabel={viewAll ? "Clear search →" : "Clear recent changes →"}
-                  onCompare={(id) => onCompare(id)}
-                  onSave={(id) => onSave(id)}
-                  compare={compare}
-                  saved={saved}
-                  allRevealed={viewAll}
-                  backLabel={backLabel}
-                  onClose={
-                    viewAll
-                      ? () => {
-                          setViewing("");
-                          setViewAll(false);
-                          setActiveView("reveals");
-                        }
-                      : () => {
-                          setViewing("");
-                          if (returnTo) {
-                            setActiveView(returnTo);
-                            setReturnTo(null);
-                          }
-                        }
-                  }
-                  setReveal={(c) => setRevealing(c)}
-                  reveals={reveals}
-                  onIntroduction={(c) => setIntroducing(c)}
-                  introduced={introduced}
-                  onHide={requestHide}
-                  hidden={hidden}
-                  totalPages={totalPages}
-                  total={total}
-                  page={page}
-                  onPageChange={goToPage}
-                  terms={viewAll ? wsTerms : terms}
-                />
+                    <ProfileView
+                      viewing={viewing}
+                      closed={!revealing}
+                      results={
+                        viewAll ? wsResults : pageResults.slice(0, +result)
+                      }
+                      activeView={activeView}
+                      setView={(id) => {
+                        setProfileCtx("registry");
+                        setViewing(id);
+                      }}
+                      onOpenSibling={(c) => openOther(c.id)}
+                      stale={profileStale}
+                      notice={
+                        profileNotice?.id === viewing
+                          ? profileNotice.text
+                          : undefined
+                      }
+                      onClearChanges={viewAll ? clearWsSearch : clearFilters}
+                      emptyMessage={
+                        viewAll
+                          ? "No revealed professionals match this search."
+                          : "No professionals match your current search."
+                      }
+                      staleMessage={
+                        viewAll
+                          ? "This professional no longer matches this search."
+                          : "This professional no longer matches your current search."
+                      }
+                      clearLabel={
+                        viewAll ? "Clear search →" : "Clear recent changes →"
+                      }
+                      onCompare={(id) => onCompare(id)}
+                      onSave={(id) => onSave(id)}
+                      compare={compare}
+                      saved={saved}
+                      allRevealed={viewAll}
+                      backLabel={backLabel}
+                      onClose={
+                        viewAll
+                          ? () => {
+                              setViewing("");
+                              setViewAll(false);
+                              setActiveView("reveals");
+                            }
+                          : () => {
+                              setViewing("");
+                              if (returnTo) {
+                                setActiveView(returnTo);
+                                setReturnTo(null);
+                              }
+                            }
+                      }
+                      setReveal={(c) => setRevealing(c)}
+                      reveals={reveals}
+                      onIntroduction={(c) => setIntroducing(c)}
+                      introduced={introduced}
+                      onHide={requestHide}
+                      hidden={hidden}
+                      totalPages={totalPages}
+                      total={total}
+                      page={page}
+                      onPageChange={goToPage}
+                      terms={viewAll ? wsTerms : terms}
+                    />
                   </div>
                 </div>
               ) : (
@@ -1176,8 +1248,8 @@ export default function Registry({
                               onClick={() => setTerms(broader)}
                               className="my-1 cursor-pointer rounded-full border-none bg-forest-light px-4 py-2 text-[13px] font-bold text-[#16260c] transition-colors hover:bg-[#dcead0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
                             >
-                              Search {broader.map((t) => `“${t}”`).join(", ")} only
-                              ({broaderCount})
+                              Search {broader.map((t) => `“${t}”`).join(", ")}{" "}
+                              only ({broaderCount})
                             </button>
                             <br />
                             <span className="text-xs">

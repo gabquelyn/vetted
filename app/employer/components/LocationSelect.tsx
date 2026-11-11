@@ -8,7 +8,7 @@ import {
   MdClose,
 } from "react-icons/md";
 // Adjust to wherever CITY_COORDS / resolveCity live
-import { CITY_COORDS, resolveCity } from "@/app/utils/geo";
+import { CITY_COORDS, TORONTO_AREAS, resolveCity } from "@/app/utils/geo";
 
 /** Every supported city, A-Z. Driven by CITY_COORDS so there is one source of truth (same as the HTML). */
 export const SUPPORTED_CITIES: string[] = Object.keys(CITY_COORDS).sort((a, b) =>
@@ -96,9 +96,26 @@ export default function LocationSelect({
 
   // Same as the HTML: the sorted supported cities, filtered by what was typed
   // (ignoring case, accents and ", ON"), first 8 only. An empty box shows the first 8.
-  const matches = SUPPORTED_CITIES.filter((city) =>
-    normCity(city).includes(normalizedQuery),
-  );
+  // Ranked: exact match, then names starting with the text, then names containing it,
+  // so "Milton" offers Milton first and Enter picks it. Toronto's areas (Scarborough,
+  // Etobicoke, ...) are never listed themselves; typing one offers "Toronto, ON".
+  const rank = (city: string): number => {
+    const n = normCity(city);
+    if (!normalizedQuery) return 0;
+    if (n === normalizedQuery) return 0;
+    if (n.startsWith(normalizedQuery)) return 1;
+    if (n.includes(normalizedQuery)) return 2;
+    if (
+      city === "Toronto, ON" &&
+      TORONTO_AREAS.some((a) => normCity(a).includes(normalizedQuery))
+    )
+      return 3;
+    return -1;
+  };
+  const matches = SUPPORTED_CITIES.map((city, i) => ({ city, i, r: rank(city) }))
+    .filter((m) => m.r >= 0)
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .map((m) => m.city);
   const suggestions = matches.slice(0, MAX_SUGGESTIONS);
 
   const unsupported = normalizedQuery.length > 0 && matches.length === 0;

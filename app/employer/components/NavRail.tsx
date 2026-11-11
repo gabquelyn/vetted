@@ -87,7 +87,7 @@ const ITEMS: Item[] = [
   {
     id: "requests",
     label: "Introductions",
-    aria: "Introductions — pending Specialist introductions",
+    aria: "Introductions — pending Specialist requests",
     icon: FiUsers,
   },
   {
