@@ -931,7 +931,7 @@ const PT_PROMPT: ResolvedTerm = {
         filter: "profession",
         value: PHYSIO?.code ?? "PT",
       },
-      { label: "Part-time", filter: "empType" as keyof Filters, value: "Part-Time" },
+      { label: "Part-time", filter: "employment" as keyof Filters, value: "Part-Time" },
       { label: "PT" }, // keep as a plain keyword
     ],
   },
