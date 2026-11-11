@@ -11,14 +11,16 @@ import Modal from "./Modal";
 import UrgentTopUp, { TOP_UP_AMOUNT } from "./UrgentTopUp";
 import ResponseCard, { ResponseMeta } from "./ResponseCard";
 import { distanceBetweenCitiesKm, locationMatch } from "@/app/utils/geo";
+import {
+  MATCH_RADIUS_KM,
+  planDemoResponders
+} from "@/app/utils/urgentPlan";
 
 /** Requests included before any (simulated) top-up */
 export const INCLUDED_REQUESTS = 2;
-const RESPONSES_PER_REQUEST = 3;
 const FIRST_RESPONSE_MS = 1500;
 const NEXT_RESPONSE_MS: [number, number] = [10_000, 6000];
 const NEW_BADGE_MS = 30_000;
-const MATCH_RADIUS_KM = 25;
 const DISCLOSURE =
   "These are sample professionals and simulated responses, shown for demonstration only. No real professionals have been contacted.";
 
@@ -83,44 +85,6 @@ const formatTime = (iso: string) =>
 /** The post's location, read from the form values. Change `location` if your field is named differently. */
 const getPostLocation = (values: unknown): string =>
   String((values as { location?: unknown } | null)?.location ?? "").trim();
-
-/**
- * DEMO ONLY: picks which candidates will "respond" to a request.
- * Eligible = own profession and within 25 km, or listed relocation city.
- * Responders = the 3 newest confirmed, so identical requests give identical results.
- */
-function planDemoResponders(values: PlacementRequestValues): {
-  eligibleCount: number;
-  plannedIds: string[];
-} {
-  const location = values.location;
-
-  const matching = FULL_CANDIDATES.filter(
-    (c) =>
-      c.discoverable !== false &&
-      c.title === values.profession &&
-      // Within the 25 km radius, or confirmed willing to relocate to the request's city
-      // (relocationReach). Not the generic "Open to relocation" answer, and never the
-      // travel flag.
-      locationMatch(c, location, MATCH_RADIUS_KM) !== null,
-  );
-
-  // Dedupe by id in case the data contains the same candidate twice
-  const unique = [...new Map(matching.map((c) => [c.id, c])).values()];
-
-  return {
-    eligibleCount: unique.length,
-    // Deterministic: the same request always gets the same responders.
-    // Newest confirmed first (fewest days since confirmation), id as the tie-break.
-    plannedIds: [...unique]
-      .sort(
-        (a, b) =>
-          a.confirmedDays - b.confirmedDays || a.id.localeCompare(b.id),
-      )
-      .slice(0, RESPONSES_PER_REQUEST)
-      .map((c) => c.id),
-  };
-}
 
 const plural = (n: number, one: string, many: string) =>
   `${n} ${n === 1 ? one : many}`;

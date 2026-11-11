@@ -121,9 +121,7 @@ export default function ResponseCard({
           )}
 
           <p className="mt-2 text-ink-mid">
-            {[environment, coverage]
-              .filter(Boolean)
-              .join(" · ")}
+            {[environment, coverage].filter(Boolean).join(" · ")}
           </p>
         </div>
         <div className="mt-0.5 flex flex-col items-end gap-1">
@@ -162,7 +160,10 @@ export default function ResponseCard({
 
       {/* Already revealed: show the state only. The reveal action (and its charge) is never offered again. */}
       {isRevealed ? (
-        <p className="rounded-[7px] border border-forest/30 bg-forest-light py-1.5 text-center text-[11px] font-bold text-forest">
+        <p
+          className="rounded-[7px] border border-forest/30 bg-forest-light py-1.5 text-center text-[11px] font-bold text-forest"
+          onClick={() => onReveal?.(candidate)}
+        >
           Revealed ✓
         </p>
       ) : (

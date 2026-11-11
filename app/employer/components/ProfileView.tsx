@@ -104,6 +104,7 @@ export default function ProfileView({
   totalPages,
   terms,
   allRevealed,
+  backLabel = "Back to results",
   stale = false,
   notice,
   onClearChanges,
@@ -137,6 +138,8 @@ export default function ProfileView({
   page: number;
   terms: string[];
   allRevealed?: boolean;
+  /** Label of the back button, named after the surface it returns to */
+  backLabel?: string;
   /** The open profile no longer matches (zero results): keep it open, marked as a stale reference */
   stale?: boolean;
   /** Shown at the top of the profile, e.g. when the profile shown was switched after a search change */
@@ -275,6 +278,8 @@ export default function ProfileView({
       x.discoverable !== false &&
       !hidden.includes(x.id), // a hidden designation leaves the sibling links
   );
+  // The workspace counts people, not designations (RN-042 + MOA-233 = 1 candidate)
+  const revealedPeople = new Set(results.map((c) => c.personId || c.id)).size;
   const reloc = candidate.relocation as unknown;
   const relocOpen = !!reloc && reloc !== "Not open";
 
@@ -372,7 +377,9 @@ export default function ProfileView({
           {allRevealed ? (
             <div className="px-2 py-1 text-[10px] font-semibold tracking-[.01em] text-ink-soft">
               <p className="font-semibold text-ink text-xs">Revealed Professionals</p>
-              <p>{results.length} candidate</p>
+              <p>
+                {revealedPeople} {revealedPeople === 1 ? "candidate" : "candidates"}
+              </p>
             </div>
           ) : (
             <>
@@ -610,7 +617,7 @@ export default function ProfileView({
                     strokeLinejoin="round"
                   />
                 </svg>
-                Back to results
+                {backLabel}
               </button>
             </div>
 

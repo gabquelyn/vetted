@@ -127,8 +127,9 @@ export default function Registry({
   // reconciled with the search; ones opened from Saved / Hidden / Recents / Introductions /
   // Compare / Urgent are inspected on their own.
   const [profileCtx, setProfileCtx] = useState<"registry" | "other">("registry");
-  const openOther = (id: string) => {
+  const openOther = (id: string, from?: ActiveView) => {
     setProfileCtx("other");
+    if (from) setReturnTo(from); // Back returns to that surface (and is labelled after it)
     setViewing(id);
   };
 
@@ -537,6 +538,18 @@ export default function Registry({
         (wsTerms.length > 0 || wsLocation.trim() !== "")
       : profileCtx === "registry" && sorted.length === 0);
 
+  // Label for the profile's back button: names the surface Back returns to
+  const backLabel = viewAll
+    ? "Back to Revealed"
+    : ({
+        requests: "Back to Introductions",
+        saved: "Back to Saved Candidates",
+        hidden: "Back to Hidden",
+        recent: "Back to Recently Viewed",
+        urgent: "Back to Urgent",
+      } as Partial<Record<ActiveView, string>>)[returnTo ?? "registry"] ??
+      "Back to results";
+
   const goToPage = (p: number) => {
     setPage(p);
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -716,7 +729,7 @@ export default function Registry({
                 c={s}
                 onViewProfile={() => {
                   setActiveView("registry");
-                  openOther(s);
+                  openOther(s, "hidden");
                 }}
                 onReveal={(c) => {
                   if (revealsRemaining > 0) setRevealing(c);
@@ -746,7 +759,7 @@ export default function Registry({
                 c={c}
                 onViewProfile={() => {
                   setActiveView("registry");
-                  openOther(c);
+                  openOther(c, "requests");
                 }}
                 onReveal={(c) => {
                   if (revealsRemaining > 0) setRevealing(c);
@@ -774,7 +787,7 @@ export default function Registry({
                 c={s}
                 onViewProfile={() => {
                   setActiveView("registry");
-                  openOther(s);
+                  openOther(s, "saved");
                 }}
                 onReveal={(c) => {
                   if (revealsRemaining > 0) setRevealing(c);
@@ -802,7 +815,7 @@ export default function Registry({
                 c={c}
                 onViewProfile={() => {
                   setActiveView("registry");
-                  openOther(c);
+                  openOther(c, "recent");
                 }}
                 onReveal={(c) => {
                   if (revealsRemaining > 0) setRevealing(c);
@@ -992,6 +1005,7 @@ export default function Registry({
                   compare={compare}
                   saved={saved}
                   allRevealed={viewAll}
+                  backLabel={backLabel}
                   onClose={
                     viewAll
                       ? () => {
