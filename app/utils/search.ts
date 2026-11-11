@@ -420,10 +420,10 @@ const TERMINOLOGY: Concept[] = [
   {
     id: "emergency_trauma",
     label: "Emergency & Trauma",
-    aliases: [],
+    aliases: ["emergency and trauma"],
     filter: "specialty",
-    scope: SPEC,
-    strictAliases: ["emergency trauma"],
+    
+    // strictAliases: ["emergency trauma"],
   },
 
   {
@@ -441,7 +441,6 @@ const TERMINOLOGY: Concept[] = [
     label: "ICU Critical Care Adult",
     aliases: ["adult icu"],
     filter: "specialty",
-    scope: SPEC,
     strictAliases: ["icu critical care adult"],
   },
   {
@@ -449,7 +448,6 @@ const TERMINOLOGY: Concept[] = [
     label: "ICU Critical Care Paediatric / PICU",
     aliases: ["picu", "paediatric icu", "pediatric icu"],
     filter: "specialty",
-    scope: SPEC,
     strictAliases: ["icu critical care paediatric"],
   },
   {
@@ -457,7 +455,6 @@ const TERMINOLOGY: Concept[] = [
     label: "Neonatal NICU",
     aliases: ["nicu", "neonatal"],
     filter: "specialty",
-    scope: SPEC,
   },
 
   // Med-surg has no structured specialty in the data: keyword scope, whole phrase only
@@ -471,49 +468,47 @@ const TERMINOLOGY: Concept[] = [
     label: "Perioperative & OR",
     aliases: ["operating room", "perioperative"],
     filter: "specialty",
-    scope: SPEC,
   },
   {
     id: "perianesthesia_pacu",
     label: "PeriAnesthesia & PACU",
     aliases: ["pacu", "perianesthesia", "peri anesthesia", "recovery room"],
     filter: "specialty",
-    scope: SPEC,
+    
   },
   {
     id: "cardiac_domain",
     label: "Cardiac",
     aliases: ["cardiovascular"],
+    filter: "specialty",
     descendants: ["cardiovascular_cardiac"],
   },
   {
     id: "cardiovascular_cardiac",
     label: "Cardiovascular & Cardiac",
-    aliases: [],
+    aliases: ["cardiovascular cardiac", "cardiovascular and cardiac"],
     filter: "specialty",
-    scope: SPEC,
+    
   },
   {
     id: "obstetrics_labour",
     label: "Obstetrics & Labour",
     aliases: ["obstetrics", "labour and delivery", "labor and delivery", "l&d"],
     filter: "specialty",
-    scope: SPEC,
-    strictAliases: ["l&d"],
+    
+    // strictAliases: ["l&d"],
   },
   {
     id: "perinatal",
     label: "Perinatal",
     aliases: [],
     filter: "specialty",
-    scope: SPEC,
   },
   {
     id: "maternal_newborn",
     label: "Maternal-Newborn",
     aliases: [],
     filter: "specialty",
-    scope: SPEC,
   },
   {
     // Broad term: keyword scope. "hospice" is an environment, not an alias of this.
@@ -532,27 +527,19 @@ const TERMINOLOGY: Concept[] = [
     label: "Mental Health & Psychiatric",
     aliases: [],
     filter: "specialty",
-    scope: SPEC,
   },
   {
     id: "addictions_concurrent",
     label: "Addictions & Concurrent Disorders",
     aliases: ["addictions", "substance use", "concurrent disorders"],
     filter: "specialty",
-    scope: SPEC,
   },
   {
     id: "paediatric_domain",
     label: "Paediatric",
     aliases: ["pediatrics", "pediatric"],
     descendants: ["paediatrics"],
-  },
-  {
-    id: "paediatrics",
-    label: "Paediatrics",
-    aliases: [],
     filter: "specialty",
-    scope: SPEC,
   },
 
   // Wound care and ostomy are related, not equivalent: no cross-expansion
