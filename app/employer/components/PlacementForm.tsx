@@ -25,7 +25,8 @@ interface PlacementRequestFormProps {
   submitLabel?: string;
 }
 
-const SHIFTS = ["Days", "Evenings", "Nights", "Weekends", "Flexible"];
+/** One choice only. "Multiple" covers requests that need more than one shift pattern. */
+const SHIFTS = ["Day", "Evening", "Night", "Weekend", "Flexible", "Multiple"];
 const START_TIMINGS = [
   "ASAP",
   "Within 2 weeks",
@@ -102,28 +103,29 @@ function Counter({ value, max }: { value: number; max: number }) {
   );
 }
 
-function ChipToggle({
+function ChipSelect({
   options,
   selected,
-  onToggle,
+  onSelect,
   label,
 }: {
   options: string[];
-  selected: string[];
-  onToggle: (v: string) => void;
+  selected: string;
+  onSelect: (v: string) => void;
   label: string;
 }) {
   return (
-    <div role="group" aria-label={label} className="flex flex-wrap gap-1.5">
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1.5">
       {options.map((o) => {
-        const on = selected.includes(o);
+        const on = selected === o;
         return (
           <motion.button
             key={o}
             type="button"
-            aria-pressed={on}
+            role="radio"
+            aria-checked={on}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onToggle(o)}
+            onClick={() => onSelect(o)}
             className={`rounded-full border px-3 py-1 text-xs transition-colors ${
               on
                 ? "border-highlight bg-highlight/10 text-highlight-dark"
@@ -168,17 +170,12 @@ export default function PlacementRequestForm({
     v: PlacementRequestValues[K],
   ) => setValues((s) => ({ ...s, [k]: v }));
 
-  const toggleShift = (v: string) =>
-    setValues((s) => ({
-      ...s,
-      shifts: s.shifts.includes(v)
-        ? s.shifts.filter((x) => x !== v)
-        : [...s.shifts, v],
-    }));
+  // Single choice. The value stays an array of one so Urgent and ResponseCard keep working.
+  const selectShift = (v: string) => setValues((s) => ({ ...s, shifts: [v] }));
 
   const errors = {
     profession: !values.profession ? "Choose a profession." : "",
-    shifts: values.shifts.length === 0 ? "Select at least one shift." : "",
+    shifts: values.shifts.length === 0 ? "Select a shift." : "",
     startTiming: !values.startTiming ? "Choose a start timing." : "",
     location: !values.location.trim() ? "Select Location" : "",
   };
@@ -226,11 +223,11 @@ export default function PlacementRequestForm({
       </Field>
 
       <Field label="Shift" error={show("shifts")}>
-        <ChipToggle
+        <ChipSelect
           label="Shift"
           options={SHIFTS}
-          selected={values.shifts}
-          onToggle={toggleShift}
+          selected={values.shifts[0] ?? ""}
+          onSelect={selectShift}
         />
       </Field>
 

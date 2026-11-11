@@ -33,6 +33,7 @@ function coverageLabel(shift?: string) {
   if (/night/i.test(shift)) return "Overnight Coverage";
   if (/even/i.test(shift)) return "Evening Coverage";
   if (/day/i.test(shift)) return "Day Coverage";
+  if (/multiple/i.test(shift)) return "Multiple Shifts";
   return `${shift} Coverage`;
 }
 
@@ -111,21 +112,19 @@ export default function ResponseCard({
           <p className="mt-0.5 text-[.6rem] uppercase tracking-wider text-ink-soft">
             {candidate.id}
           </p>
-
           <p className="mt-2 text-ink-mid">
-            {[environment, coverage].filter(Boolean).join(" · ")}
-          </p>
-          <p className="text-ink-mid">
-            Confirmed {candidate.confirmedDays}d ago
+            {[environment, coverage]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </div>
         <div className="mt-0.5 flex flex-col items-end gap-1">
           <p className="text-[.6rem] uppercase tracking-wider text-ink-soft">
             {candidate.loc}
           </p>
-          {candidate.relocation === "Open to relocation" && (
-            <span className="rounded-full bg-forest-light px-2 py-0.5 text-[.5rem] font-semibold text-forest">
-              Open to relocation
+          {response.locationMatch === "relocation" && (
+            <span className="rounded-full bg-forest-light px-2 py-0.5 text-[.6rem] font-semibold text-forest">
+              {MATCH_LABELS.relocation}
             </span>
           )}
         </div>
@@ -159,10 +158,10 @@ export default function ResponseCard({
           Revealed ✓
         </p>
       ) : (
-        !candidate.specialist && (
+        onReveal && (
           <button
             type="button"
-            onClick={() => onReveal?.(candidate)}
+            onClick={() => onReveal(candidate)}
             className="cursor-pointer rounded-[7px] bg-forest py-1.5 text-center text-[11px] font-bold text-white transition-colors hover:bg-forest-dark"
           >
             Reveal →
