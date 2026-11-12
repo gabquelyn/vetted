@@ -517,7 +517,16 @@ export default function Registry({
   );
   // Adjusted while rendering (no effect): the notice is tied to the profile it was raised for,
   // so it disappears as soon as the employer opens a different one.
-  const [profileNotice, setProfileNotice] = useState<{ id: string; text: string } | null>(null);
+  // `results` is the result set it was raised for: any later search/filter change (including
+  // removing filters) retires it, and leaving the profile drops it so it cannot come back on reopen.
+  const [profileNotice, setProfileNotice] = useState<{
+    id: string;
+    text: string;
+    results: unknown;
+  } | null>(null);
+  if (profileNotice && (profileNotice.id !== viewing || profileNotice.results !== sorted)) {
+    setProfileNotice(null);
+  }
   if (
     viewing &&
     !viewAll &&
@@ -530,6 +539,7 @@ export default function Registry({
     const next = pageResults[0].id;
     setProfileNotice({
       id: next,
+      results: sorted,
       text: sorted.some((c) => c.id === viewing)
         ? "That professional is on a different results page — showing the first match on this page."
         : "That professional no longer matches your filters — showing the next match.",
@@ -1003,7 +1013,7 @@ export default function Registry({
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
           {!viewing && activeView == "registry" && (
             <p className="text-xs py-3 text-ink-soft px-8 lg:px-12 font-semibold">
-              {data.length} {data.length == 0 ? "results" : "professionals"}
+              {data.length} {data.length == 0 ? "results" : `professional${data.length > 1 ? "s" :""}`}
             </p>
           )}
 
