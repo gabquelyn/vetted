@@ -577,6 +577,29 @@ const TERMINOLOGY: Concept[] = [
     aliases: ["immediate", "immediately", "immediate availability"],
     filter: "availability",
   }, // must equal your c.avail option text
+
+  /* ---- Employment type: promoted into the Employment filter (value = the option text) ---- */
+  {
+    id: "part_time",
+    label: "Part-Time",
+    aliases: ["part time", "parttime"],
+    filter: "employment" as keyof Filters,
+    value: "Part-Time",
+  },
+  {
+    id: "full_time",
+    label: "Full-Time",
+    aliases: ["full time", "fulltime"],
+    filter: "employment" as keyof Filters,
+    value: "Full-Time",
+  },
+  {
+    id: "casual_",
+    label: "Casual",
+    aliases: ["casual"],
+    filter: "employment" as keyof Filters,
+    value: "Casual",
+  },
 ];
 const BY_ID = new Map(TERMINOLOGY.map((c) => [c.id, c]));
 const BY_PHRASE = new Map<string, Concept[]>();
@@ -944,13 +967,16 @@ const resolvePhrase = (phrase: string, text?: string): ResolvedTerm | undefined 
 
   const c = BY_PHRASE.get(phrase)?.[0];
   if (c) {
-    // availability keeps its own promotion; every other filtered concept reached by an
-    // alias stays keyword-scope
+    // availability and employment type keep their own promotion; every other filtered
+    // concept reached by an alias stays keyword-scope
     // A broad alias of a structured leaf ("obstetrics" -> Obstetrics & Labour) keeps the
     // wording the user typed: the leaf's own label would search that one field only and
     // lose profiles that mention the word elsewhere (RN-511 "High-Risk Obstetrics").
     if (c.scope && text) return { label: text };
-    return fromConcept(c, c.filter === "availability");
+    return fromConcept(
+      c,
+      c.filter === "availability" || (c.filter as string) === "employment",
+    );
   }
   return undefined;
 };
