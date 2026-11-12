@@ -16,9 +16,9 @@ import {
 
 const headClass =
   "mb-1.5 font-['Cormorant_Garamond',serif] text-[clamp(24px,3vw,30px)] font-semibold leading-[1.2] text-ink";
-const subClass = "mb-[18px] text-[13.5px] text-ink-soft";
+const subClass = "mb-[18px] text-[13.5px] text-[#8a8a84]";
 const btnPrimary =
-  "inline-block rounded-[10px] bg-forest px-[26px] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-forest-mid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest";
+  "inline-block rounded-[10px] bg-forest px-[26px] py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#16260c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest";
 
 function OpportunityCard({ o }: { o: Opportunity }) {
   const profession = getProfession(o.profession);
@@ -32,9 +32,9 @@ function OpportunityCard({ o }: { o: Opportunity }) {
       data-status="live"
     >
       <div className="mb-2 text-[15px] font-semibold text-ink">{o.title}</div>
-      <div className="mb-0.5 text-[12.5px] text-ink-mid">{city.name}, ON</div>
-      <div className="mb-0.5 text-[12.5px] text-ink-mid">{o.employmentType} · {o.shift}</div>
-      <div className="mb-0.5 text-[12.5px] text-ink-soft">Start date: {o.startDate}</div>
+      <div className="mb-0.5 text-[12.5px] text-[#5c5c58]">{city.name}, ON</div>
+      <div className="mb-0.5 text-[12.5px] text-[#5c5c58]">{o.employmentType} · {o.shift}</div>
+      <div className="mb-0.5 text-[12.5px] text-[#8a8a84]">Start date: {o.startDate}</div>
       <Link href={joinHref} className="mt-2.5 inline-block text-[12.5px] font-semibold text-forest">Join to respond →</Link>
     </div>
   );
@@ -69,7 +69,7 @@ function MarketArrowRow({ group }: { group: MarketGroup }) {
         <span className="text-sm font-semibold text-[#382B26]">{label}</span>
         <span className="shrink-0 font-semibold text-forest">→</span>
       </div>
-      <div className="mt-1 block text-[12.5px] text-ink-mid">
+      <div className="mt-1 block text-[12.5px] text-[#5c5c58]">
         {cities.map((c, i) => (
           <Fragment key={c.slug}>
             {i > 0 && " "}
@@ -108,13 +108,13 @@ export default function OpportunitiesSection({ opps, emptyCtx, joinCtx, treatmen
     const ctx = emptyCtx || {};
     return (
       <section
-        className={`${topMargin} rounded-[14px] border border-dashed border-[#e5e2da] bg-[#faf9f6] p-8 max-[860px]:px-5 max-[860px]:py-6`}
+        className={`${topMargin} leading-[normal] rounded-[14px] border border-dashed border-[#e5e2da] bg-[#faf9f6] p-8 max-[860px]:px-5 max-[860px]:py-6`}
         id="oppSection"
       >
         <p className="mb-2 font-['Cormorant_Garamond',serif] text-xl font-semibold text-ink">
           {ctx.headline || "No current openings — join and you'll be here when there are."}
         </p>
-        <p className="mb-[18px] max-w-[480px] text-sm leading-[1.55] text-ink-mid">
+        <p className="mb-[18px] max-w-[480px] text-sm leading-[1.55] text-[#5c5c58]">
           {ctx.body || "Add your profile to the Registry so employers can find you when a relevant opportunity comes up."}
         </p>
         <Link
@@ -138,7 +138,7 @@ export default function OpportunitiesSection({ opps, emptyCtx, joinCtx, treatmen
   const buildingGroupsSource = t === "full" && alphabetical ? alphabetizedMarketGroups(building) : consolidatedMarketGroups(building);
 
   return (
-    <section className={topMargin} id="oppSection">
+    <section className={`${topMargin} leading-[normal]`} id="oppSection">
       {live.length > 0 && (
         <>
           <h2 className={headClass}>Current opportunities</h2>
@@ -152,7 +152,7 @@ export default function OpportunitiesSection({ opps, emptyCtx, joinCtx, treatmen
       )}
       {building.length > 0 && t === "homepage" && (
         <div className="mt-6 rounded-[14px] bg-forest-pale px-5.5 pb-2 pt-5">
-          <h2 className={headClass}>Opportunities we are building for</h2>
+          <h2 className={headClass}>Opportunities we&apos;re building for</h2>
           <p className={subClass}>Join the Registry to be discoverable here as employer hiring needs come up.</p>
           <div className="mt-2 border-t border-forest/[0.14]">
             {alphabetizedMarketGroups(building).map((g) => <MarketArrowRow group={g} key={g.profession.slug + "|" + (g.specialty ? g.specialty.slug : "")} />)}
@@ -161,7 +161,7 @@ export default function OpportunitiesSection({ opps, emptyCtx, joinCtx, treatmen
       )}
       {building.length > 0 && t === "full" && (
         <div className="mt-1 rounded-2xl bg-forest-pale px-7 pb-6 pt-7">
-          <h2 className={headClass}>Opportunities we are building for</h2>
+          <h2 className={headClass}>Opportunities we&apos;re building for</h2>
           <p className={subClass}>Join the Registry to be discoverable here as employer hiring needs come up.</p>
           <div className="mt-1 border-t border-forest/[0.14]">
             {buildingGroupsSource.map((g) => <MarketRow group={g} key={g.profession.slug + "|" + (g.specialty ? g.specialty.slug : "")} />)}
@@ -170,12 +170,11 @@ export default function OpportunitiesSection({ opps, emptyCtx, joinCtx, treatmen
       )}
       {building.length > 0 && t !== "homepage" && t !== "full" && (
         <div className="mt-1 rounded-2xl bg-forest-pale px-7 pb-6 pt-7">
-          <h2 className={headClass}>Opportunities we are building for</h2>
+          <h2 className={headClass}>Opportunities we&apos;re building for</h2>
           <p className={subClass}>Join the Registry to be discoverable here as employer hiring needs come up.</p>
           <div className="mt-1 border-t border-forest/[0.14]">
             {consolidatedMarketGroups(building).map((g) => <MarketRow group={g} key={g.profession.slug + "|" + (g.specialty ? g.specialty.slug : "")} />)}
           </div>
-          <Link href={buildJoinDestination(joinCtx || {})} className={`${btnPrimary} mt-5`}>Join the Registry →</Link>
         </div>
       )}
     </section>

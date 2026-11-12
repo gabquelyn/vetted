@@ -15,7 +15,7 @@ import { computeCta, locationCopy, opportunitiesForContext } from "@/app/data/fi
 import { faqsForLocation } from "@/app/data/findworkFaqs";
 
 /** /locations/{city} — the "everything in this city" hub. Only the known cities exist. */
-export const dynamicParams = false;
+// export const dynamicParams = false;
 
 export function generateStaticParams() {
   return CITIES.map(c => ({ city: c.slug }));

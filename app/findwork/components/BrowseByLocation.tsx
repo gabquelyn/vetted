@@ -20,10 +20,12 @@ export interface BrowseByLocationProps {
   specialties?: Specialty[];
   /** Override how a city resolves to a URL. Defaults to hrefForCity(). */
   buildHref?: (city: City) => string;
+  /** Full-width cream band behind the section (the /findwork homepage treatment). */
+  band?: boolean;
 }
 
 const cityLink =
-  "text-ink no-underline transition-colors duration-150 hover:text-[#2D5016]";
+  "leading-[normal] text-ink no-underline transition-colors duration-150 hover:text-[#2D5016]";
 
 export default function BrowseByLocation({
   heading = "Browse by location",
@@ -31,6 +33,7 @@ export default function BrowseByLocation({
   profession = null,
   specialties = [],
   buildHref,
+  band = true,
 }: BrowseByLocationProps) {
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
@@ -67,25 +70,29 @@ export default function BrowseByLocation({
   }, []);
 
   const linkBtn =
-    "mt-4 inline-block cursor-pointer border-0 bg-transparent p-0 text-[13px] font-semibold text-[#2D5016] hover:underline";
+    "mt-4 inline-block cursor-pointer border-0 bg-transparent p-0 text-[13px] font-semibold leading-[normal] text-[#2D5016] hover:underline";
 
-  return (
-    <section className="mx-auto max-w-280 px-5 py-11 font-['DM_Sans',sans-serif] antialiased min-[860px]:px-12 min-[860px]:py-14">
+  const section = (
+    <section
+      className={`mx-auto max-w-280 px-5 py-11 font-['DM_Sans',sans-serif] antialiased min-[860px]:px-12 min-[860px]:py-14 ${
+        band ? "min-[860px]:pb-7.5" : ""
+      }`}
+    >
       <h2 className="mb-1.5 font-['Cormorant_Garamond',serif] text-[clamp(24px,3vw,30px)] font-semibold leading-[1.2] text-ink">
         {heading}
       </h2>
-      <p className="mb-4.5 text-[13.5px] text-[#8a8a84]">{subheading}</p>
+      <p className="mb-4.5 text-[13.5px] leading-[normal] text-[#8a8a84]">{subheading}</p>
 
       <div className="relative">
-        <div className="relative mb-5 max-w-none min-[860px]:max-w-105">
+        <div className="relative mb-4 max-w-none min-[860px]:max-w-105">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search cities (e.g. Toronto, Ottawa)"
+            placeholder="Search locations — e.g. Toronto, Ottawa, Kitchener"
             autoComplete="off"
             aria-label="Search cities"
-            className="w-full rounded-[10px] border border-[#e5e2da] bg-white px-4 py-3 font-['DM_Sans',sans-serif] text-[14px] text-ink transition-colors placeholder:text-[#8a8a84] focus:border-[#2D5016] focus:outline-none"
+            className="w-full rounded-[10px] border border-[#e5e2da] bg-white px-4 py-3 font-['DM_Sans',sans-serif] text-[14px] leading-[normal] text-ink transition-colors placeholder:text-[#8a8a84] focus:border-[#2D5016] focus:outline-none"
           />
           {searching && (
             <div className="absolute inset-x-0 top-[calc(100%+6px)] z-20 max-h-85 overflow-y-auto rounded-[10px] border border-[#e5e2da] bg-white shadow-[0_12px_32px_rgba(20,30,15,0.10)]">
@@ -94,14 +101,14 @@ export default function BrowseByLocation({
                   <Link
                     key={c.slug}
                     href={hrefFor(c)}
-                    className="flex items-center justify-between gap-2.5 border-b border-[#e5e2da] px-4 py-2.75 text-[13.5px] no-underline last:border-b-0 hover:bg-[#faf9f6]"
+                    className="flex items-center justify-between gap-2.5 border-b border-[#e5e2da] px-4 py-2.75 text-[13.5px] leading-[normal] no-underline last:border-b-0 hover:bg-[#faf9f6]"
                   >
                     <span className="font-medium text-ink">{c.name}</span>
                     <span className="text-[11.5px] text-[#8a8a84]">Ontario</span>
                   </Link>
                 ))
               ) : (
-                <div className="px-4 py-3.5 text-[13px] text-[#8a8a84]">
+                <div className="px-4 py-3.5 text-[13px] leading-[normal] text-[#8a8a84]">
                   No matches — try a different term.
                 </div>
               )}
@@ -138,7 +145,7 @@ export default function BrowseByLocation({
                   key={letter}
                   className="flex items-baseline gap-5 border-b border-[#e5e2da] py-2.5 max-[460px]:flex-col max-[460px]:gap-1.5"
                 >
-                  <span className="shrink-0 basis-5.5 font-['Cormorant_Garamond',serif] text-[17px] font-semibold text-[#2D5016]">
+                  <span className="shrink-0 basis-5.5 font-['Cormorant_Garamond',serif] text-[17px] font-semibold leading-[normal] text-[#2D5016]">
                     {letter}
                   </span>
                   <div className="flex flex-wrap gap-x-5.5 gap-y-1.5">
@@ -156,11 +163,13 @@ export default function BrowseByLocation({
               ))}
             </div>
             <button type="button" onClick={() => setShowAll(false)} className={linkBtn}>
-              Show fewer
+              ← Show fewer locations
             </button>
           </>
         )}
       </div>
     </section>
   );
+
+  return band ? <div className="bg-cream">{section}</div> : section;
 }

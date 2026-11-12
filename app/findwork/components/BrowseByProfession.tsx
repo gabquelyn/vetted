@@ -45,16 +45,10 @@ function ProfessionRow({
   return (
     <Link
       href={href}
-      className="group flex items-center justify-between gap-3 border-b border-[#e5e2da] px-0.5 py-2.75 text-[14.5px] text-[#1a1a18] no-underline transition-[padding,color] duration-150 hover:pl-1.5 hover:text-[#2D5016]"
+      className="group flex items-center justify-between gap-3 border-b border-[#e5e2da] px-0.5 py-2.75 text-[14.5px] leading-[normal] text-[#1a1a18] no-underline transition-[padding,color] duration-150 hover:pl-1.5 hover:text-[#2D5016]"
     >
       <span className="transition-colors duration-150 group-hover:text-[#2D5016]">
         {profession.name}
-      </span>
-      <span
-        className="text-[#8a8a84] transition-colors group-hover:text-[#2D5016]"
-        aria-hidden
-      >
-        →
       </span>
     </Link>
   );
@@ -78,11 +72,11 @@ function GroupRow({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 border-b border-[#e5e2da] bg-transparent px-0.5 py-2.75 text-left text-[14.5px] text-[#1a1a18] transition-[padding,color] duration-150 hover:pl-1.5 hover:text-[#2D5016]"
+        className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 border-b border-[#e5e2da] bg-transparent px-0.5 py-2.75 text-left text-[14.5px] leading-[normal] text-[#1a1a18] transition-[padding,color] duration-150 hover:pl-1.5 hover:text-[#2D5016]"
       >
         <span>{group.label}</span>
         <span
-          className={`text-[15px] text-[#5c5c58] transition-transform duration-150 ${open ? "rotate-90" : ""}`}
+          className={`text-[15px] leading-[normal] text-[#5c5c58] transition-transform duration-150 ${open ? "rotate-90" : ""}`}
           aria-hidden
         >
           ›
@@ -101,7 +95,7 @@ function GroupRow({
               <Link
                 key={p?.slug}
                 href={hrefFor(p)}
-                className="py-1.25 text-[13.5px] text-[#5c5c58] no-underline hover:text-[#2D5016]"
+                className="py-1.25 text-[13.5px] leading-[normal] text-[#5c5c58] no-underline hover:text-[#2D5016]"
               >
                 {p?.name}
               </Link>
@@ -165,7 +159,7 @@ export default function BrowseByProfession({
       <h2 className="mb-1.5 font-['Cormorant_Garamond',serif] text-[clamp(24px,3vw,30px)] font-semibold leading-[1.2] text-[#1a1a18]">
         {heading}
       </h2>
-      <p className="mb-4.5 text-[13.5px] text-[#8a8a84]">{subheading}</p>
+      <p className="mb-4.5 text-[13.5px] leading-[normal] text-[#8a8a84]">{subheading}</p>
 
       <div className="relative">
         {/* Search */}
@@ -174,10 +168,10 @@ export default function BrowseByProfession({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search professions (e.g. RN, PSW, physio)"
+            placeholder="Search professions or areas of practice — e.g. PACU, RN, PSW"
             autoComplete="off"
             aria-label="Search professions"
-            className="w-full rounded-[10px] border border-[#e5e2da] bg-white px-4 py-3 font-['DM_Sans',sans-serif] text-[14px] text-[#1a1a18] transition-colors placeholder:text-[#8a8a84] focus:border-[#2D5016] focus:outline-none"
+            className="w-full rounded-[10px] border border-[#e5e2da] bg-white px-4 py-3 font-['DM_Sans',sans-serif] text-[14px] leading-[normal] text-[#1a1a18] transition-colors placeholder:text-[#8a8a84] focus:border-[#2D5016] focus:outline-none"
           />
           {searching && (
             <div className="absolute inset-x-0 top-[calc(100%+6px)] z-20 max-h-85 overflow-y-auto rounded-[10px] border border-[#e5e2da] bg-white shadow-[0_12px_32px_rgba(20,30,15,0.10)]">
@@ -186,7 +180,7 @@ export default function BrowseByProfession({
                   <Link
                     key={`${r.type}-${r.professionSlug}-${r.specialtySlug ?? ""}-${i}`}
                     href={hrefForSearchEntry(r, { city })}
-                    className="flex items-center justify-between gap-2.5 border-b border-[#e5e2da] px-4 py-2.75 text-[13.5px] no-underline last:border-b-0 hover:bg-[#faf9f6]"
+                    className="flex items-center justify-between gap-2.5 border-b border-[#e5e2da] px-4 py-2.75 text-[13.5px] leading-[normal] no-underline last:border-b-0 hover:bg-[#faf9f6]"
                   >
                     <span className="font-medium text-[#1a1a18]">
                       {r.label}
@@ -197,7 +191,7 @@ export default function BrowseByProfession({
                   </Link>
                 ))
               ) : (
-                <div className="px-4 py-3.5 text-[13px] text-[#8a8a84]">
+                <div className="px-4 py-3.5 text-[13px] leading-[normal] text-[#8a8a84]">
                   No matches — try a different term.
                 </div>
               )}
@@ -219,7 +213,7 @@ export default function BrowseByProfession({
                   key={cat.key}
                   type="button"
                   onClick={() => setFilter(cat.key)}
-                  className={`cursor-pointer rounded-full border px-3.5 py-1.75 text-[12.5px] font-semibold transition-colors duration-150 ${
+                  className={`cursor-pointer rounded-full border px-3.5 py-1.75 text-[12.5px] font-semibold leading-[normal] transition-colors duration-150 ${
                     on
                       ? "border-[#2D5016] bg-[#2D5016] text-white"
                       : "border-[#e5e2da] bg-transparent text-[#5c5c58] hover:border-[#2D5016] hover:text-[#2D5016]"
@@ -255,7 +249,7 @@ export default function BrowseByProfession({
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="mt-4 inline-block cursor-pointer border-0 bg-transparent p-0 text-[13px] font-semibold text-[#2D5016] hover:underline"
+              className="mt-4 inline-block cursor-pointer border-0 bg-transparent p-0 text-[13px] font-semibold leading-[normal] text-[#2D5016] hover:underline"
             >
               View all professions →
             </button>
@@ -271,7 +265,7 @@ export default function BrowseByProfession({
                 if (!professions.length) return null;
                 return (
                   <div key={cluster.slug} data-cluster-block={cluster.slug}>
-                    <div className="mb-1 border-b border-[#e5e2da] pb-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#8a8a84]">
+                    <div className="mb-1 border-b border-[#e5e2da] pb-2.5 text-[11px] font-bold uppercase leading-[normal] tracking-[0.08em] text-[#8a8a84]">
                       {cluster.name}
                     </div>
                     <div className="block">
@@ -291,9 +285,9 @@ export default function BrowseByProfession({
               <button
                 type="button"
                 onClick={() => setExpanded(false)}
-                className="mt-4 inline-block cursor-pointer border-0 bg-transparent p-0 text-[13px] font-semibold text-[#2D5016] hover:underline"
+                className="mt-4 inline-block cursor-pointer border-0 bg-transparent p-0 text-[13px] font-semibold leading-[normal] text-[#2D5016] hover:underline"
               >
-                Show fewer
+                ← Show fewer professions
               </button>
             )}
           </>

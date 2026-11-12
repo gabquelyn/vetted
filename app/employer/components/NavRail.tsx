@@ -143,7 +143,7 @@ export default function NavRail({
           overflow-x-auto overflow-y-hidden overscroll-x-contain
           border-b border-ash bg-transparent px-3 py-2
           [scrollbar-color:#b7bcc3_transparent] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-          lg:h-full lg:max-h-full lg:snap-none lg:flex-col lg:items-center lg:gap-5
+          lg:h-full lg:max-h-full lg:snap-none lg:flex-col lg:items-center lg:gap-4.5
           lg:overflow-x-hidden lg:overflow-y-auto lg:[scrollbar-width:thin]
           lg:rounded-none lg:border-b-0 lg:border-r lg:px-3 lg:py-1.5
         "

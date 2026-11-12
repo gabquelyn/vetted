@@ -29,10 +29,16 @@ export default function FindWorkHero({
   howItWorksLabel = "How It Works",
   stats = DEFAULT_STATS,
 }: FindWorkHeroProps) {
+  /*
+   * Prototype hero: cream background, 1px bottom border, natural height,
+   * padding 72px 48px 56px (52px 20px 40px under 860px), DM Sans for everything
+   * except the h1. The fixed 65px site nav sits over the page, so its height is
+   * added to the top padding (72 + 65 = 137, 52 + 65 = 117).
+   */
   return (
-    <section className="flex flex-col items-center justify-center h-screen md:h-[60vh] border-b border-ash bg-white px-5 pb-10 text-center font-serif antialiased min-[860px]:px-12 min-[860px]:pb-14 min-[860px]:pt-18">
+    <section className="border-b border-ash bg-cream px-5 pb-10 pt-[117px] text-center font-['DM_Sans',sans-serif] antialiased min-[860px]:px-12 min-[860px]:pb-14 min-[860px]:pt-[137px]">
       <div className="mx-auto max-w-155">
-        <div className="mb-3.5 text-[11.5px] font-medium uppercase tracking-[0.08em] text-forest">
+        <div className="mb-3.5 text-[11.5px] font-medium uppercase leading-[normal] tracking-[0.08em] text-forest">
           {eyebrow}
         </div>
 
@@ -47,24 +53,24 @@ export default function FindWorkHero({
         <div className="mb-5.5 flex w-full flex-col items-center justify-center gap-3.5 min-[460px]:w-auto min-[460px]:flex-row min-[460px]:flex-wrap">
           <a
             href={joinHref}
-            className="inline-block w-full rounded-[10px] bg-forest px-6.5 py-3.5 text-center text-[14px] font-semibold text-white no-underline transition-colors duration-150 hover:bg-[#16260c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest min-[460px]:w-auto"
+            className="inline-block w-full rounded-[10px] bg-forest px-6.5 py-3.5 text-center text-[14px] font-semibold leading-[normal] text-white no-underline transition-colors duration-150 hover:bg-[#16260c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest min-[460px]:w-auto"
           >
             {joinLabel}
           </a>
           <a
             href={howItWorksHref}
-            className="inline-block w-full rounded-[10px] border-[1.5px] border-forest bg-transparent px-6 py-[12.5px] text-center text-[14px] font-semibold text-forest no-underline transition-colors duration-150 hover:bg-forest hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest min-[460px]:w-auto"
+            className="inline-block w-full rounded-[10px] border-[1.5px] border-forest bg-transparent px-6 py-[12.5px] text-center text-[14px] font-semibold leading-[normal] text-forest no-underline transition-colors duration-150 hover:bg-forest hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest min-[460px]:w-auto"
           >
             {howItWorksLabel}
           </a>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2 text-[12.5px] text-[#8a8a84] min-[860px]:gap-2.5">
+        <div className="flex flex-wrap items-center justify-center gap-2 text-[12.5px] leading-[normal] text-[#8a8a84] min-[860px]:gap-2.5">
           {stats.map((stat, i) => (
             <React.Fragment key={stat.label}>
               {i > 0 && <span className="text-ash">·</span>}
               <span>
-                <b className="font-bold text-[#5c5c58] text-lg">{stat.value}</b>{" "}
+                <b className="font-bold text-[#5c5c58]">{stat.value}</b>{" "}
                 {stat.label}
               </span>
             </React.Fragment>

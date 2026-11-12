@@ -190,15 +190,9 @@ export default function Registry({
   // One card per person whenever no profession is selected, for every kind of criterion
   // (keywords, availability, shift...). A profession filter shows each profile on its own.
   // Siblings that also match are kept for the card's "Also matches as ..." note.
-  // The draft (typed, not yet committed) filters live, as each committed phrase does.
-  const liveTerms = useMemo(() => {
-    const draft = viewAll ? "" : query.trim();
-    return draft && !terms.some((t) => t.toLowerCase() === draft.toLowerCase())
-      ? [...terms, draft]
-      : terms;
-  }, [terms, query, viewAll]);
+  // Only committed terms (Enter or comma) filter; typed text waits for commit.
   const folded = useMemo(() => {
-    const matched = searchCandidates(pool, liveTerms);
+    const matched = searchCandidates(pool, terms);
     if (filters.profession.length > 0) {
       return { list: matched, siblings: new Map<string, Candidate[]>() };
     }
@@ -216,7 +210,7 @@ export default function Registry({
       }
     }
     return { list, siblings };
-  }, [pool, liveTerms, filters.profession]);
+  }, [pool, terms, filters.profession]);
   const data = folded.list;
 
   // Empty result with several terms: offer (never apply) a search with one term dropped
