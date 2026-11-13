@@ -234,6 +234,10 @@ export default function Registry({
       return;
     }
 
+    // A location still being typed ("Toro") is not a search: only a resolved place
+    // ("Toronto, ON") is remembered, so partial text never lands in Recent history.
+    if (location.trim() !== "" && !resolved) return;
+
     // Same set of candidates as the last saved search -> not a different result
     const signature = data
       .map((c) => c.id)
@@ -261,7 +265,7 @@ export default function Registry({
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [data, terms, filters, location, radius]);
+  }, [data, terms, filters, location, radius, resolved]);
 
   const sortedHistory = useMemo(
     () =>
@@ -1013,7 +1017,7 @@ export default function Registry({
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
           {!viewing && activeView == "registry" && (
             <p className="text-xs py-3 text-ink-soft px-8 lg:px-12 font-semibold">
-              {data.length} {data.length == 0 ? "results" : `professional${data.length > 1 ? "s" :""}`}
+              {data.length} {data.length == 0 ? "results" : "professionals"}
             </p>
           )}
 
