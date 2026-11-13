@@ -1017,7 +1017,7 @@ export default function Registry({
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
           {!viewing && activeView == "registry" && (
             <p className="text-xs py-3 text-ink-soft px-8 lg:px-12 font-semibold">
-              {data.length} {data.length == 0 ? "results" : "professionals"}
+              {data.length} {data.length == 0 ? "results" : `professional${data.length > 1 ? "s" :""}`}
             </p>
           )}
 
