@@ -159,7 +159,9 @@ export default function ResponseCard({
         <Stat label="Distance">
           <span className="flex items-center gap-1.5">
             <LuMapPin className="h-3 w-3 shrink-0 text-ink-soft" />
-            {response.distanceKm} km away
+            {response.distanceKm > 0
+              ? `${response.distanceKm} km away`
+              : "Same city"}
           </span>
         </Stat>
       </div>
@@ -199,7 +201,7 @@ export default function ResponseCard({
               e.stopPropagation();
               onIntroduction?.(candidate);
             }}
-            disabled = {intro}
+            disabled={intro}
             className={`w-full md:w-[50%] rounded-[7px] p-1.5 text-center text-[11px] font-bold transition-colors ${
               intro
                 ? "cursor-default border-[1.5px] border-[#d9a878] bg-white text-[#b8621a]"
