@@ -153,7 +153,7 @@ export default function LocationSelect({
   };
 
   // Settle whatever is typed: a supported city is kept (normalised to "Toronto, ON"),
-  // anything else is cleared so free text never stays as the location.
+  // anything else stays as typed plain text.
   const commit = () => {
     closeList();
     const city = resolveTypedCity(query);
@@ -162,8 +162,9 @@ export default function LocationSelect({
       setQuery(city);
       emitResolved(city);
     } else if (query.trim()) {
-      onChange("");
-      setQuery("");
+      // Unresolved text stays as typed and falls back to a plain-text match on the city
+      // name with the radius disabled; it is never shown as a structured chip (SA-01).
+      onChange(query.trim());
       emitResolved("");
     } else {
       setQuery(value);

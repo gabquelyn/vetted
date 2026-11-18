@@ -59,8 +59,8 @@ export const SHIFTS = ["Days", "Evenings", "Nights", "Weekends"];
 
 export const EMPLOYMENT = ["Casual", "Part-Time", "Full-Time"];
 export const MOBILITY = [
-  ["vehicle", "Vehicle"],
-  ["licence", "Driver Licence"],
+  ["vehicle", "Own Vehicle"],
+  ["licence", "Own Driver's Licence"],
   ["rural", "Open to rural"],
   ["travel", "Open to travel / fly-in roles"],
   ["relocation", "Open to relocation"],

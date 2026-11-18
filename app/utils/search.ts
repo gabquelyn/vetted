@@ -493,7 +493,7 @@ const TERMINOLOGY: Concept[] = [
   {
     id: "obstetrics_labour",
     label: "Obstetrics & Labour",
-    aliases: ["obstetrics", "labour and delivery", "labor and delivery", "l&d"],
+    aliases: ["obstetrics", "labour and delivery", "labor and delivery", "labour & delivery", "labor & delivery", "l&d"],
     filter: "specialty",
     
     // strictAliases: ["l&d"],
@@ -577,29 +577,6 @@ const TERMINOLOGY: Concept[] = [
     aliases: ["immediate", "immediately", "immediate availability"],
     filter: "availability",
   }, // must equal your c.avail option text
-
-  /* ---- Employment type: promoted into the Employment filter (value = the option text) ---- */
-  {
-    id: "part_time",
-    label: "Part-Time",
-    aliases: ["part time", "parttime"],
-    filter: "employment" as keyof Filters,
-    value: "Part-Time",
-  },
-  {
-    id: "full_time",
-    label: "Full-Time",
-    aliases: ["full time", "fulltime"],
-    filter: "employment" as keyof Filters,
-    value: "Full-Time",
-  },
-  {
-    id: "casual_",
-    label: "Casual",
-    aliases: ["casual"],
-    filter: "employment" as keyof Filters,
-    value: "Casual",
-  },
 ];
 const BY_ID = new Map(TERMINOLOGY.map((c) => [c.id, c]));
 const BY_PHRASE = new Map<string, Concept[]>();
@@ -967,16 +944,16 @@ const resolvePhrase = (phrase: string, text?: string): ResolvedTerm | undefined 
 
   const c = BY_PHRASE.get(phrase)?.[0];
   if (c) {
-    // availability and employment type keep their own promotion; every other filtered
+    // availability keeps its own promotion; every other filtered
     // concept reached by an alias stays keyword-scope
     // A broad alias of a structured leaf ("obstetrics" -> Obstetrics & Labour) keeps the
     // wording the user typed: the leaf's own label would search that one field only and
     // lose profiles that mention the word elsewhere (RN-511 "High-Risk Obstetrics").
     if (c.scope && text) return { label: text };
-    return fromConcept(
-      c,
-      c.filter === "availability" || (c.filter as string) === "employment",
-    );
+    // Keyword-scope terms keep the employer's exact wording (SA-12): the concept still
+    // drives matching because the matcher resolves the chip text back through BY_PHRASE.
+    if (c.filter !== "availability" && text) return { label: text };
+    return fromConcept(c, c.filter === "availability");
   }
   return undefined;
 };
@@ -990,6 +967,20 @@ export function resolveTerm(raw: string): ResolvedTerm {
 }
 
 export const termLabel = (raw: string) => resolveTerm(raw).label;
+
+/**
+ * What an unpromoted keyword term was taken to mean, or null when it is matched as typed.
+ * Lets the chip show the interpretation beside the employer's own wording (SA-12).
+ */
+export function interpretedAs(raw: string): string | null {
+  const t = raw.trim();
+  if (!t || (t.length > 2 && t.startsWith('"') && t.endsWith('"'))) return null;
+  const phrase = normQuery(t);
+  const c = BY_PHRASE.get(phrase)?.[0];
+  if (!c || c.filter === "availability") return null;
+  return normQuery(c.label) === phrase ? null : c.label;
+}
+
 
 /**
  * Turns a committed entry into chips. The whole entry is checked literally first:

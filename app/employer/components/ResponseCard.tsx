@@ -6,6 +6,8 @@ export type ResponseMeta = {
   respondedAt: string; // ISO timestamp
   /** The responder's confirmed earliest start for THIS request (not their profile availability). */
   earliestStart: string;
+  /** What the responder confirms about the shift requested THIS time (not their profile preference). */
+  shiftConfirmation?: string;
   distanceKm: number;
   /** "local" = within the request radius; "relocation" = candidate is open to relocating there */
   locationMatch?: "local" | "relocation";
@@ -149,7 +151,12 @@ export default function ResponseCard({
             {response.earliestStart}
           </Stat>
         )}
-        <Stat label="Shift">{candidate.shift?.join(", ") || "Flexible"}</Stat>
+        {response.shiftConfirmation && (
+          <Stat label="Shift (this request)">{response.shiftConfirmation}</Stat>
+        )}
+        <Stat label="Profile shift preference">
+          {candidate.shift?.join(", ") || "Flexible"}
+        </Stat>
         <Stat label="Distance">
           <span className="flex items-center gap-1.5">
             <LuMapPin className="h-3 w-3 shrink-0 text-ink-soft" />
@@ -160,17 +167,14 @@ export default function ResponseCard({
 
       {/* Already revealed: show the state only. The reveal action (and its charge) is never offered again. */}
       {isRevealed ? (
-        <p
-          className="rounded-[7px] border border-forest/30 bg-forest-light py-1.5 text-center text-[11px] font-bold text-forest"
-          onClick={() => onReveal?.(candidate)}
-        >
+        <p className="rounded-[7px] border border-forest/30 bg-forest-light py-1.5 text-center text-[11px] font-bold text-forest">
           Revealed ✓
         </p>
       ) : (
-        !candidate.specialist && (
+        onReveal && (
           <button
             type="button"
-            onClick={() => onReveal?.(candidate)}
+            onClick={() => onReveal(candidate)}
             className="cursor-pointer rounded-[7px] bg-forest py-1.5 text-center text-[11px] font-bold text-white transition-colors hover:bg-forest-dark"
           >
             Reveal →

@@ -87,7 +87,7 @@ const ITEMS: Item[] = [
   {
     id: "requests",
     label: "Introductions",
-    aria: "Introductions — pending Specialist requests",
+    aria: "Introductions",
     icon: FiUsers,
   },
   {
@@ -142,8 +142,8 @@ export default function NavRail({
           flex w-full max-w-full snap-x snap-proximity flex-row items-center gap-2
           overflow-x-auto overflow-y-hidden overscroll-x-contain
           border-b border-ash bg-transparent px-3 py-2
-          [scrollbar-color:#b7bcc3_transparent] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-          lg:h-full lg:max-h-full lg:snap-none lg:flex-col lg:items-center lg:gap-4.5
+          [scrollbar-color:#b7bcc3_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#b7bcc3]
+          lg:h-full lg:max-h-full lg:snap-none lg:flex-col lg:items-center lg:gap-5
           lg:overflow-x-hidden lg:overflow-y-auto lg:[scrollbar-width:thin]
           lg:rounded-none lg:border-b-0 lg:border-r lg:px-3 lg:py-1.5
         "
@@ -198,6 +198,11 @@ export default function NavRail({
           );
         })}
       </nav>
+      {/* Phone widths: the rail scrolls sideways, so fade the edge to show more workspaces beyond it */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent lg:hidden"
+      />
     </div>
   );
 }

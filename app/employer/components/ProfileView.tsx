@@ -290,7 +290,8 @@ export default function ProfileView({
   const relocOpen = !!reloc && reloc !== "Not open";
   // Outside the radius, but candidate-confirmed willing to relocate to the searched city
   const viaRelocation =
-    !!location.trim() && locationMatch(candidate, location, radius) === "relocation";
+    !!location.trim() &&
+    locationMatch(candidate, location, radius) === "relocation";
 
   const fitRows: [string, React.ReactNode][] = (
     [
@@ -384,9 +385,12 @@ export default function ProfileView({
         >
           {allRevealed ? (
             <div className="px-2 py-1 text-[10px] font-semibold tracking-[.01em] text-ink-soft">
-              <p className="font-semibold text-ink text-xs">Revealed Professionals</p>
+              <p className="font-semibold text-ink text-xs">
+                Revealed Professionals
+              </p>
               <p>
-                {revealedPeople} {revealedPeople === 1 ? "candidate" : "candidates"}
+                {revealedPeople}{" "}
+                {revealedPeople === 1 ? "candidate" : "candidates"}
               </p>
             </div>
           ) : (
@@ -424,10 +428,13 @@ export default function ProfileView({
             </>
           )}
 
-          <Divider/>
+          <Divider />
 
           {results.length === 0 && (
-            <div role="status" className="m-3.5 text-xs leading-relaxed text-ink-soft">
+            <div
+              role="status"
+              className="m-3.5 text-xs leading-relaxed text-ink-soft"
+            >
               {emptyMessage}
               <br />
               {onClearChanges && (
@@ -696,8 +703,17 @@ export default function ProfileView({
                   ))}
                 </div>
 
+                <BlockLabel className="mt-[22px]">
+                  Experienced environment
+                </BlockLabel>
+                <div className="mb-2 mt-2 flex flex-wrap gap-1.5">
+                  {[...new Set(candidate.exp.map((e) => e.env))].map((s) => (
+                    <Chip key={s}>{s}</Chip>
+                  ))}
+                </div>
+
                 {candidate.emr?.length > 0 && (
-                  <div className="mt-0.5">
+                  <div className="mt-5.5">
                     <MicroLabel>EMR &amp; clinical systems</MicroLabel>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {candidate.emr.map((s) => (

@@ -183,8 +183,8 @@ export default function Registry({
             candidate.discoverable !== false && !hidden.includes(candidate.id),
         ),
         filters,
-      ).filter((c) => locationMatch(c, location, radius) !== null),
-    [filters, hidden, location, radius],
+      ).filter((c) => locationMatch(c, resolved ?? location, radius) !== null),
+    [filters, hidden, location, resolved, radius],
   );
 
   // One card per person whenever no profession is selected, for every kind of criterion
@@ -253,7 +253,7 @@ export default function Registry({
           {
             terms,
             filters,
-            location,
+            location: resolved ?? location,
             radius,
             count: data.length,
             timestamp: new Date().toISOString(),
@@ -422,6 +422,25 @@ export default function Registry({
     [revealedProffesionals, wsTerms, wsLocation, wsRadius],
   );
 
+  // One workspace entry per revealed person; the other designations are reached from the
+  // entry's "Also available on Vetted as" links. Keeps the open designation as the entry.
+  const wsPeople = useMemo(() => {
+    const byPerson = new Map<string, (typeof wsResults)[number]>();
+    wsResults.forEach((c) => {
+      const key = c.personId || c.id;
+      if (!byPerson.has(key) || c.id === viewing) byPerson.set(key, c);
+    });
+    return [...byPerson.values()];
+  }, [wsResults, viewing]);
+
+  // Every profile that matches the active search, including sibling designations folded
+  // under another card. A compared profile outside this set is marked, never removed.
+  const inCurrentSearch = useMemo(() => {
+    const ids = new Set(data.map((c) => c.id));
+    folded.siblings.forEach((list) => list.forEach((c) => ids.add(c.id)));
+    return ids;
+  }, [data, folded.siblings]);
+
   const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
   const emptyNote = (text: string) => (
     <div className="text-xs text-ink-soft">{text}</div>
@@ -482,6 +501,17 @@ export default function Registry({
   const hideIds = (ids: string[]) => {
     setHidden((prev) => [...new Set([...prev, ...ids])]);
     setCompare((prev) => prev.filter((id) => !ids.includes(id)));
+    // As in the HTML: when hidden from an open profile, confirm with a toast that can undo it.
+    // Hiding from a card shows no toast.
+    if (viewing) {
+      toast("Candidate hidden", {
+        duration: 4200,
+        action: {
+          label: "Undo",
+          onClick: () => setHidden((prev) => prev.filter((k) => !ids.includes(k))),
+        },
+      });
+    }
     // Leaving the hidden profile: go to another visible result, or back to the list
     if (!viewAll && ids.includes(viewing)) {
       setViewing(pageResults.find((c) => !ids.includes(c.id))?.id ?? "");
@@ -519,18 +549,8 @@ export default function Registry({
     () => new Set([...folded.siblings.values()].flat().map((c) => c.id)),
     [folded],
   );
-  // Adjusted while rendering (no effect): the notice is tied to the profile it was raised for,
-  // so it disappears as soon as the employer opens a different one.
-  // `results` is the result set it was raised for: any later search/filter change (including
-  // removing filters) retires it, and leaving the profile drops it so it cannot come back on reopen.
-  const [profileNotice, setProfileNotice] = useState<{
-    id: string;
-    text: string;
-    results: unknown;
-  } | null>(null);
-  if (profileNotice && (profileNotice.id !== viewing || profileNotice.results !== sorted)) {
-    setProfileNotice(null);
-  }
+  // Case B (as in the HTML): the open profile is not on this page. Either a page change moved
+  // them off it (still a match) or they no longer match; show the first result on this page.
   if (
     viewing &&
     !viewAll &&
@@ -541,16 +561,16 @@ export default function Registry({
     !siblingIds.has(viewing)
   ) {
     const next = pageResults[0].id;
-    setProfileNotice({
-      id: next,
-      results: sorted,
-      text: sorted.some((c) => c.id === viewing)
-        ? "That professional is on a different results page — showing the first match on this page."
-        : "That professional no longer matches your filters — showing the next match.",
-    });
+    const message = sorted.some((c) => c.id === viewing)
+      ? "That professional is on a different results page — showing the first match on this page."
+      : "That professional no longer matches your filters — showing the next match.";
     setViewing(next);
+    queueMicrotask(() => toast(message));
   }
 
+  // Case C (as in the HTML): nothing matches. The profile stays open, marked as a stale
+  // reference, with a banner and a recovery action. Recomputed on every search/filter change,
+  // so removing a chip clears it the moment a match returns.
   const profileStale =
     !!viewing &&
     (viewAll
@@ -600,6 +620,9 @@ export default function Registry({
       terms={terms}
       removeTerm={(term: string) =>
         setTerms(terms.filter((t) => t !== term))
+      }
+      literalTerm={(term: string) =>
+        setTerms(terms.map((t) => (t === term ? `"${term}"` : t)))
       }
       removeLoc={() => {
         setLocation("");
@@ -1017,15 +1040,14 @@ export default function Registry({
         <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-white">
           {!viewing && activeView == "registry" && (
             <p className="text-xs py-3 text-ink-soft px-8 lg:px-12 font-semibold">
-              {data.length} {data.length == 0 ? "results" : `professional${data.length > 1 ? "s" :""}`}
+              {data.length} {data.length == 0 ? "results" : "professionals"}
             </p>
           )}
 
           {viewing && viewAll && (
             <p className="px-8 py-3 text-xs font-semibold text-ink-soft lg:px-12">
               {revealedCount} revealed {revealedCount === 1 ? "person" : "people"}
-              {wsResults.length !== revealedProffesionals.length &&
-                ` · ${wsResults.length} shown`}
+              {wsPeople.length !== revealedCount && ` · ${wsPeople.length} shown`}
             </p>
           )}
 
@@ -1044,7 +1066,7 @@ export default function Registry({
                   viewing={viewing}
                   closed={!revealing}
                   results={
-                    viewAll ? wsResults : pageResults.slice(0, +result)
+                    viewAll ? wsPeople : pageResults.slice(0, +result)
                   }
                   activeView={activeView}
                   location={viewAll ? wsLocation : location}
@@ -1055,7 +1077,6 @@ export default function Registry({
                   }}
                   onOpenSibling={(c) => openOther(c.id)}
                   stale={profileStale}
-                  notice={profileNotice?.id === viewing ? profileNotice.text : undefined}
                   onClearChanges={viewAll ? clearWsSearch : clearFilters}
                   emptyMessage={
                     viewAll
@@ -1276,6 +1297,7 @@ export default function Registry({
             <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
               <CandidateCompare
                 ids={compare}
+                outsideSearchIds={compare.filter((id) => !inCurrentSearch.has(id))}
                 clearComparison={() => setCompare([])}
                 onViewProfile={(id) => {
                   setActiveView("registry");

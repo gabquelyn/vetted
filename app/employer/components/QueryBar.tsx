@@ -228,6 +228,12 @@ export default function QueryBar({
           </svg>
           Build from job description
         </button>
+        {/* Search guidance, visible without opening Help (PA-11) */}
+        <p className="basis-full text-[11px] leading-snug text-ink-soft">
+          Press Enter or type a comma to add a term. Professions, settings and
+          availability become green filters; anything else is searched as a grey
+          keyword. Put a phrase in quotes to match it exactly.
+        </p>
       </div>
     </div>
   );

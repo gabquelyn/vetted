@@ -103,6 +103,8 @@ export interface CandidateCompareProps {
   reveals?: string[];
   introduced?: string[];
   clearComparison: () => void;
+  /** Compared ids that fall outside the current search. They stay in the set; only marked. */
+  outsideSearchIds?: string[];
 }
 
 export function CandidateCompare({
@@ -116,6 +118,7 @@ export function CandidateCompare({
   reveals = [],
   introduced = [],
   clearComparison,
+  outsideSearchIds = [],
 }: CandidateCompareProps) {
   const reduce = useReducedMotion();
 
@@ -270,6 +273,11 @@ export function CandidateCompare({
                     >
                       {identityLine}
                     </div>
+                    {outsideSearchIds.includes(c.id) && (
+                      <div className="mb-2 text-[10.5px] font-medium italic text-white/60">
+                        Outside the current search
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-[7px]">
                       {onViewProfile && (
                         <button

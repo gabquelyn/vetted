@@ -9,6 +9,7 @@ import {
   SHIFTS,
 } from "@/app/data/professions";
 import { AVAILABILITY } from "@/app/data/registry";
+import { interpretedAs } from "@/app/utils/search";
 
 type FilterKey =
   | "profession"
@@ -60,6 +61,7 @@ export default function ActiveFilters({
   onSave,
   terms,
   removeTerm,
+  literalTerm,
   location,
   removeLoc,
 }: {
@@ -71,6 +73,8 @@ export default function ActiveFilters({
   onSave?: () => void;
   terms: string[];
   removeTerm: (term: string) => void;
+  /** One action that returns a recognised term to exact keyword matching, without retyping */
+  literalTerm?: (term: string) => void;
   location: { radius: number; location: string; resolved: boolean };
   removeLoc: () => void;
 }) {
@@ -139,6 +143,24 @@ export default function ActiveFilters({
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#ececea] py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-ink-soft"
               >
                 {term}
+                {interpretedAs(term) && (
+                  <>
+                    <span className="font-normal text-ink-soft/80">
+                      {" "}
+                      read as {interpretedAs(term)}
+                    </span>
+                    {literalTerm && (
+                      <button
+                        type="button"
+                        aria-label={`Match “${term}” exactly as typed`}
+                        onClick={() => literalTerm(term)}
+                        className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-bold text-forest underline hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest"
+                      >
+                        Exact only
+                      </button>
+                    )}
+                  </>
+                )}
                 <button
                   type="button"
                   aria-label={`Remove ${term}`}

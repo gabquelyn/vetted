@@ -23,6 +23,8 @@ interface PlacementRequestFormProps {
   professions?: string[];
   submitting?: boolean;
   submitLabel?: string;
+  /** Eligible sample professionals for a profession and city, shown before submitting (uses no request) */
+  previewEligible?: (v: { profession: string; location: string }) => number;
 }
 
 /** One choice only. "Multiple" covers requests that need more than one shift pattern. */
@@ -149,6 +151,7 @@ export default function PlacementRequestForm({
   professions = PROFESSIONS.map((p) => p[1]),
   submitting = false,
   submitLabel = "Continue",
+  previewEligible,
 }: PlacementRequestFormProps) {
   const reduce = useReducedMotion();
   const uid = useId();
@@ -221,6 +224,18 @@ export default function PlacementRequestForm({
 
         {attempted && !values.location ? <p className="text-highlight my-2">Select location</p> : null}
       </Field>
+
+      {previewEligible && values.profession && values.location && (
+        <p role="status" className="-mt-2 text-xs text-ink-soft">
+          {(() => {
+            const n = previewEligible({
+              profession: values.profession,
+              location: values.location,
+            });
+            return `${n} eligible sample ${n === 1 ? "professional" : "professionals"} for ${values.profession} in ${values.location}. Previewing uses no request.`;
+          })()}
+        </p>
+      )}
 
       <Field label="Shift" error={show("shifts")}>
         <ChipSelect

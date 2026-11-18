@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import { v4 as uuid } from "uuid";
@@ -10,10 +10,10 @@ import PlacementRequestForm, { PlacementRequestValues } from "./PlacementForm";
 import Modal from "./Modal";
 import UrgentTopUp, { TOP_UP_AMOUNT } from "./UrgentTopUp";
 import ResponseCard, { ResponseMeta } from "./ResponseCard";
-import { distanceBetweenCitiesKm, locationMatch } from "@/app/utils/geo";
+import { CITY_COORDS, distanceBetweenCitiesKm, locationMatch } from "@/app/utils/geo";
 import {
   MATCH_RADIUS_KM,
-  planDemoResponders
+  planDemoResponders,
 } from "@/app/utils/urgentPlan";
 
 /** Requests included before any (simulated) top-up */
@@ -22,7 +22,7 @@ const FIRST_RESPONSE_MS = 1500;
 const NEXT_RESPONSE_MS: [number, number] = [10_000, 6000];
 const NEW_BADGE_MS = 30_000;
 const DISCLOSURE =
-  "These are sample professionals and simulated responses, shown for demonstration only. No real professionals have been contacted.";
+  "Illustrative responses from sample professionals. Availability shown reflects their simulated response to this request.";
 
 const CANDIDATES_BY_ID = new Map(FULL_CANDIDATES.map((c) => [c.id, c]));
 
@@ -32,7 +32,12 @@ type RequestValues = Parameters<
 >[0];
 
 // responseId is unique per response, so React keys never collide
-type Response = ResponseMeta & { responseId: string; candidateId: string };
+type Response = ResponseMeta & {
+  responseId: string;
+  candidateId: string;
+  /** What the responder confirms about the shift requested this time */
+  shiftConfirmation?: string;
+};
 
 export type UrgentRequest = {
   id: string;
@@ -60,7 +65,7 @@ const getRequestShifts = (values: unknown): string[] => {
 };
 
 /**
- * Request summary: profession, city, radius, shift and requested start.
+ * Request summary: profession, city, reach, shift and requested start.
  * Optional fields (About the setting, Work) are never listed, so leaving them blank is fine.
  * Field names (profession, location, shifts, startTiming) must match PlacementRequestForm.
  */
@@ -68,7 +73,7 @@ function summarize(v: PlacementRequestValues) {
   return [
     { label: "Profession", value: asText(v.profession) },
     { label: "City", value: asText(v.location) },
-    { label: "Radius", value: `${MATCH_RADIUS_KM} km` },
+    { label: "Reach", value: `${MATCH_RADIUS_KM} km (fixed for this demo)` },
     { label: "Shift", value: asText(v.shifts) },
     { label: "Requested start", value: asText(v.startTiming) },
   ].filter((row) => row.value !== "");
@@ -126,10 +131,23 @@ function stableHash(s: string): number {
   return h >>> 0;
 }
 
+/** Deterministic per candidate and request: what this responder says about the requested shift. */
+function confirmShift(candidate: Candidate, requestedShift: string, seed: number) {
+  const wanted = requestedShift.trim();
+  if (!wanted || /multiple|flexible/i.test(wanted)) return "Confirmed for this request";
+  const stem = wanted.toLowerCase().replace(/s$/, "");
+  const prefers = (candidate.shift ?? []).some((x) => x.toLowerCase().startsWith(stem));
+  if (prefers) return `Confirmed for ${wanted.toLowerCase()}`;
+  return seed % 2 === 0
+    ? `Can cover ${wanted.toLowerCase()} on request`
+    : `To confirm for ${wanted.toLowerCase()}`;
+}
+
 function makeDemoResponse(
   candidate: Candidate,
   postLocation: string,
   requestedStart: string,
+  requestedShift = "",
 ): Response {
   const seed = stableHash(`${candidate.id}|${requestedStart}`);
   return {
@@ -144,9 +162,12 @@ function makeDemoResponse(
     // Deterministic per candidate and requested start, so identical requests give
     // identical cards. Belongs to this request only; profile availability is untouched.
     earliestStart: START_TIMINGS[seed % START_TIMINGS.length],
+    // Request-specific shift confirmation from the simulated response, not the requested
+    // shift copied back and not the profile preference (PA-04).
+    shiftConfirmation: confirmShift(candidate, requestedShift, seed),
     // Real straight-line distance; stable fallback only if a city isn't in CITY_COORDS
     distanceKm:
-      distanceBetweenCitiesKm(postLocation, candidate.loc) || 2 + (seed % 44),
+      distanceBetweenCitiesKm(postLocation, candidate.loc) ?? 2 + (seed % 44),
   };
 }
 
@@ -199,11 +220,52 @@ export default function Urgent({
   // cancel responses that are still on their way.
   const timers = { current: URGENT_TIMERS };
 
-  const atLimit = requests.length >= allowance;
+  // A request with no eligible professionals does not use one of the allowance (PA-02)
+  const usedCount = requests.filter((r) => eligibleOf(r) > 0).length;
+  const atLimit = usedCount >= allowance;
   // Fall back to the first request, so no effect is needed to keep a valid selection
   const selected = requests.find((r) => r.id === selectedId) ?? requests[0];
   const editing = requests.find((r) => r.id === editingId);
   const noMatches = !!selected && eligibleOf(selected) === 0;
+
+  // Up to three supported cities near the request's city with real eligible counts (PA-03).
+  const alternatives = useMemo(() => {
+    if (!noMatches || !selected) return [];
+    const profession = asText(selected.values.profession);
+    const from = getPostLocation(selected.values);
+    return Object.keys(CITY_COORDS)
+      .map((city) => ({
+        city,
+        km: distanceBetweenCitiesKm(from, city),
+        count: planDemoResponders({ profession, location: city }).eligibleCount,
+      }))
+      .filter((a) => a.km !== undefined && a.km > 0 && a.km <= 100 && a.count > 0)
+      .sort((a, b) => (a.km as number) - (b.km as number))
+      .slice(0, 3);
+  }, [noMatches, selected]);
+
+  // Employer-selected only: re-plans the same request for another city, never automatic.
+  const chooseAlternative = (city: string) => {
+    if (!selected) return;
+    const values = { ...selected.values, location: city } as RequestValues;
+    const { eligibleCount, plannedIds } = planDemoResponders(values);
+    timers.current.get(selected.id)?.forEach(clearTimeout);
+    timers.current.delete(selected.id);
+    setRequests((prev) =>
+      prev.map((r) =>
+        r.id === selected.id
+          ? { ...r, values, eligibleCount, plannedIds, responses: [] }
+          : r,
+      ),
+    );
+    scheduleResponses(
+      selected.id,
+      plannedIds,
+      city,
+      asText(values.startTiming),
+      asText(values.shifts),
+    );
+  };
 
   const openCreate = () => {
     if (atLimit) return setTopUpOpen(true);
@@ -223,6 +285,7 @@ export default function Urgent({
     candidateIds: string[],
     postLocation: string,
     requestedStart: string,
+    requestedShift = "",
   ) => {
     let delay = 0;
     const handles = candidateIds.map((candidateId, i) => {
@@ -243,7 +306,7 @@ export default function Urgent({
               : {
                   ...r,
                   responses: [
-                    makeDemoResponse(candidate, postLocation, requestedStart),
+                    makeDemoResponse(candidate, postLocation, requestedStart, requestedShift),
                     ...r.responses,
                   ],
                 },
@@ -275,6 +338,7 @@ export default function Urgent({
         plannedIds,
         getPostLocation(values),
         asText(values.startTiming),
+        asText(values.shifts),
       );
       setOpen(false);
       setEditingId(null);
@@ -305,6 +369,7 @@ export default function Urgent({
       plannedIds,
       getPostLocation(values),
       asText(values.startTiming),
+      asText(values.shifts),
     );
     setOpen(false);
     toast.success("Urgent request created");
@@ -337,7 +402,7 @@ export default function Urgent({
             {atLimit ? "Add more requests" : "Create request"}
           </button>
           <p className="text-[.65rem] text-ink-soft">
-            {requests.length} of {allowance} requests used
+            {usedCount} of {allowance} requests used
           </p>
         </div>
       </div>
@@ -498,6 +563,26 @@ export default function Urgent({
                   <p className="text-xs text-ink-soft">
                     Try a different profession or location.
                   </p>
+                  {alternatives.length > 0 && (
+                    <div className="mt-2 flex flex-col items-center gap-1.5">
+                      <p className="text-xs text-ink-soft">
+                        Nearby sample cities with matching professionals. Choose
+                        one to use it for this request.
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {alternatives.map((a) => (
+                          <button
+                            key={a.city}
+                            type="button"
+                            onClick={() => chooseAlternative(a.city)}
+                            className="cursor-pointer rounded-full border border-ash bg-white px-3 py-1 text-[11px] font-semibold text-ink-mid hover:border-forest hover:text-forest"
+                          >
+                            {a.city} · {plural(a.count, "professional", "professionals")} · {a.km} km away
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => openEdit(selected.id)}
@@ -579,7 +664,7 @@ export default function Urgent({
       {topUpOpen && (
         <UrgentTopUp
           allowance={allowance}
-          used={requests.length}
+          used={usedCount}
           onComplete={onTopUp}
           onClose={() => setTopUpOpen(false)}
         />
@@ -620,6 +705,7 @@ export default function Urgent({
           key={editing?.id ?? "new"}
           initialValues={editing?.values}
           onSubmit={handleSubmit}
+          previewEligible={(v) => planDemoResponders(v).eligibleCount}
         />
       </Modal>
     </div>

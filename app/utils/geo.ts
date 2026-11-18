@@ -133,9 +133,6 @@ export const distanceBetweenCitiesKm = (
   const to = resolve(toCity);
   if (!from || !to) return undefined;
 
-  // Same-city candidates come out as 0 (both use the city centroid), so show at least 1 km
-  return Math.max(
-    1,
-    Math.round(haversineKm(CITY_COORDS[from], CITY_COORDS[to])),
-  );
+  // Same-city candidates are 0 km (SA-06); otherwise one decimal, so 24.7 km stays 24.7
+  return Math.round(haversineKm(CITY_COORDS[from], CITY_COORDS[to]) * 10) / 10;
 };
