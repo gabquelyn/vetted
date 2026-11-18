@@ -595,12 +595,6 @@ export default function Registry({
     setWsRadius(25);
   };
 
-  // Revealed workspace: undo the most recently added term; with none left, drop the place.
-  const undoWsChange = () => {
-    if (wsTerms.length > 0) setWsTerms(wsTerms.slice(0, -1));
-    else clearWsSearch();
-  };
-
   // A search or filter change alters the result set, never the workspace mode. If the open
   // profile (opened from the Registry results) stops matching:
   //  - other results exist -> show the first one on this page, with a toast
@@ -654,6 +648,35 @@ export default function Registry({
     setPage(p);
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  // Revealed workspace chip row: the workspace's own terms and place, one chip each, so any
+  // of them can be removed on its own. No filter chips and no Save search here (RV-05).
+  const wsChips = (
+    <ActiveFilters
+      filters={{
+        profession: [],
+        environment: [],
+        shift: [],
+        employment: [],
+        mobility: [],
+        profile: [],
+        availability: [],
+        openTo: [],
+        confirmed: [],
+        skills: [],
+      }}
+      setFilters={() => {}}
+      onClear={clearWsSearch}
+      location={{ radius: wsRadius, location: wsResolved ?? wsLocation, resolved: !!wsResolved }}
+      terms={wsTerms}
+      removeTerm={(term: string) => setWsTerms(wsTerms.filter((t) => t !== term))}
+      removeLoc={() => {
+        setWsLocation("");
+        setWsResolved(null);
+        setWsRadius(25);
+      }}
+    />
+  );
 
   // The chip row: shown above the results, and also while a profile is open
   const activeChips = (
@@ -1116,11 +1139,9 @@ export default function Registry({
               {/* Profile or candidate results */}
               {viewing ? (
                 <div className="flex min-h-0 flex-1 flex-col">
-                  {!viewAll && (
-                    <div className="px-4 pt-1 text-xs text-[#8a8a84] sm:px-6 lg:px-12">
-                      {activeChips}
-                    </div>
-                  )}
+                  <div className="px-4 pt-1 text-xs text-[#8a8a84] sm:px-6 lg:px-12">
+                    {viewAll ? wsChips : activeChips}
+                  </div>
                   <div className="min-h-0 flex-1">
                 <ProfileView
                   viewing={viewing}
@@ -1137,7 +1158,7 @@ export default function Registry({
                   }}
                   onOpenSibling={(c) => openOther(c.id)}
                   stale={profileStale}
-                  onClearChanges={viewAll ? undoWsChange : undoLastChange}
+                  onClearChanges={viewAll ? clearWsSearch : undoLastChange}
                   emptyMessage={
                     viewAll
                       ? "No revealed professionals match this search."
