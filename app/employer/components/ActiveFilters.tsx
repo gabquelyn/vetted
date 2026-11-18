@@ -54,6 +54,13 @@ const VALUE_LABELS: Partial<Record<FilterKey, Record<string, string>>> = {
   openTo: Object.fromEntries(ENVIRONMENT.map((e) => [`Open to:${e}`, e])),
 };
 
+// Chips wrap and never exceed the row; long labels truncate instead of forcing overflow.
+const CHIP =
+  "inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-full py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold";
+// 15px visually; 20px on small screens so the remove target is easier to hit
+const X =
+  "flex size-3.75 shrink-0 cursor-pointer items-center justify-center rounded-full border-none p-0 text-[11px] leading-none text-[#16260c] transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest max-sm:size-5";
+
 export default function ActiveFilters({
   filters,
   setFilters,
@@ -96,18 +103,20 @@ export default function ActiveFilters({
     }));
 
   return (
-    <div className="flex flex-wrap items-center gap-5">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
       {/* .fd-query-chips */}
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+      <div className="flex min-w-0 basis-full flex-wrap items-center gap-1.5 min-[640px]:basis-0 min-[640px]:flex-1">
         {location.resolved && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]">
-            {location.location}{" "}
-            {location.resolved && `· within ${location.radius}km`}
+          <span className={`${CHIP} bg-forest-light text-[#16260c]`}>
+            <span className="min-w-0 truncate">
+              {location.location}
+              {location.resolved && ` · within ${location.radius}km`}
+            </span>
             <button
               type="button"
               aria-label={`Remove location search`}
               onClick={() => removeLoc()}
-              className="flex h-3.75 w-3.75 cursor-pointer items-center justify-center rounded-full border-none bg-forest/15 p-0 text-[11px] leading-none text-[#16260c] transition-colors hover:bg-forest/25 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest"
+              className={`${X} bg-forest/15 hover:bg-forest/25`}
             >
               ×
             </button>
@@ -116,18 +125,20 @@ export default function ActiveFilters({
         {chips.map((chip) => (
           <span
             key={`${chip.key}:${chip.value}`}
-            className="inline-flex items-center gap-1.5 rounded-full bg-forest-light py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-[#16260c]"
+            className={`${CHIP} bg-forest-light text-[#16260c]`}
           >
-            {chip.key == "confirmed"
-              ? `Confirmed ≤${chip.value}d`
-              : chip.key == "openTo"
-                ? `Open to: ${chip.value}`
-                : chip.label}
+            <span className="min-w-0 truncate">
+              {chip.key == "confirmed"
+                ? `Confirmed ≤${chip.value}d`
+                : chip.key == "openTo"
+                  ? `Open to: ${chip.value}`
+                  : chip.label}
+            </span>
             <button
               type="button"
               aria-label={`Remove ${chip.label}`}
               onClick={() => removeChip(chip.key, chip.value)}
-              className="flex h-3.75 w-3.75 cursor-pointer items-center justify-center rounded-full border-none bg-forest/15 p-0 text-[11px] leading-none text-[#16260c] transition-colors hover:bg-forest/25 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest"
+              className={`${X} bg-forest/15 hover:bg-forest/25`}
             >
               ×
             </button>
@@ -136,17 +147,16 @@ export default function ActiveFilters({
 
         {/* Committed search phrases (.fd-query-chip) */}
         {terms.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">
             {terms.map((term) => (
               <span
                 key={term}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#ececea] py-1.25 pl-2.75 pr-1.5 text-[11px] font-semibold text-ink-soft"
+                className={`${CHIP} bg-[#ececea] text-ink-soft`}
               >
-                {term}
+                <span className="min-w-0 truncate">{term}</span>
                 {interpretedAs(term) && (
                   <>
-                    <span className="font-normal text-ink-soft/80">
-                      {" "}
+                    <span className="min-w-0 break-words font-normal text-ink-soft/80">
                       read as {interpretedAs(term)}
                     </span>
                     {literalTerm && (
@@ -154,7 +164,7 @@ export default function ActiveFilters({
                         type="button"
                         aria-label={`Match “${term}” exactly as typed`}
                         onClick={() => literalTerm(term)}
-                        className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-bold text-forest underline hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest"
+                        className="shrink-0 cursor-pointer whitespace-nowrap border-none bg-transparent p-0 text-[11px] font-bold text-forest underline hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest"
                       >
                         Exact only
                       </button>
@@ -165,7 +175,7 @@ export default function ActiveFilters({
                   type="button"
                   aria-label={`Remove ${term}`}
                   onClick={() => removeTerm(term)}
-                  className="flex h-3.75 w-3.75 cursor-pointer items-center justify-center rounded-full border-none bg-[rgba(45,80,22,.14)] p-0 text-[11px] leading-none text-[#16260c] transition-colors hover:bg-[rgba(45,80,22,.26)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-forest"
+                  className={`${X} bg-[rgba(45,80,22,.14)] hover:bg-[rgba(45,80,22,.26)]`}
                 >
                   ×
                 </button>
@@ -175,6 +185,8 @@ export default function ActiveFilters({
         )}
       </div>
 
+      {/* Actions: one row on small screens (Clear all left, Save search right) */}
+      <div className="flex w-full items-center justify-between gap-3 min-[640px]:ml-auto min-[640px]:w-auto min-[640px]:justify-end">
       {/* Clear all */}
       {chips.length + terms.length + (location.resolved ? 1 : 0) > 1 && (
         <button
@@ -191,7 +203,7 @@ export default function ActiveFilters({
         <button
           type="button"
           onClick={onSave}
-          className="ml-auto inline-flex shrink-0 cursor-pointer items-center gap-1.25 rounded-full border border-ash bg-white py-1.5 pl-2.75 pr-3.25 text-[11px] font-bold text-forest transition-colors hover:border-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+          className="ml-auto inline-flex shrink-0 whitespace-nowrap cursor-pointer items-center gap-1.25 rounded-full border border-ash bg-white py-1.5 pl-2.75 pr-3.25 text-[11px] font-bold text-forest transition-colors hover:border-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
         >
           <svg
             width="12"
@@ -206,6 +218,7 @@ export default function ActiveFilters({
           Save search
         </button>
       )}
+      </div>
     </div>
   );
 }

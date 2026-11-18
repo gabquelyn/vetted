@@ -48,9 +48,11 @@ export default function QueryBar({
   /** Revealed workspace: every entry is a plain keyword (no filter promotion, no PT prompt) */
   keywordOnly?: boolean;
 }) {
-  // Segment: stacked with a bottom rule on small screens, inline from 900px
+  // Below 900px the bar is a two-row grid: the search takes the full first row, and
+  // location + radius share the second row (two rows instead of four). From 900px it is
+  // one inline row. Vertical dividers show between segments in the shared row.
   const seg =
-    "relative flex min-w-0 items-center gap-[9px] border-b border-ash px-3 py-2.5 min-[900px]:border-b-0 min-[900px]:py-3";
+    "relative flex min-w-0 items-center gap-[9px] px-3 py-2 min-[900px]:py-3";
   const divider =
     "hidden h-5 w-px shrink-0 self-center bg-ash min-[900px]:block";
 
@@ -124,13 +126,13 @@ export default function QueryBar({
 
   return (
     <div className="mb-2.5 max-w-[1360px] shrink-0">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+      <div className="flex items-center gap-x-2 min-[900px]:gap-x-4">
         {/* .fd-sc-bar */}
-        <div className="flex min-w-0 flex-[1_1_640px] flex-col items-stretch transition-[border-color] duration-150 min-[900px]:flex-row min-[900px]:border-b-[1.5px] min-[900px]:border-b-ash min-[900px]:focus-within:border-b-forest">
+        <div className="grid min-w-0 flex-1 grid-cols-2 items-stretch border-b-[1.5px] border-b-ash transition-[border-color] duration-150 focus-within:border-b-forest min-[900px]:flex min-[900px]:flex-[1_1_640px] min-[900px]:flex-row">
           {/* Keyword + Help */}
           <div
             data-tour="search"
-            className={`${seg} w-full pl-1 min-[900px]:w-auto min-[900px]:flex-[1.6_1_260px]`}
+            className={`${seg} col-span-2 w-full pl-1 min-[900px]:w-auto min-[900px]:flex-[1.6_1_260px]`}
           >
             <svg
               width="16"
@@ -196,7 +198,7 @@ export default function QueryBar({
 
           {/* Location */}
           <div
-            className={`${seg} w-full min-[900px]:w-auto min-[900px]:flex-[0_1_170px]`}
+            className={`${seg} w-full border-t border-ash min-[900px]:w-auto min-[900px]:flex-[0_1_170px] min-[900px]:border-t-0`}
           >
             <div className="min-w-0 text-xs flex-1">
               <LocationSelect
@@ -209,7 +211,7 @@ export default function QueryBar({
             </div>
           </div>
           <div
-            className={`${seg} w-full min-w-0 min-[900px]:w-auto min-[900px]:flex-[0_0_145px]`}
+            className={`${seg} w-full min-w-0 border-l border-t border-ash min-[900px]:w-auto min-[900px]:flex-[0_0_145px] min-[900px]:border-l-0 min-[900px]:border-t-0`}
           >
             <RadiusSelect
               value={radiusKm}
@@ -224,7 +226,9 @@ export default function QueryBar({
         <button
           type="button"
           onClick={onBuild}
-          className="inline-flex w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-full border-none bg-forest-light px-4 py-[9px] text-[11.5px] font-bold text-[#16260c] transition-colors hover:bg-[#dcead0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest min-[900px]:w-auto"
+          aria-label="Build from job description"
+          title="Build from job description"
+          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-full border-none bg-forest-light p-0 text-[11.5px] font-bold text-[#16260c] transition-colors hover:bg-[#dcead0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest min-[900px]:size-auto min-[900px]:px-4 min-[900px]:py-[9px]"
         >
           <svg
             width="13"
@@ -236,7 +240,7 @@ export default function QueryBar({
           >
             <path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
           </svg>
-          Build from job description
+          <span className="hidden min-[900px]:inline">Build from job description</span>
         </button>
       </div>
     </div>
