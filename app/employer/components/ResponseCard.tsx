@@ -99,11 +99,10 @@ export default function ResponseCard({
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
           {candidate.activeAgo}
         </p>
-
-        {isNew && (
-          <span className="rounded-full bg-highlight/15 px-2 py-0.5 text-[.55rem] font-semibold uppercase tracking-wide text-highlight">
-            New
-          </span>
+        {candidate.specialist && (
+          <div className="rounded-[5px] bg-[#8a5a1f] py-1 pl-2.5 pr-2.75 text-[9px] font-bold uppercase tracking-[.05em] text-[#f5e6cc] shadow-[-2px_2px_6px_rgba(0,0,0,.15)]">
+            Specialist
+          </div>
         )}
       </div>
 
@@ -171,10 +170,10 @@ export default function ResponseCard({
           Revealed ✓
         </p>
       ) : (
-        onReveal && (
+        !candidate.specialist && (
           <button
             type="button"
-            onClick={() => onReveal(candidate)}
+            onClick={() => onReveal?.(candidate)}
             className="cursor-pointer rounded-[7px] bg-forest py-1.5 text-center text-[11px] font-bold text-white transition-colors hover:bg-forest-dark"
           >
             Reveal →
@@ -200,6 +199,7 @@ export default function ResponseCard({
               e.stopPropagation();
               onIntroduction?.(candidate);
             }}
+            disabled = {intro}
             className={`w-full md:w-[50%] rounded-[7px] p-1.5 text-center text-[11px] font-bold transition-colors ${
               intro
                 ? "cursor-default border-[1.5px] border-[#d9a878] bg-white text-[#b8621a]"
