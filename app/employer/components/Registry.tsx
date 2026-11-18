@@ -35,7 +35,7 @@ import RevealedPreview from "./RevealedPreview";
 import ActiveFilters from "./ActiveFilters";
 import Pagination from "./Pagination";
 import { TourController } from "./TourController";
-import { locationMatch } from "@/app/utils/geo";
+import { locationMatch, resolveCity } from "@/app/utils/geo";
 
 const CARD = 316;
 const GAP = 16;
@@ -183,7 +183,7 @@ export default function Registry({
             candidate.discoverable !== false && !hidden.includes(candidate.id),
         ),
         filters,
-      ).filter((c) => locationMatch(c, resolved ?? location, radius) !== null),
+      ).filter((c) => locationMatch(c, location.trim() ? (resolved ?? location) : "", radius) !== null),
     [filters, hidden, location, resolved, radius],
   );
 
@@ -245,11 +245,24 @@ export default function Registry({
       .join("|");
     if (signature === lastSignature.current) return;
 
-    // Debounce so typing or ticking several filters saves one search, not each step
+    // A profession picked on its own, with no term, place or other filter, is browsing the
+    // registry, not a search worth remembering.
+    const onlyProfession =
+      terms.length === 0 &&
+      location.trim() === "" &&
+      Object.entries(filters).every(([k, g]) => k === "profession" || g.length === 0);
+    if (onlyProfession) return;
+
+    // Debounce so typing, dragging the radius or ticking several filters saves one search
     const timer = setTimeout(() => {
       lastSignature.current = signature;
-      setSearchHistory((prev) =>
-        [
+      setSearchHistory((prev) => {
+        const key = JSON.stringify([terms, filters, resolved ?? location, radius]);
+        const dup = prev.some(
+          (s) => JSON.stringify([s.terms, s.filters, s.location, s.radius]) === key,
+        );
+        if (dup) return prev;
+        return [
           {
             terms,
             filters,
@@ -260,9 +273,9 @@ export default function Registry({
             id: uuid(),
           },
           ...prev,
-        ].slice(0, MAX_HISTORY),
-      );
-    }, 800);
+        ].slice(0, MAX_HISTORY);
+      });
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, [data, terms, filters, location, radius, resolved]);
@@ -316,6 +329,45 @@ export default function Registry({
   // Whole result set fits in one row of the current column capacity -> centre it
   const singleRow = cols !== null && total > 0 && total <= cols;
 
+  // Last-committed-change undo for the stale-profile "Clear recent changes" action: each
+  // committed change to terms, filters, place or radius pushes the state it replaced.
+  type SearchSnap = {
+    terms: string[];
+    filters: Filters;
+    location: string;
+    resolved: string | null;
+    radius: number;
+  };
+  const undoStack = useRef<SearchSnap[]>([]);
+  const prevSnap = useRef<SearchSnap | null>(null);
+  const restoring = useRef(false);
+  useEffect(() => {
+    const cur: SearchSnap = { terms, filters, location, resolved, radius };
+    const prev = prevSnap.current;
+    prevSnap.current = cur;
+    if (!prev) return;
+    if (restoring.current) {
+      restoring.current = false;
+      return;
+    }
+    const key = (x: SearchSnap) =>
+      JSON.stringify([x.terms, x.filters, x.resolved ?? "", x.radius]);
+    if (key(prev) !== key(cur)) undoStack.current = [...undoStack.current, prev].slice(-30);
+  }, [terms, filters, location, resolved, radius]);
+
+  const undoLastChange = () => {
+    const last = undoStack.current[undoStack.current.length - 1];
+    if (!last) return clearFilters();
+    undoStack.current = undoStack.current.slice(0, -1);
+    restoring.current = true;
+    setTerms(last.terms);
+    setFilters(last.filters);
+    setLocation(last.location);
+    setResolved(last.resolved);
+    setRadius(last.radius);
+    setQuery("");
+  };
+
   const clearFilters = useCallback(() => {
     setFilters({
       profession: [],
@@ -346,6 +398,8 @@ export default function Registry({
       setToggle(true);
       setFilters(next.filters);
       setLocation(next.location);
+      // The restored search decides the location outright: no stale resolved city from before
+      setResolved(next.location.trim() ? resolveCity(next.location) : null);
       setRadius(next.radius);
       setTerms(next.terms);
     },
@@ -539,6 +593,12 @@ export default function Registry({
     setWsLocation("");
     setWsResolved(null);
     setWsRadius(25);
+  };
+
+  // Revealed workspace: undo the most recently added term; with none left, drop the place.
+  const undoWsChange = () => {
+    if (wsTerms.length > 0) setWsTerms(wsTerms.slice(0, -1));
+    else clearWsSearch();
   };
 
   // A search or filter change alters the result set, never the workspace mode. If the open
@@ -1077,7 +1137,7 @@ export default function Registry({
                   }}
                   onOpenSibling={(c) => openOther(c.id)}
                   stale={profileStale}
-                  onClearChanges={viewAll ? clearWsSearch : clearFilters}
+                  onClearChanges={viewAll ? undoWsChange : undoLastChange}
                   emptyMessage={
                     viewAll
                       ? "No revealed professionals match this search."

@@ -493,10 +493,15 @@ const TERMINOLOGY: Concept[] = [
   {
     id: "obstetrics_labour",
     label: "Obstetrics & Labour",
-    aliases: ["obstetrics", "labour and delivery", "labor and delivery", "labour & delivery", "labor & delivery", "l&d"],
+    aliases: ["obstetrics"],
     filter: "specialty",
-    
-    // strictAliases: ["l&d"],
+  },
+  {
+    // PA-08: L&D is a clinical-context keyword scope (RN-510 only). It is not the Obstetrics &
+    // Labour specialty and does not expand into Perinatal or Maternal-Newborn (RN-511).
+    id: "labour_delivery",
+    label: "Labour & Delivery",
+    aliases: ["l&d", "labour and delivery", "labor and delivery", "labour & delivery", "labor & delivery"],
   },
   {
     id: "perinatal",

@@ -495,7 +495,7 @@ export default function Urgent({
                         {summary.map(({ label, value }) => (
                           <div key={label} className="min-w-0">
                             <dt className="text-ink-soft">{label}</dt>
-                            <dd className="wrap-break-word truncate font-semibold text-ink-mid">
+                            <dd className="wrap-break-word font-semibold text-ink-mid">
                               {value}
                             </dd>
                           </div>

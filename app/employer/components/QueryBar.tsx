@@ -5,6 +5,9 @@ import RadiusSelect from "./RadiusSelector";
 import HelpButton from "./HelpButton";
 import { restartTour } from "./TourController";
 import { parseQuery, type ResolvedTerm } from "@/app/utils/search";
+const GUIDANCE =
+  "Press Enter or type a comma to add a term. Professions, settings and availability become green filters; anything else is searched as a grey keyword. Put a phrase in quotes to match it exactly.";
+
 export default function QueryBar({
   query,
   setQuery,
@@ -148,8 +151,15 @@ export default function QueryBar({
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               placeholder="Search by profession, clinical experience, skill…"
+              aria-describedby="search-guidance"
+              title={GUIDANCE}
               className="w-full min-w-0 border-none bg-transparent font-[inherit] text-sm font-medium text-ink outline-none placeholder:font-normal placeholder:text-[#8a8a84]"
             />
+
+            {/* Search guidance (PA-11): read by screen readers as the input's description */}
+            <span id="search-guidance" className="sr-only">
+              {GUIDANCE}
+            </span>
 
             <HelpButton restartTours={restartTour} />
 
@@ -228,12 +238,6 @@ export default function QueryBar({
           </svg>
           Build from job description
         </button>
-        {/* Search guidance, visible without opening Help (PA-11) */}
-        <p className="basis-full text-[11px] leading-snug text-ink-soft">
-          Press Enter or type a comma to add a term. Professions, settings and
-          availability become green filters; anything else is searched as a grey
-          keyword. Put a phrase in quotes to match it exactly.
-        </p>
       </div>
     </div>
   );
