@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import Overlay from "./Overlay";
 import SearchItem from "./SearchItem";
 import { v4 as uuid } from "uuid";
-import { searchCandidates, suggestBroadening, suggestSpelling } from "@/app/utils/search";
+import { parseQuery, searchCandidates, suggestBroadening, suggestSpelling } from "@/app/utils/search";
 import QueryBar from "./QueryBar";
 import HideChoice from "./HideChoice";
 import ProfileView from "./ProfileView";
@@ -223,6 +223,33 @@ export default function Registry({
     () => (data.length === 0 ? suggestSpelling(pool, terms, FULL_CANDIDATES) : null),
     [data, pool, terms],
   );
+  // Accepting a spelling fix goes through the same resolution as typing it: a profession,
+  // setting or other structured wording becomes a green filter, anything else a grey keyword.
+  const acceptSpelling = (from: string, to: string) => {
+    const resolvedItems = parseQuery(to);
+    const nextTerms = terms.filter((t) => t !== from);
+    const nextFilters: Filters = { ...filters };
+    let filtersChanged = false;
+    resolvedItems.forEach(({ label, filter, value, clarify }) => {
+      if (clarify) {
+        // ambiguous ("PT"): keep the wording as typed rather than guess a meaning
+        if (!nextTerms.includes(to)) nextTerms.push(to);
+        return;
+      }
+      if (filter && value) {
+        const current = nextFilters[filter] ?? [];
+        if (!current.some((v) => v.toLowerCase() === value.toLowerCase())) {
+          nextFilters[filter] = [...current, value] as never;
+          filtersChanged = true;
+        }
+        return;
+      }
+      if (label && !nextTerms.some((t) => t.toLowerCase() === label.toLowerCase()))
+        nextTerms.push(label);
+    });
+    setTerms(nextTerms);
+    if (filtersChanged) setFilters(nextFilters);
+  };
   const broaderCount = useMemo(
     () => (broader ? searchCandidates(pool, broader).length : 0),
     [broader, pool],
@@ -481,6 +508,14 @@ export default function Registry({
     [revealedProffesionals, wsTerms, wsLocation, wsRadius],
   );
 
+  // The same help inside the revealed workspace (its own terms, place and population)
+  const wsSpelling = useMemo(() => {
+    if (!viewAll || wsTerms.length === 0 || wsResults.length > 0) return null;
+    const pool = revealedProffesionals.filter(
+      (c) => locationMatch(c, wsLocation, wsRadius) !== null,
+    );
+    return suggestSpelling(pool, wsTerms, FULL_CANDIDATES);
+  }, [viewAll, wsTerms, wsResults, revealedProffesionals, wsLocation, wsRadius]);
   // One workspace entry per revealed person; the other designations are reached from the
   // entry's "Also available on Vetted as" links. Keeps the open designation as the entry.
   const wsPeople = useMemo(() => {
@@ -1175,6 +1210,22 @@ export default function Registry({
                       : "This professional no longer matches your current search."
                   }
                   clearLabel={viewAll ? "Clear search →" : "Clear recent changes →"}
+                  suggestion={(() => {
+                    const sp = viewAll ? wsSpelling : spelling;
+                    if (!sp) return null;
+                    const note = sp.alone
+                      ? `On its own it finds ${sp.count}; together with your other terms nothing matches yet.`
+                      : sp.outsideFilters
+                        ? "Your current filters or place hide those professionals."
+                        : undefined;
+                    const swap = (list: string[]) => list.map((t) => (t === sp.from ? sp.to : t));
+                    return {
+                      text: `“${sp.to}” (${sp.count})`,
+                      note,
+                      apply: () =>
+                        viewAll ? setWsTerms(swap(wsTerms)) : acceptSpelling(sp.from, sp.to),
+                    };
+                  })()}
                   onCompare={(id) => onCompare(id)}
                   onSave={(id) => onSave(id)}
                   compare={compare}
@@ -1351,9 +1402,7 @@ export default function Registry({
                             <span className="text-[13px]">Did you mean </span>
                             <button
                               type="button"
-                              onClick={() =>
-                                setTerms(terms.map((t) => (t === spelling.from ? spelling.to : t)))
-                              }
+                              onClick={() => acceptSpelling(spelling.from, spelling.to)}
                               className="my-1 cursor-pointer rounded-full border-none bg-forest-light px-4 py-2 text-[13px] font-bold text-[#16260c] transition-colors hover:bg-[#dcead0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
                             >
                               “{spelling.to}” ({spelling.count})

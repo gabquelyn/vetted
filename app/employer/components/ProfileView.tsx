@@ -114,6 +114,7 @@ export default function ProfileView({
   emptyMessage = "No professionals match your current search.",
   staleMessage = "This professional no longer matches your current search.",
   clearLabel = "Clear recent changes →",
+  suggestion = null,
 }: {
   results: Candidate[];
   viewing?: string;
@@ -155,6 +156,8 @@ export default function ProfileView({
   emptyMessage?: string;
   staleMessage?: string;
   clearLabel?: string;
+  /** A "Did you mean" spelling fix for the current search, offered beside the recovery action */
+  suggestion?: { text: string; note?: string; apply: () => void } | null;
 }) {
   const candidate =
     results.find((c) => c?.personId == viewing || c.id == viewing) ||
@@ -290,8 +293,7 @@ export default function ProfileView({
   const relocOpen = !!reloc && reloc !== "Not open";
   // Outside the radius, but candidate-confirmed willing to relocate to the searched city
   const viaRelocation =
-    !!location.trim() &&
-    locationMatch(candidate, location, radius) === "relocation";
+    !!location.trim() && locationMatch(candidate, location, radius) === "relocation";
 
   const fitRows: [string, React.ReactNode][] = (
     [
@@ -385,12 +387,9 @@ export default function ProfileView({
         >
           {allRevealed ? (
             <div className="px-2 py-1 text-[10px] font-semibold tracking-[.01em] text-ink-soft">
-              <p className="font-semibold text-ink text-xs">
-                Revealed Professionals
-              </p>
+              <p className="font-semibold text-ink text-xs">Revealed Professionals</p>
               <p>
-                {revealedPeople}{" "}
-                {revealedPeople === 1 ? "candidate" : "candidates"}
+                {revealedPeople} {revealedPeople === 1 ? "candidate" : "candidates"}
               </p>
             </div>
           ) : (
@@ -428,15 +427,26 @@ export default function ProfileView({
             </>
           )}
 
-          <Divider />
+          <Divider/>
 
           {results.length === 0 && (
-            <div
-              role="status"
-              className="m-3.5 text-xs leading-relaxed text-ink-soft"
-            >
+            <div role="status" className="m-3.5 text-xs leading-relaxed text-ink-soft">
               {emptyMessage}
               <br />
+              {suggestion && (
+                <>
+                  Did you mean{" "}
+                  <button
+                    type="button"
+                    onClick={suggestion.apply}
+                    className="cursor-pointer rounded-full border-none bg-forest-light px-2.5 py-0.5 text-xs font-bold text-[#16260c] hover:bg-[#dcead0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                  >
+                    {suggestion.text}
+                  </button>
+                  ?{suggestion.note && <span className="block">{suggestion.note}</span>}
+                  <br />
+                </>
+              )}
               {onClearChanges && (
                 <button
                   type="button"
@@ -521,6 +531,19 @@ export default function ProfileView({
               className="flex flex-wrap items-center gap-2 border-b border-[#e8c9a3] bg-[#fff4e6] px-5 py-2.5 text-xs font-semibold text-[#7a4a12]"
             >
               {stale ? staleMessage : notice}
+              {stale && suggestion && (
+                <span className="inline-flex flex-wrap items-center gap-1.5">
+                  Did you mean
+                  <button
+                    type="button"
+                    onClick={suggestion.apply}
+                    className="cursor-pointer rounded-full border-none bg-white/70 px-2.5 py-0.5 text-xs font-bold text-[#7a4a12] hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                  >
+                    {suggestion.text}
+                  </button>
+                  ?{suggestion.note && <span className="font-normal">{suggestion.note}</span>}
+                </span>
+              )}
               {stale && onClearChanges && (
                 <button
                   type="button"
@@ -703,17 +726,8 @@ export default function ProfileView({
                   ))}
                 </div>
 
-                <BlockLabel className="mt-[22px]">
-                  Experienced environment
-                </BlockLabel>
-                <div className="mb-2 mt-2 flex flex-wrap gap-1.5">
-                  {[...new Set(candidate.exp.map((e) => e.env))].map((s) => (
-                    <Chip key={s}>{s}</Chip>
-                  ))}
-                </div>
-
                 {candidate.emr?.length > 0 && (
-                  <div className="mt-5.5">
+                  <div className="mt-0.5">
                     <MicroLabel>EMR &amp; clinical systems</MicroLabel>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {candidate.emr.map((s) => (
