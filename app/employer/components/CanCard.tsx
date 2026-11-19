@@ -6,7 +6,7 @@ import {
   matchText,
   pickDisplayMatch,
 } from "@/app/utils/search";
-import { locationMatch, resolveCity } from "@/app/utils/geo";
+import { distanceBetweenCitiesKm, locationMatch, resolveCity } from "@/app/utils/geo";
 import Highlight from "./Highlight";
 
 const PinIcon = () => (
@@ -155,13 +155,20 @@ export default function CanCard({
   //  - "area": lives in the searched city's own area (e.g. Scarborough for Toronto)
   //  - "local": lives within the radius
   const where = searchCity ? locationMatch(c, searchCity, radiusKm) : null;
+  // The real distance between the searched city and where this person lives, not the radius
+  // that was searched. Shown only for another city: same city / area and relocation show none.
+  const km = searchCity ? distanceBetweenCitiesKm(searchCity, c.loc) : undefined;
+  const kmText = km === undefined ? "" : `${km} km`;
   const locNote =
     where === "relocation"
       ? { tone: "relocation", text: `Open to relocating to ${searchCity}` }
       : where === "local"
-        ? resolveCity(c.loc) === searchCity && c.loc !== searchCity
-          ? { tone: "local", text: `In ${searchCity?.replace(", ON", "")} area` }
-          : { tone: "local", text: c.loc === searchCity ? "Local" : `Within ${radiusKm} km` }
+        ? resolveCity(c.loc) === searchCity
+          ? {
+              tone: "local",
+              text: c.loc === searchCity ? "Same city" : `In ${searchCity?.replace(", ON", "")} area`,
+            }
+          : { tone: "local", text: kmText ? `${kmText} away` : `Within ${radiusKm} km` }
         : null;
   
   return (
