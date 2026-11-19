@@ -63,6 +63,14 @@ export default function Registry({
   const [sort, setSort] = useState<"new" | "most">("new");
   const [query, setQuery] = useState("");
   const [activeView, setActiveView] = useState<ActiveView>("registry");
+  // The panels that slide over a page (Saved, Searches, Recent, Revealed, Introductions,
+  // Hidden) share activeView with the pages themselves. Remember the page underneath so
+  // closing a panel returns to it (Urgent, Compare...) instead of always to the Registry.
+  const OVERLAY_VIEWS = ["saved", "searches", "recent", "reveals", "requests", "hidden"];
+  const [baseView, setBaseView] = useState<ActiveView>("registry");
+  const activeViewRef = useRef<ActiveView>(activeView);
+  activeViewRef.current = activeView;
+  const closeOverlay = () => setActiveView(baseView);
   const handleRailSelect = useCallback((id: string) => {
     if (
       id === "registry" ||
@@ -77,6 +85,12 @@ export default function Registry({
     ) {
       setViewAll(false);
       setReturnTo(null);
+      if (OVERLAY_VIEWS.includes(id)) {
+        // opening a panel from a page: remember that page; from another panel: keep the first
+        if (!OVERLAY_VIEWS.includes(activeViewRef.current)) setBaseView(activeViewRef.current);
+      } else {
+        setBaseView("registry");
+      }
       setActiveView(id);
 
       return;
@@ -827,7 +841,7 @@ export default function Registry({
         {/* Saved searches */}
         <Overlay
           open={activeView == "searches"}
-          onClose={() => setActiveView("registry")}
+          onClose={closeOverlay}
           title="Saved Searches"
           subtitle={
             recentSearch.length
@@ -888,7 +902,7 @@ export default function Registry({
         {/* hidden professionals */}
         <Overlay
           open={activeView == "hidden"}
-          onClose={() => setActiveView("registry")}
+          onClose={closeOverlay}
           title="Hidden"
           subtitle={
             hidden.length
@@ -928,7 +942,7 @@ export default function Registry({
 
         <Overlay
           open={activeView == "requests"}
-          onClose={() => setActiveView("registry")}
+          onClose={closeOverlay}
           title="Introductions"
           subtitle={
             introduced.length
@@ -963,7 +977,7 @@ export default function Registry({
         {/* Saved professionals */}
         <Overlay
           open={activeView == "saved"}
-          onClose={() => setActiveView("registry")}
+          onClose={closeOverlay}
           title="Saved Candidates"
           subtitle={
             saved.length
@@ -1001,7 +1015,7 @@ export default function Registry({
 
         <Overlay
           open={activeView == "recent"}
-          onClose={() => setActiveView("registry")}
+          onClose={closeOverlay}
           title="Recently Viewed"
           subtitle={
             recents.length
@@ -1034,7 +1048,7 @@ export default function Registry({
         {/* Revealed professionals */}
         <Overlay
           open={activeView == "reveals"}
-          onClose={() => setActiveView("registry")}
+          onClose={closeOverlay}
           title="Revealed Professionals"
           subtitle={
             revealedCount
