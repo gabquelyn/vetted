@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import Overlay from "./Overlay";
 import SearchItem from "./SearchItem";
 import { v4 as uuid } from "uuid";
-import { searchCandidates, suggestBroadening } from "@/app/utils/search";
+import { searchCandidates, suggestBroadening, suggestSpelling } from "@/app/utils/search";
 import QueryBar from "./QueryBar";
 import HideChoice from "./HideChoice";
 import ProfileView from "./ProfileView";
@@ -216,6 +216,11 @@ export default function Registry({
   // Empty result with several terms: offer (never apply) a search with one term dropped
   const broader = useMemo(
     () => (data.length === 0 ? suggestBroadening(pool, terms) : null),
+    [data, pool, terms],
+  );
+  // Empty result: a likely typo ("operating roon") is offered as a click, never applied
+  const spelling = useMemo(
+    () => (data.length === 0 ? suggestSpelling(pool, terms, FULL_CANDIDATES) : null),
     [data, pool, terms],
   );
   const broaderCount = useMemo(
@@ -1288,6 +1293,8 @@ export default function Registry({
                               <CandidateCard
                                 c={candidate}
                                 key={candidate.id}
+                                searchCity={resolved && location.trim() ? resolved : null}
+                                radiusKm={radius}
                                 saved={saved}
                                 onSave={(id) => onSave(id)}
                                 onCompare={(id) => onCompare(id)}
@@ -1339,6 +1346,33 @@ export default function Registry({
                         No professionals in this demo&apos;s sample set match
                         this combination of filters.
                         <br />
+                        {spelling && (
+                          <>
+                            <span className="text-[13px]">Did you mean </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setTerms(terms.map((t) => (t === spelling.from ? spelling.to : t)))
+                              }
+                              className="my-1 cursor-pointer rounded-full border-none bg-forest-light px-4 py-2 text-[13px] font-bold text-[#16260c] transition-colors hover:bg-[#dcead0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+                            >
+                              “{spelling.to}” ({spelling.count})
+                            </button>
+                            <span className="text-[13px]">?</span>
+                            {spelling.alone && (
+                              <span className="mt-0.5 block text-xs">
+                                On its own “{spelling.to}” finds {spelling.count}; together with
+                                your other terms nothing matches yet.
+                              </span>
+                            )}
+                            {spelling.outsideFilters && (
+                              <span className="mt-0.5 block text-xs">
+                                Your current filters or place hide those professionals.
+                              </span>
+                            )}
+                            <br />
+                          </>
+                        )}
                         {broader && (
                           <>
                             <button

@@ -6,6 +6,7 @@ import {
   matchText,
   pickDisplayMatch,
 } from "@/app/utils/search";
+import { locationMatch, resolveCity } from "@/app/utils/geo";
 import Highlight from "./Highlight";
 
 const PinIcon = () => (
@@ -116,6 +117,8 @@ export default function CanCard({
   introduced,
   terms,
   siblings,
+  searchCity = null,
+  radiusKm = 25,
 }: {
   c: Candidate;
   onSave: (id: string) => void;
@@ -136,6 +139,9 @@ export default function CanCard({
   terms: string[];
   /** Other profiles of the same person that also match (set when results are folded by person) */
   siblings?: Candidate[];
+  /** The resolved city being searched (e.g. "Toronto, ON"), or null when no city search is active */
+  searchCity?: string | null;
+  radiusKm?: number;
 }) {
   const revealed = reveals.includes(c.personId || c.id);
   const intro = introduced.includes(c.id);
@@ -143,6 +149,20 @@ export default function CanCard({
   const extraSkills = c.skills.length - 2;
   const stop = (e: MouseEvent) => e.stopPropagation();
   const matches = findCandidateMatches(c, terms)
+
+  // Why this person is in a city search. Only shown while a supported city is searched.
+  //  - "relocation": lives outside the radius but has confirmed they would relocate there
+  //  - "area": lives in the searched city's own area (e.g. Scarborough for Toronto)
+  //  - "local": lives within the radius
+  const where = searchCity ? locationMatch(c, searchCity, radiusKm) : null;
+  const locNote =
+    where === "relocation"
+      ? { tone: "relocation", text: `Open to relocating to ${searchCity}` }
+      : where === "local"
+        ? resolveCity(c.loc) === searchCity && c.loc !== searchCity
+          ? { tone: "local", text: `In ${searchCity?.replace(", ON", "")} area` }
+          : { tone: "local", text: c.loc === searchCity ? "Local" : `Within ${radiusKm} km` }
+        : null;
   
   return (
     <div
@@ -246,6 +266,17 @@ export default function CanCard({
         <div className="mb-1.75 flex flex-wrap items-center gap-1.5 border-b border-ash pb-2.25 text-xs text-ink-soft">
           <PinIcon />
           {c.loc}
+          {locNote && (
+            <span
+              className={`rounded-full px-2 py-[2.5px] text-[9.5px] font-semibold ${
+                locNote.tone === "relocation"
+                  ? "bg-[#f6e7d3] text-[#8a5a1f]"
+                  : "bg-forest-light text-forest"
+              }`}
+            >
+              {locNote.text}
+            </span>
+          )}
           {c.vehicle && (
             <span className="ml-auto flex items-center gap-1.25 font-medium text-[#8a8a84]">
               <CarIcon />

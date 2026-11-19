@@ -50,7 +50,7 @@ export default function RadiusSelect({
   disabled = false,
   disabledReason = "Select a supported city to enable distance search",
   presets = [25, 50, 100],
-  min = 5,
+  min = 0,
   max = 100,
   step = 5,
   className = "",

@@ -878,6 +878,179 @@ export function suggestBroadening(
 }
 
 /* ------------------------------------------------------------------ *
+ * 9b. "Did you mean": spelling help for a search that found nothing
+ * ------------------------------------------------------------------ */
+
+/** Plain words (lower case) found anywhere in a value: strings, arrays, nested objects. */
+const wordsOf = (v: unknown, out: string[] = []): string[] => {
+  if (typeof v === "string") out.push(...(v.toLowerCase().match(/[a-z]+/g) ?? []));
+  else if (Array.isArray(v)) v.forEach((x) => wordsOf(x, out));
+  return out;
+};
+
+const vocabCache = new WeakMap<object, Map<string, number>>();
+/** Every word a search can match, with how often it occurs: candidate evidence + terminology. */
+const vocabulary = (everyone: Candidate[]): Map<string, number> => {
+  const hit = vocabCache.get(everyone);
+  if (hit) return hit;
+  const freq = new Map<string, number>();
+  const add = (w: string) => w.length > 1 && freq.set(w, (freq.get(w) ?? 0) + 1);
+  everyone.forEach((c) => SEARCH_FIELDS.forEach((f) => wordsOf(f.get(c)).forEach(add)));
+  BY_PHRASE.forEach((_, phrase) => phrase.split(" ").forEach((w) => /^[a-z]+$/.test(w) && add(w)));
+  vocabCache.set(everyone, freq);
+  return freq;
+};
+
+/** Edit distance counting a swap of two neighbouring letters ("form" / "from") as one edit. */
+const editDistance = (a: string, b: string): number => {
+  const d: number[][] = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++) {
+      d[i][j] = Math.min(
+        d[i - 1][j] + 1,
+        d[i][j - 1] + 1,
+        d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+  return d[a.length][b.length];
+};
+
+/**
+ * Known words close to a misspelt one, best first. Handles slips (swapped, missing, extra
+ * or wrong letter) and unfinished words ("roo" -> "room"). Words of 3 letters or more only;
+ * 3-5 letter words allow one slip, longer words two.
+ */
+const nearestWords = (
+  word: string,
+  vocab: Map<string, number>,
+  limit = 3,
+  includeKnown = false,
+): string[] => {
+  if (word.length < 3 || (vocab.has(word) && !includeKnown)) return [];
+  const max = word.length <= 5 ? 1 : 2;
+  const found: { w: string; d: number; freq: number }[] = [];
+  vocab.forEach((freq, w) => {
+    if (w === word) return;
+    if (w[0] !== word[0] && w[1] !== word[1]) return; // keeps it fast and avoids wild guesses
+    if (w.startsWith(word) && w.length - word.length <= 3) {
+      found.push({ w, d: 0.5, freq }); // unfinished word
+      return;
+    }
+    if (Math.abs(w.length - word.length) > max) return;
+    const d = editDistance(word, w);
+    if (d <= max) found.push({ w, d, freq });
+  });
+  return found.sort((x, y) => x.d - y.d || y.freq - x.freq).slice(0, limit).map((x) => x.w);
+};
+
+/** Known wordings (aliases / labels) close to the whole phrase, for slips across words. */
+const nearestPhrases = (phrase: string, limit = 2): string[] => {
+  const q = normQuery(phrase);
+  if (q.length < 5) return [];
+  const max = Math.max(2, Math.floor(q.length * 0.25));
+  const found: { p: string; d: number }[] = [];
+  BY_PHRASE.forEach((_, p) => {
+    if (p === q || Math.abs(p.length - q.length) > max + 3) return;
+    const d = p.startsWith(q) ? 0.5 : editDistance(q, p);
+    if (d <= max) found.push({ p, d });
+  });
+  return found.sort((x, y) => x.d - y.d).slice(0, limit).map((x) => x.p);
+};
+
+const matchCase = (from: string, to: string) =>
+  from[0] === from[0].toUpperCase() && from[0] !== from[0].toLowerCase()
+    ? to[0].toUpperCase() + to.slice(1)
+    : to;
+
+export interface SpellingSuggestion {
+  from: string;
+  to: string;
+  /** How many candidates the corrected wording finds */
+  count: number;
+  /** True when it only finds people your current filters / place are hiding */
+  outsideFilters?: boolean;
+  /** True when the corrected chip finds people on its own but not together with the other chips */
+  alone?: boolean;
+}
+
+/**
+ * Zero-result recovery for typos ("operating roo" -> "operating room"). Offer it as a
+ * click, never apply it. Candidate wordings come from the whole phrase (known aliases and
+ * labels) and from each unknown word (near or unfinished matches). The first wording that
+ * finds people with the current filters wins; failing that, the first that finds anyone in
+ * the whole registry is offered and marked as hidden by the filters. Quoted phrases and
+ * ALL-CAPS abbreviations are left exactly as typed.
+ */
+export function suggestSpelling(
+  pool: Candidate[],
+  query: string[],
+  everyone: Candidate[],
+): SpellingSuggestion | null {
+  if (!query.length || searchCandidates(pool, query).length) return null;
+  const vocab = vocabulary(everyone);
+
+  const options = (raw: string): string[] => {
+    if (/^\s*["\u201c]/.test(raw)) return []; // literal phrases are matched exactly as typed
+    const out: string[] = nearestPhrases(raw).map((p) => matchCase(raw, p));
+    // word by word: each unknown word may be replaced by its closest known words
+    const parts = raw.split(/([A-Za-z]+)/);
+    const choices = parts.map((part) => {
+      if (!/^[A-Za-z]+$/.test(part) || /^[A-Z]{2,}$/.test(part)) return [part];
+      const near = nearestWords(part.toLowerCase(), vocab).map((w) => matchCase(part, w));
+      return near.length ? near : [part];
+    });
+    const build = (cs: string[][]) => {
+      let combos: string[] = [""];
+      for (const c of cs) combos = combos.flatMap((acc) => c.map((x) => acc + x)).slice(0, 40);
+      return combos;
+    };
+    out.push(...build(choices));
+    // A misspelling can also be a real word ("operation" for "operating"): try near words
+    // for every word, keeping the typed word as one of the options
+    const alt = parts.map((part) => {
+      if (!/^[A-Za-z]{4,}$/.test(part) || /^[A-Z]{2,}$/.test(part)) return [part];
+      const near = nearestWords(part.toLowerCase(), vocab, 3, true).map((w) => matchCase(part, w));
+      return [part, ...near];
+    });
+    out.push(...build(alt));
+    return [...new Set(out)].filter((x) => x !== raw);
+  };
+
+  const tries: { from: string; to: string; next: string[] }[] = [];
+  // Only a chip that finds nobody on its own can be a typo. "palliative" matches people, so it
+  // is never "corrected" just because it conflicts with another chip.
+  const suspect = query.filter((t) => searchCandidates(everyone, [t]).length === 0);
+  for (const raw of suspect)
+    for (const to of options(raw))
+      tries.push({ from: raw, to, next: query.map((t) => (t === raw ? to : t)) });
+
+  for (const t of tries) {
+    const count = searchCandidates(pool, t.next).length;
+    if (count > 0) return { from: t.from, to: t.to, count };
+  }
+  for (const t of tries) {
+    const count = searchCandidates(everyone, t.next).length;
+    if (count > 0) return { from: t.from, to: t.to, count, outsideFilters: true };
+  }
+  // Together with the other chips nothing matches, but the corrected chip is still a real
+  // wording: say so rather than leave the typo unexplained
+  if (query.length > 1) {
+    for (const t of tries) {
+      const count = searchCandidates(pool, [t.to]).length;
+      if (count > 0) return { from: t.from, to: t.to, count, alone: true };
+    }
+    for (const t of tries) {
+      const count = searchCandidates(everyone, [t.to]).length;
+      if (count > 0) return { from: t.from, to: t.to, count, alone: true, outsideFilters: true };
+    }
+  }
+  return null;
+}
+
+/* ------------------------------------------------------------------ *
  * 10. Chip resolution: professions are promoted into the panel filter,
  *     terminology and free text stay search-only
  * ------------------------------------------------------------------ */

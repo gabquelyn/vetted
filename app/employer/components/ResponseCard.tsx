@@ -23,7 +23,7 @@ export function timeAgo(iso: string, now: number) {
     0,
     Math.round((now - new Date(iso).getTime()) / 1000),
   );
-  if (seconds < 60) return "just now";
+  if (seconds < 60) return "Just now";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes} min ago`;
   return `${Math.floor(minutes / 60)} hr ago`;

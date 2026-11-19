@@ -6,7 +6,6 @@ import TopBar from "./TopBar";
 import Registry from "./Registry";
 import { useRouter } from "next/navigation";
 
-
 export default function RegistryModal() {
   const router = useRouter();
   const onClose = () => {
@@ -62,18 +61,6 @@ export default function RegistryModal() {
     setShowGateNote(false);
   }, []);
 
-  const continueFromGate = useCallback(() => {
-    if (professions.size === 0) {
-      setShowGateNote(true);
-      return;
-    }
-
-    setGateDone(true);
-
-    // TODO:
-    // Run the initial filterFullDemo() equivalent + first-entry tour.
-  }, [professions.size]);
-
   const goToUrgentHiring = useCallback(() => {
     window.setTimeout(() => {
       document.getElementById("urgent")?.scrollIntoView({
@@ -109,7 +96,7 @@ export default function RegistryModal() {
                   selected={professions}
                   onToggle={toggleProfession}
                   showNote={showGateNote}
-                  onContinue={continueFromGate}
+                  onContinue={() => setGateDone(true)}
                   onClose={onClose}
                 />
               )}
